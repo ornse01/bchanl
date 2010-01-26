@@ -1,7 +1,7 @@
 /*
- * test_main.c
+ * bbsmenufilter.h
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2010 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,20 +24,20 @@
  *
  */
 
-#include	<basic.h>
-#include	<btron/btron.h>
+#include    "bbsmenuparser.h"
 
-#include    "test.h"
+#ifndef __BBSMENUFILTER_H__
+#define __BBSMENUFILTER_H__
 
-EXPORT	W	MAIN(MESSAGE *msg)
-{
-	test_sbjtcache_main();
-	test_sbjtparser_main();
-	test_sbjtlayout_main();
-	test_bbsmncache_main();
-	test_bbsmnparser_main();
-	test_bbsmnlayout_main();
-	test_bbsmnfilter_main();
+typedef struct bbsmnfilter_t_ bbsmnfilter_t;
 
-	return 0;
-}
+IMPORT bbsmnfilter_t* bbsmnfilter_new();
+IMPORT VOID bbsmnfilter_delete(bbsmnfilter_t *filter);
+IMPORT VOID bbsmnfilter_inputitem(bbsmnfilter_t *filter, bbsmnparser_item_t *item);
+#define BBSMNFILTER_OUTPUTITEM_CONTINUE 0
+#define BBSMNFILTER_OUTPUTITEM_WAITNEXT 1
+#define BBSMNFILTER_OUTPUTITEM_END      2
+IMPORT W bbsmnfilter_outputitem(bbsmnfilter_t *filter, bbsmnparser_item_t **item);
+IMPORT VOID bbsmnfilter_reset(bbsmnfilter_t *filter);
+
+#endif

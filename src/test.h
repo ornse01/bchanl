@@ -1,7 +1,7 @@
 /*
  * test.h
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2010 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -51,5 +51,8 @@ IMPORT VOID test_bbsmnparser_main();
 
 /* test_bbsmenulayout.c */
 IMPORT VOID test_bbsmnlayout_main();
+
+/* test_bbsmenufilter.c */
+IMPORT VOID test_bbsmnfilter_main();
 
 #endif

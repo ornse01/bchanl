@@ -38,7 +38,7 @@ VPATH = $(S)
 HEADER := $(S) $(HEADER)
 
 # ソースファイル
-SRC =	test_main.c subjectcache.c test_subjectcache.c subjectparser.c test_subjectparser.c subjectlayout.c test_subjectlayout.c cache.c bbsmenucache.c test_bbsmenucache.c bbsmenuparser.c test_bbsmenuparser.c bbsmenulayout.c test_bbsmenulayout.c tadlib.c parselib.c
+SRC =	test_main.c subjectcache.c test_subjectcache.c subjectparser.c test_subjectparser.c subjectlayout.c test_subjectlayout.c cache.c bbsmenucache.c test_bbsmenucache.c bbsmenuparser.c test_bbsmenuparser.c bbsmenulayout.c test_bbsmenulayout.c tadlib.c parselib.c bbsmenufilter.c test_bbsmenufilter.c
 
 # データボックスソースファイル
 DBSRC =
