@@ -47,6 +47,7 @@
 #include    "bbsmenuretriever.h"
 #include    "bbsmenucache.h"
 #include    "bbsmenuparser.h"
+#include	"bbsmenufilter.h"
 #include    "bbsmenulayout.h"
 
 #include    "bchanl_subject.h"
@@ -486,6 +487,7 @@ struct bchanl_bbsmenu_t_ {
 	bbsmnretriever_t *retriever;
 	bbsmncache_t *cache;
 	bbsmnparser_t *parser;
+	bbsmnfilter_t *filter;
 	bbsmnlayout_t *layout;
 	bbsmndraw_t *draw;
 
@@ -497,6 +499,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bbsmnretriever_t *retriever;
 	bbsmncache_t *cache;
 	bbsmnparser_t *parser;
+	bbsmnfilter_t *filter;
 	bbsmnlayout_t *layout;
 	bbsmndraw_t *draw;
 
@@ -512,6 +515,10 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	if (parser == NULL) {
 		goto error_parser;
 	}
+	filter = bbsmnfilter_new();
+	if (filter == NULL) {
+		goto error_filter;
+	}
 	layout = bbsmnlayout_new(gid);
 	if (layout == NULL) {
 		goto error_layout;
@@ -525,6 +532,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bchanl->retriever = retriever;
 	bchanl->cache = cache;
 	bchanl->parser = parser;
+	bchanl->filter = filter;
 	bchanl->layout = layout;
 	bchanl->draw = draw;
 	bchanl->subjecthash = subjecthash;
@@ -534,6 +542,8 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 error_draw:
 	bbsmnlayout_delete(layout);
 error_layout:
+	bbsmnfilter_delete(filter);
+error_filter:
 	bbsmnparser_delete(parser);
 error_parser:
 	bbsmnretriever_delete(retriever);
@@ -556,13 +566,14 @@ LOCAL W bchanl_bbsmenu_appenditemtohash(bchanl_bbsmenu_t *bchanl, bbsmnparser_it
 
 LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwindow_t *bchanl_window)
 {
-	W err, l, t, r, b, tmp = 0;
-	Bool check;
+	W err, l, t, r, b, ret;
 	bbsmnparser_t *parser = bchanl->parser;
 	bbsmnparser_item_t *item;
+	bbsmnfilter_t *filter = bchanl->filter;
 	bbsmnlayout_t *layout = bchanl->layout;
 
 	bbsmnlayout_clear(layout);
+	bbsmnfilter_clear(filter);
 	bbsmnparser_clear(parser);
 
 	for (;;) {
@@ -570,29 +581,39 @@ LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwindo
 		if (err != 1) {
 			break;
 		}
-		if (item == NULL) {
-			break;
-		}
-		check = bbsmnparser_item_checkboradurl(item);
-		if (check == True) {
-			if (tmp == 0) { /* temporary filter. */
-				bbsmnparser_item_delete(item);
-				tmp = 1;
-				continue;
-			}
-			if (item->category == NULL) {
-				err = bchanl_bbsmenu_appenditemtohash(bchanl, item);
+		bbsmnfilter_inputitem(filter, item);
+		for (;;) {
+			ret = bbsmnfilter_outputitem(filter, &item);
+			if (item != NULL) {
+				if (item->category == NULL) {
+					err = bchanl_bbsmenu_appenditemtohash(bchanl, item);
+					if (err < 0) {
+						return;
+					}
+				}
+				err = bbsmnlayout_appenditem(layout, item);
 				if (err < 0) {
 					return;
 				}
 			}
-			err = bbsmnlayout_appenditem(layout, item);
-			if (err < 0) {
-				return;
+			if (ret != BBSMNFILTER_OUTPUTITEM_CONTINUE) {
+				break;
 			}
-		} else {
-			bbsmnparser_item_delete(item);
 		}
+		if (ret == BBSMNFILTER_OUTPUTITEM_END) {
+			printf("D\n");
+			break;
+		}
+		if (ret != BBSMNFILTER_OUTPUTITEM_WAITNEXT) {
+			/* TODO: error */
+			break;
+		}
+/*
+		if (item == NULL) {
+			printf("F\n");
+			break;
+		}
+*/
 	}
 
 	bbsmnlayout_getdrawrect(bchanl->layout, &l, &t, &r, &b);
