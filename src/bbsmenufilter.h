@@ -38,6 +38,6 @@ IMPORT VOID bbsmnfilter_inputitem(bbsmnfilter_t *filter, bbsmnparser_item_t *ite
 #define BBSMNFILTER_OUTPUTITEM_WAITNEXT 1
 #define BBSMNFILTER_OUTPUTITEM_END      2
 IMPORT W bbsmnfilter_outputitem(bbsmnfilter_t *filter, bbsmnparser_item_t **item);
-IMPORT VOID bbsmnfilter_reset(bbsmnfilter_t *filter);
+IMPORT VOID bbsmnfilter_clear(bbsmnfilter_t *filter);
 
 #endif

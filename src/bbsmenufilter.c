@@ -147,13 +147,15 @@ EXPORT W bbsmnfilter_outputitem(bbsmnfilter_t *filter, bbsmnparser_item_t **item
 	return BBSMNFILTER_OUTPUTITEM_WAITNEXT;
 }
 
-EXPORT VOID bbsmnfilter_reset(bbsmnfilter_t *filter)
+EXPORT VOID bbsmnfilter_clear(bbsmnfilter_t *filter)
 {
 	if (filter->title != NULL) {
 		bbsmnparser_item_delete(filter->title);
+		filter->title = NULL;
 	}
 	if (filter->category != NULL) {
 		bbsmnparser_item_delete(filter->category);
+		filter->category = NULL;
 	}
 	filter->state = STATE_REJECT_TITLE;
 }
