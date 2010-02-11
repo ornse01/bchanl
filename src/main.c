@@ -252,7 +252,8 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	adsp_sel(gid, &sel, 0);
 	wend_drg();
 
-	if (wid_butup == bchanl->wid) {
+	/* BUTUP on self window or no window or system message panel */
+	if ((wid_butup == bchanl->wid)||(wid_butup == 0)||(wid_butup == -1)) {
 		return;
 	}
 
