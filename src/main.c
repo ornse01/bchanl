@@ -185,7 +185,7 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
 	sbjtparser_thread_t *thread;
 	WID wid_butup;
-	W event_type, size, err, fsn_len;
+	W event_type, size, err, fsn_len, dx, dy;
 	void *fsn;
 	GID gid;
 	PNT pos, p1;
@@ -193,7 +193,7 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	TRAYREC tr_rec;
 	WEVENT paste_ev;
 	SEL_RGN	sel;
-	RECT r0;
+	RECT r0, vframe;
 
 	if (bchanl->draw == NULL) {
 		return;
@@ -202,7 +202,7 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 		return;
 	}
 
-	err = sbjtdraw_findthread(bchanl->draw, wev->s.pos, &thread);
+	err = sbjtdraw_findthread(bchanl->draw, wev->s.pos, &thread, &vframe);
 	if (err == 0) {
 		return;
 	}
@@ -216,12 +216,15 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	gget_fra(gid, &r0);
 	gset_vis(gid, r0);
 
+	dx = vframe.c.left - wev->s.pos.x;
+	dy = vframe.c.top - wev->s.pos.y;
+
 	p1 = wev->s.pos;
 	sel.sts = 0;
-	sel.rgn.r.c.left = p1.x - 5;
-	sel.rgn.r.c.top = p1.y - 5;
-	sel.rgn.r.c.right = sel.rgn.r.c.left + 100;
-	sel.rgn.r.c.bottom = sel.rgn.r.c.top + 20;
+	sel.rgn.r.c.left = vframe.c.left;
+	sel.rgn.r.c.top = vframe.c.top;
+	sel.rgn.r.c.right = vframe.c.right;
+	sel.rgn.r.c.bottom = vframe.c.bottom;
 	adsp_sel(gid, &sel, 1);
 
 	gset_ptr(PS_GRIP, NULL, -1, -1);
@@ -287,7 +290,8 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	}
 
 	paste_ev.r.type = EV_REQUEST;
-	paste_ev.r.r.p.rightbot = wev->s.pos;
+	paste_ev.r.r.p.rightbot.x = wev->s.pos.x + dx;
+	paste_ev.r.r.p.rightbot.y = wev->s.pos.y + dy;
 	paste_ev.r.cmd = W_PASTE;
 	paste_ev.r.wid = wid_butup;
 	err = wsnd_evt(&paste_ev);

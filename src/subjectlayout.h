@@ -49,7 +49,7 @@ typedef struct sbjtdraw_t_ sbjtdraw_t;
 IMPORT sbjtdraw_t* sbjtdraw_new(sbjtlayout_t *layout);
 IMPORT VOID sbjtdraw_delete(sbjtdraw_t *draw);
 IMPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r);
-IMPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread);
+IMPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread, RECT *vframe);
 IMPORT VOID sbjtdraw_setviewrect(sbjtdraw_t *draw, W l, W t, W r, W b);
 IMPORT VOID sbjtdraw_getviewrect(sbjtdraw_t *draw, W *l, W *t, W *r, W *b);
 IMPORT VOID sbjtdraw_scrollviewrect(sbjtdraw_t *draw, W dh, W dv);

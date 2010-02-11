@@ -487,9 +487,9 @@ EXPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r)
 	return 0;
 }
 
-EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread)
+EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread, RECT *vframe)
 {
-	W i,abs_x,abs_y;
+	W i,abs_x,abs_y,l,t,r,b;
 	sbjtlayout_t *layout;
 	sbjtlayout_thread_t *sbjt_thread;
 
@@ -499,11 +499,19 @@ EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t 
 
 	for (i=0;i < layout->len;i++) {
 		sbjt_thread = layout->layout_thread[i];
-		if ((sbjt_thread->view_l + sbjt_thread->vframe.c.left <= abs_x)
-			&&(abs_x < sbjt_thread->view_l + sbjt_thread->vframe.c.right)
-			&&(sbjt_thread->view_t + sbjt_thread->vframe.c.top <= abs_y)
-			&&(abs_y < sbjt_thread->view_t + sbjt_thread->vframe.c.bottom)) {
+		l = sbjt_thread->view_l + sbjt_thread->vframe.c.left;
+		t = sbjt_thread->view_t + sbjt_thread->vframe.c.top;
+		r = sbjt_thread->view_l + sbjt_thread->vframe.c.right;
+		b = sbjt_thread->view_t + sbjt_thread->vframe.c.bottom;
+		if ((l <= abs_x)&&(abs_x < r)
+			&&(t <= abs_y)&&(abs_y < b)) {
 			*thread = sbjt_thread->parser_thread;
+			if (vframe != NULL) {
+				vframe->c.left = l - draw->view_l;
+				vframe->c.top = t - draw->view_t;
+				vframe->c.right = r - draw->view_l;
+				vframe->c.bottom = b - draw->view_t;
+			}
 			return 1;
 		}
 	}
