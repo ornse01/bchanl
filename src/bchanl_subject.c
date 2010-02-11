@@ -41,6 +41,14 @@
 #include	"subjectparser.h"
 #include	"subjectlayout.h"
 
+#ifdef BCHANL_CONFIG_DEBUG
+# define DP(arg) printf arg
+# define DP_ER(msg, err) printf("%s (%d/%x)\n", msg, err>>16, err)
+#else
+# define DP(arg) /**/
+# define DP_ER(msg, err) /**/
+#endif
+
 /* copy from bchan/src/cache.h */
 #define DATCACHE_RECORDTYPE_MAIN 31
 #define DATCACHE_RECORDTYPE_INFO 30
@@ -149,13 +157,13 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 
 	fd = cre_fil(lnk, title, NULL, 1, F_FLOAT);
 	if (fd < 0) {
-		printf("cre_fil error\n");
+		DP_ER("cre_fil error", fd);
 		return fd;
 	}
 
 	err = apd_rec(fd, fsnrec, fsnrec_len, 8, 0, 0);
 	if (err < 0) {
-		printf("apd_rec:fusen rec error\n");
+		DP_ER("apd_rec:fusen rec error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
@@ -163,14 +171,14 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 
 	err = apd_rec(fd, NULL, NULL, DATCACHE_RECORDTYPE_INFO, DATCACHE_RECORDSUBTYPE_RETRIEVE, 0);
 	if (err < 0) {
-		printf("apd_rec:retrieve info error\n");
+		DP_ER("apd_rec:retrieve info error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
 	}
 	err = see_rec(fd, -1, -1, NULL);
 	if (err < 0) {
-		printf("see_rec error\n");
+		DP_ER("see_rec error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
@@ -179,14 +187,14 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 	sbjtcache_gethost(subject->cache, &bin, &len);
 	err = wri_rec(fd, -1, bin, len, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:host error\n");
+		DP_ER("wri_rec:host error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
 	}
 	err = wri_rec(fd, -1, "\n", 1, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:host error\n");
+		DP_ER("wri_rec:host error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
@@ -194,14 +202,14 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 	sbjtcache_getboard(subject->cache, &bin, &len);
 	err = wri_rec(fd, -1, bin, len, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:board error\n");
+		DP_ER("wri_rec:board error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
 	}
 	err = wri_rec(fd, -1, "\n", 1, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:board error\n");
+		DP_ER("wri_rec:board error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
@@ -210,14 +218,14 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 	len = thread->number_len;
 	err = wri_rec(fd, -1, bin, len, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:thread error\n");
+		DP_ER("wri_rec:thread error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
 	}
 	err = wri_rec(fd, -1, "\n", 1, NULL, NULL, 0);
 	if (err < 0) {
-		printf("wri_rec:thread error\n");
+		DP_ER("wri_rec:thread error", err);
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
