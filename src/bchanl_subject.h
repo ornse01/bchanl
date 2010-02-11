@@ -43,6 +43,8 @@ IMPORT sbjtcache_t* bchanl_subject_getcache(bchanl_subject_t *subject);
 IMPORT sbjtlayout_t* bchanl_subject_getlayout(bchanl_subject_t *subject);
 IMPORT sbjtdraw_t* bchanl_subject_getdraw(bchanl_subject_t *subject);
 IMPORT W bchanl_subject_relayout(bchanl_subject_t *subject);
+#define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED 0
+#define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED  1
 IMPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_thread_t *thread, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk);
 
 IMPORT bchanl_subjecthash_t* bchanl_subjecthash_new(GID gid, W base);

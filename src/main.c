@@ -269,6 +269,10 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 		DP_ER("bchanl_subject_createviewervobj error", err);
 		return;
 	}
+	if (err == BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED) {
+		DP(("canceled\n"));
+		return;
+	}
 
 	tr_rec.id = TR_VOBJ;
 	tr_rec.len = sizeof(TR_VOBJREC);

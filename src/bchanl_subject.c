@@ -34,6 +34,7 @@
 #include	<bsys/queue.h>
 #include	<btron/btron.h>
 #include	<btron/hmi.h>
+#include	<btron/vobj.h>
 
 #include    "bchanl_subject.h"
 
@@ -132,6 +133,8 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 	W fd, len, err;
 	UB *bin;
 	TC *str, title[21];
+	VID vid;
+	RECT newr;
 
 	seg->view = (RECT){{0,0,300,20}};
 	seg->height = 100;
@@ -233,7 +236,43 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 
 	cls_fil(fd);
 
-	return 0;
+	vid = oreg_vob((VLINK*)lnk, seg, -1, V_NODISP);
+	if (vid < 0) {
+		DP_ER("oreg_vob", vid);
+		del_fil(NULL, lnk, 0);
+		return vid;
+	}
+#if 0
+	err = ochg_nam(vid, NULL); /* should use original panel */
+	if (err < 0) {
+		DP_ER("ochg_nam", err);
+		odel_vob(vid, 0);
+		del_fil(NULL, lnk, 0);
+		return err;
+	}
+	if (err == 0) {
+		odel_vob(vid, 0);
+		del_fil(NULL, lnk, 0);
+		return BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED;
+	}
+#endif
+	err = orsz_vob(vid, &newr, V_ADJUST1|V_NODISP);
+	if (err < 0) {
+		DP_ER("orsz_vob", vid);
+		odel_vob(vid, 0);
+		del_fil(NULL, lnk, 0);
+		return err;
+	}
+	seg->view = newr;
+	err = odel_vob(vid, 0);
+	if (err < 0) {
+		DP_ER("odel_vob", err);
+		del_fil(NULL, lnk, 0);
+		return err;
+	}
+
+
+	return BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED;
 }
 
 LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
