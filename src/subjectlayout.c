@@ -499,8 +499,10 @@ EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t 
 
 	for (i=0;i < layout->len;i++) {
 		sbjt_thread = layout->layout_thread[i];
-		if ((sbjt_thread->view_l <= abs_x)&&(abs_x < sbjt_thread->view_r)
-			&&(sbjt_thread->view_t <= abs_y)&&(abs_y < sbjt_thread->view_b)) {
+		if ((sbjt_thread->view_l + sbjt_thread->vframe.c.left <= abs_x)
+			&&(abs_x < sbjt_thread->view_l + sbjt_thread->vframe.c.right)
+			&&(sbjt_thread->view_t + sbjt_thread->vframe.c.top <= abs_y)
+			&&(abs_y < sbjt_thread->view_t + sbjt_thread->vframe.c.bottom)) {
 			*thread = sbjt_thread->parser_thread;
 			return 1;
 		}
