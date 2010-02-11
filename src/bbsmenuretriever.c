@@ -90,7 +90,7 @@ LOCAL W bbsmnretriever_sendheader(W sock)
 	SO_ERR_SEND(sock, "Accept: */*\r\n");
 	SO_ERR_SEND(sock, "Referer: http://menu.2ch.net/\r\n");
 	SO_ERR_SEND(sock, "Accept-Language: ja\r\n");
-	SO_ERR_SEND(sock, "User-Agent: Monazilla/1.00 (bchanl/0.01)\r\n");
+	SO_ERR_SEND(sock, "User-Agent: Monazilla/1.00 (bchanl/0.10)\r\n");
 	SO_ERR_SEND(sock, "Connection: close\r\n");
 	SO_ERR_SEND(sock, "\r\n");
 
