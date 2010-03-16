@@ -1122,10 +1122,44 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		commonwindow_scrollbyvalue(window->window, scr, 0);
 		break;
 	case KC_PG_U:
+		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		if (t < (b - t)) {
+			scr = -t;
+		} else {
+			scr = - (b - t);
+		}
+		commonwindow_scrollbyvalue(window->window, 0, scr);
+		break;
 	case KC_PG_D:
+		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
+		if (b + (b - t) > b1) {
+			scr = b1 - b;
+		} else {
+			scr = (b - t);
+		}
+		commonwindow_scrollbyvalue(window->window, 0, scr);
+		break;
 	case KC_PG_R:
+		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
+		if (r + (r - l) > r1) {
+			scr = r1 - r;
+		} else {
+			scr = (r - l);
+		}
+		commonwindow_scrollbyvalue(window->window, scr, 0);
+		break;
 	case KC_PG_L:
-		/* area scroll */
+		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		if (l < (r - l)) {
+			scr = -l;
+		} else {
+			scr = - (r - l);
+		}
+		commonwindow_scrollbyvalue(window->window, scr, 0);
 		break;
 	}
 }
@@ -1156,11 +1190,28 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycod
 		break;
 	case KC_CC_R:
 	case KC_CC_L:
+		break;
 	case KC_PG_U:
+		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
+		if (t < (b - t)) {
+			scr = -t;
+		} else {
+			scr = - (b - t);
+		}
+		commonwindow_scrollbyvalue(window->window, 0, scr);
+		break;
 	case KC_PG_D:
+		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
+		bbsmnlayout_getdrawrect(window->owner->bbsmenu.layout, &l1, &t1, &r1, &b1);
+		if (b + (b - t) > b1) {
+			scr = b1 - b;
+		} else {
+			scr = (b - t);
+		}
+		commonwindow_scrollbyvalue(window->window, 0, scr);
+		break;
 	case KC_PG_R:
 	case KC_PG_L:
-		/* area scroll */
 		break;
 	case KC_PF5:
 		bchanl_networkrequest_bbsmenu(window->owner);
