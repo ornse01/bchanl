@@ -1099,7 +1099,9 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		} else {
 			scr = 16;
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, 0, scr);
+		}
 		break;
 	case KC_CC_R:
 		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
@@ -1110,7 +1112,9 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		} else {
 			scr = 16;
 		}
-		commonwindow_scrollbyvalue(window->window, scr, 0);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, scr, 0);
+		}
 		break;
 	case KC_CC_L:
 		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
@@ -1139,7 +1143,9 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		} else {
 			scr = (b - t);
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, 0, scr);
+		}
 		break;
 	case KC_PG_R:
 		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
@@ -1150,7 +1156,9 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		} else {
 			scr = (r - l);
 		}
-		commonwindow_scrollbyvalue(window->window, scr, 0);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, scr, 0);
+		}
 		break;
 	case KC_PG_L:
 		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
@@ -1186,7 +1194,9 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycod
 		} else {
 			scr = 16;
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, 0, scr);
+		}
 		break;
 	case KC_CC_R:
 	case KC_CC_L:
@@ -1208,7 +1218,9 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycod
 		} else {
 			scr = (b - t);
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		if (scr > 0) {
+			commonwindow_scrollbyvalue(window->window, 0, scr);
+		}
 		break;
 	case KC_PG_R:
 	case KC_PG_L:
