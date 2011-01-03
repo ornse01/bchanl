@@ -1,7 +1,7 @@
 ----
 --  bchanl.d
 --
--- Copyright (c) 2009 project bchan
+-- Copyright (c) 2009-2011 project bchan
 --
 -- This software is provided 'as-is', without any express or implied
 -- warranty. In no event will the authors be held liable for any damages
@@ -50,7 +50,7 @@
 ---------
 	{% 6 0}		-- datatype TEXT_DATA
 	{# TEXT_MLIST0 0 0}	-- data number
-	MC_STR+MC_STRKEY1 "Ｅ姜位\0"
+	MC_STRKEY1 "Ｅ姜位\0"
 
 	{# TEXT_MLIST1 0 0}	-- data number
 	MC_STR "山绩" MC_STR "浩山绩\0"
