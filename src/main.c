@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -1071,7 +1071,7 @@ LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
 	return 0;
 }
 
-LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycode, TC ch)
+LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycode, TC ch, UW stat)
 {
 	W l,t,r,b,l1,t1,r1,b1,scr;
 	sbjtlayout_t *layout;
@@ -1169,10 +1169,15 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 		}
 		commonwindow_scrollbyvalue(window->window, scr, 0);
 		break;
+	case TK_E: /* temporary */
+		if (stat & ES_CMD) {
+			bchanl_killme(window->owner);
+		}
+		break;
 	}
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycode, TC ch)
+LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycode, TC ch, UW stat)
 {
 	W l,t,r,b,l1,t1,r1,b1,scr;
 
@@ -1227,6 +1232,11 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycod
 		break;
 	case KC_PF5:
 		bchanl_networkrequest_bbsmenu(window->owner);
+		break;
+	case TK_E: /* temporary */
+		if (stat & ES_CMD) {
+			bchanl_killme(window->owner);
+		}
 		break;
 	}
 }
@@ -1492,7 +1502,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 				if (wev0.s.stat & ES_CMD) {
 					bchanl_setupmenu(&bchanl);
 					i = mfnd_key(bchanl.mnid, wev0.e.data.key.code);
-					if (i >= 0) {
+					if (i > 0) {
 						bchanl_selectmenu(&bchanl, i);
 						break;
 					}
@@ -1500,9 +1510,9 @@ EXPORT	W	MAIN(MESSAGE *msg)
 			case	EV_AUTKEY:
 				act = wget_act(NULL);
 				if (act == wid) {
-					bchanl_subjectwindow_keydwn(&bchanl.subjectwindow, wev0.e.data.key.keytop, wev0.e.data.key.code);
+					bchanl_subjectwindow_keydwn(&bchanl.subjectwindow, wev0.e.data.key.keytop, wev0.e.data.key.code, wev0.e.stat);
 				} else if (act == wid_bbsmenu) {
-					bchanl_bbsmenuwindow_keydwn(&bchanl.bbsmenuwindow, wev0.e.data.key.keytop, wev0.e.data.key.code);
+					bchanl_bbsmenuwindow_keydwn(&bchanl.bbsmenuwindow, wev0.e.data.key.keytop, wev0.e.data.key.code, wev0.e.stat);
 				}
 				break;
 			case	EV_INACT:
