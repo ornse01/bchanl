@@ -98,7 +98,7 @@ LOCAL W sbjtretriver_sendheader(W sock, UB *host, UB *board)
 	SO_ERR_SEND(sock, board);
 	SO_ERR_SEND(sock, "/");
 	SO_ERR_SEND(sock, "/\r\n");
-	SO_ERR_SEND(sock, "Accept-Language: ja\r\nUser-Agent: Monazilla/1.00 (bchanl/0.10)\r\nConnection: close\r\n\r\n");
+	SO_ERR_SEND(sock, "Accept-Language: ja\r\nUser-Agent: Monazilla/1.00 (bchanl/0.101)\r\nConnection: close\r\n\r\n");
 
 	return 0;
 }
