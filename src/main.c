@@ -51,6 +51,7 @@
 #include    "bbsmenulayout.h"
 
 #include    "bchanl_subject.h"
+#include    "bchanl_hmi.h"
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -114,100 +115,140 @@ LOCAL VOID bchanl_hmistate_initialize(bchanl_hmistate_t *hmistate)
 	}
 }
 
+typedef struct bchanl_bbsmenu_t_ bchanl_bbsmenu_t;
+struct bchanl_bbsmenu_t_ {
+	W gid;
+
+	bbsmnretriever_t *retriever;
+	bbsmncache_t *cache;
+	bbsmnparser_t *parser;
+	bbsmnfilter_t *filter;
+	bbsmnlayout_t *layout;
+	bbsmndraw_t *draw;
+
+	bchanl_subjecthash_t *subjecthash;
+};
+
+struct bchanl_t_ {
+	W taskid;
+	W mbfid;
+
+	MENUITEM *mnitem;
+	MNID mnid;
+	VID vid;
+	W exectype;
+
+	bchanl_hmistate_t hmistate;
+
+	sbjtretriever_t *retriever;
+
+	bchanl_subjecthash_t *subjecthash;
+	bchanl_bbsmenu_t bbsmenu;
+	bchanl_subject_t *currentsubject;
+
+	bchanlhmi_t *hmi;
+	subjectwindow_t *subjectwindow;
+	bbsmenuwindow_t *bbsmenuwindow;
+
+	struct {
+		sbjtcache_t *cache;
+		sbjtparser_t *parser;
+		sbjtlayout_t *layout;
+		sbjtdraw_t *draw;
+	} testdata;
+};
 typedef struct bchanl_t_ bchanl_t;
 
 LOCAL VOID bchanl_killme(bchanl_t *bchanl);
 
-typedef struct bchanl_subjectwindow_t_ bchanl_subjectwindow_t;
-struct bchanl_subjectwindow_t_ {
-	bchanl_t *owner;
-
-	W wid;
-	W gid;
-	bchanl_subject_t *sbjt;
+LOCAL VOID bchanl_subjectwindow_draw(bchanl_t *bchanl)
+{
 	sbjtdraw_t *draw;
-	commonwindow_t *window;
-};
+	RECT r;
+	if (bchanl->currentsubject == NULL) {
+		do {
+			if (subjectwindow_startredisp(bchanl->subjectwindow, &r) == 0) {
+				break;
+			}
+			subjectwindow_eraseworkarea(bchanl->subjectwindow, &r);
+		} while (subjectwindow_endredisp(bchanl->subjectwindow) > 0);
+	} else {
+		draw = bchanl_subject_getdraw(bchanl->currentsubject);
+		do {
+			if (subjectwindow_startredisp(bchanl->subjectwindow, &r) == 0) {
+				break;
+			}
+			subjectwindow_eraseworkarea(bchanl->subjectwindow, &r);
+			sbjtdraw_draw(draw, &r);
+		} while (subjectwindow_endredisp(bchanl->subjectwindow) > 0);
+	}
+}
 
 LOCAL VOID bchanl_subjectwindow_scroll(VP arg, W dh, W dv)
 {
-	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
-	if (bchanl->draw == NULL) {
+	bchanl_t *bchanl = (bchanl_t*)arg;
+	sbjtdraw_t *draw;
+	if (bchanl->currentsubject == NULL) {
 		return;
 	}
-	sbjtdraw_scrollviewrect(bchanl->draw, dh, dv);
-	wscr_wnd(bchanl->wid, NULL, -dh, -dv, W_MOVE|W_RDSET);
+	draw = bchanl_subject_getdraw(bchanl->currentsubject);
+	sbjtdraw_scrollviewrect(draw, dh, dv);
+	subjectwindow_scrollworkarea(bchanl->subjectwindow, -dh, -dv);
+	bchanl_subjectwindow_draw(bchanl);
 }
 
-LOCAL VOID bchanl_subjectwindow_draw(VP arg, RECT *r)
+LOCAL VOID bchanl_subjectwindow_resize(bchanl_t *bchanl, SIZE newsize)
 {
-	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
-	if (bchanl->draw == NULL) {
-		return;
-	}
-	sbjtdraw_draw(bchanl->draw, r);
-}
-
-LOCAL VOID bchanl_subjectwindow_resize(VP arg)
-{
-	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
 	W l,t,r,b;
-	RECT work;
+	sbjtdraw_t *draw;
 
-	if (bchanl->draw == NULL) {
+	if (bchanl->currentsubject == NULL) {
 		return;
 	}
+	draw = bchanl_subject_getdraw(bchanl->currentsubject);
 
-	sbjtdraw_getviewrect(bchanl->draw, &l, &t, &r, &b);
-	wget_wrk(bchanl->wid, &work);
+	sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
 
-	r = l + work.c.right - work.c.left;
-	b = t + work.c.bottom - work.c.top;
+	r = l + newsize.h;
+	b = t + newsize.v;
 
-	sbjtdraw_setviewrect(bchanl->draw, l, t, r, b);
-	commonwindow_setworkrect(bchanl->window, l, t, r, b);
+	sbjtdraw_setviewrect(draw, l, t, r, b);
+	subjectwindow_setworkrect(bchanl->subjectwindow, l, t, r, b);
 
-	wreq_dsp(bchanl->wid);
+	bchanl_subjectwindow_draw(bchanl);
 }
 
-LOCAL VOID bchanl_subjectwindow_close(VP arg)
+LOCAL VOID bchanl_subjectwindow_close(bchanl_t *bchanl)
 {
-	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
-	bchanl_killme(bchanl->owner);
+	bchanl_killme(bchanl);
 }
 
-LOCAL VOID bchanl_subjectwindow_click(VP arg, PNT pos)
+LOCAL VOID bchanl_subjectwindow_press(bchanl_t *bchanl, PNT evpos)
 {
-}
-
-LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
-{
-	bchanl_subjectwindow_t *bchanl = (bchanl_subjectwindow_t*)arg;
 	sbjtparser_thread_t *thread;
+	sbjtdraw_t *draw;
 	WID wid_butup;
 	W event_type, size, err, fsn_len, dx, dy;
 	void *fsn;
 	GID gid;
-	PNT pos, p1;
+	PNT pos, p1, pos_butup;
 	TR_VOBJREC vrec;
 	TRAYREC tr_rec;
 	WEVENT paste_ev;
 	SEL_RGN	sel;
 	RECT r0, vframe;
 
-	if (bchanl->draw == NULL) {
+	if (bchanl->currentsubject == NULL) {
 		return;
 	}
-	if (bchanl->sbjt == NULL) {
-		return;
-	}
+	draw = bchanl_subject_getdraw(bchanl->currentsubject);
 
-	err = sbjtdraw_findthread(bchanl->draw, wev->s.pos, &thread, &vframe);
+	err = sbjtdraw_findthread(draw, evpos, &thread, &vframe);
 	if (err == 0) {
 		return;
 	}
 
-	gid = wsta_drg(bchanl->wid, 0);
+	gid = subjectwindow_startdrag(bchanl->subjectwindow);
 	if (gid < 0) {
 		DP_ER("wsta_drg error:", gid);
 		return;
@@ -216,10 +257,10 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	gget_fra(gid, &r0);
 	gset_vis(gid, r0);
 
-	dx = vframe.c.left - wev->s.pos.x;
-	dy = vframe.c.top - wev->s.pos.y;
+	dx = vframe.c.left - evpos.x;
+	dy = vframe.c.top - evpos.y;
 
-	p1 = wev->s.pos;
+	p1 = evpos;
 	sel.sts = 0;
 	sel.rgn.r.c.left = vframe.c.left;
 	sel.rgn.r.c.top = vframe.c.top;
@@ -229,9 +270,8 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 
 	gset_ptr(PS_GRIP, NULL, -1, -1);
 	for (;;) {
-		event_type = wget_drg(&pos, wev);
+		event_type = subjectwindow_getdrag(bchanl->subjectwindow, &pos, &wid_butup, &pos_butup);
 		if (event_type == EV_BUTUP) {
-			wid_butup = wev->s.wid;
 			break;
 		}
 		if (event_type != EV_NULL) {
@@ -250,10 +290,10 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	}
 	gset_ptr(PS_SELECT, NULL, -1, -1);
 	adsp_sel(gid, &sel, 0);
-	wend_drg();
+	subjectwindow_enddrag(bchanl->subjectwindow);
 
 	/* BUTUP on self window or no window or system message panel */
-	if ((wid_butup == bchanl->wid)||(wid_butup == 0)||(wid_butup == -1)) {
+	if ((wid_butup == subjectwindow_getWID(bchanl->subjectwindow))||(wid_butup == 0)||(wid_butup == -1)) {
 		return;
 	}
 
@@ -268,7 +308,7 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 		return;
 	}
 	fsn_len = dget_siz((B*)fsn);
-	err = bchanl_subject_createviewervobj(bchanl->sbjt, thread, fsn, fsn_len, &vrec.vseg, (LINK*)&vrec.vlnk);
+	err = bchanl_subject_createviewervobj(bchanl->currentsubject, thread, fsn, fsn_len, &vrec.vseg, (LINK*)&vrec.vlnk);
 	if (err < 0) {
 		DP_ER("bchanl_subject_createviewervobj error", err);
 		return;
@@ -291,8 +331,8 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	}
 
 	paste_ev.r.type = EV_REQUEST;
-	paste_ev.r.r.p.rightbot.x = wev->s.pos.x + dx;
-	paste_ev.r.r.p.rightbot.y = wev->s.pos.y + dy;
+	paste_ev.r.r.p.rightbot.x = pos_butup.x + dx;
+	paste_ev.r.r.p.rightbot.y = pos_butup.y + dy;
 	paste_ev.r.cmd = W_PASTE;
 	paste_ev.r.wid = wid_butup;
 	err = wsnd_evt(&paste_ev);
@@ -316,110 +356,78 @@ LOCAL VOID bchanl_subjectwindow_press(VP arg, WEVENT *wev)
 	wswi_wnd(wid_butup, NULL);
 }
 
-LOCAL W bchanl_subjectwindow_initialize(bchanl_t *owner, bchanl_subjectwindow_t *window, RECT *r, TC *tit)
+LOCAL VOID bchanl_subjectwindow_butdn(bchanl_t *bchanl, W dck, PNT evpos)
 {
-	WID wid;
-	commonwindow_t *cwindow;
-
-	wid = wopn_wnd(WA_SIZE|WA_HHDL|WA_VHDL|WA_BBAR|WA_RBAR, 0, r, NULL, 1, tit, NULL, NULL);
-	if (wid < 0) {
-		return wid;
+	switch (dck) {
+	case	W_CLICK:
+	case	W_DCLICK:
+	case	W_QPRESS:
+	default:
+		return;
+	case	W_PRESS:
+		bchanl_subjectwindow_press(bchanl, evpos);
 	}
-	cwindow = commonwindow_new(wid, window);
-	if (window == NULL) {
-		return -1; /* TODO */
-	}
-	commonwindow_setscrollcallback(cwindow, bchanl_subjectwindow_scroll);
-	commonwindow_setdrawcallback(cwindow, bchanl_subjectwindow_draw);
-	commonwindow_setresizecallback(cwindow, bchanl_subjectwindow_resize);
-	commonwindow_setclosecallback(cwindow, bchanl_subjectwindow_close);
-	commonwindow_setclickcallback(cwindow, bchanl_subjectwindow_click);
-	commonwindow_setdclickcallback(cwindow, bchanl_subjectwindow_click);
-	commonwindow_setpresscallback(cwindow, bchanl_subjectwindow_press);
-	commonwindow_setqpresscallback(cwindow, bchanl_subjectwindow_press);
-
-	window->owner = owner;
-	window->wid = wid;
-	window->gid = wget_gid(wid);
-	window->window = cwindow;
-	window->draw = NULL;
-
-	return 0;
 }
 
-LOCAL VOID bchanl_subjectwindow_finalize(bchanl_subjectwindow_t *window)
+LOCAL VOID bchanl_setcurrentsubject(bchanl_t *bchanl, bchanl_subject_t *sbjt)
 {
-	commonwindow_delete(window->window);
-	wcls_wnd(window->wid, CLR);
+	bchanl->currentsubject = sbjt;
+	subjectwindow_requestredisp(bchanl->subjectwindow);
 }
 
-LOCAL VOID bchanl_subjectwindow_setsubject(bchanl_subjectwindow_t *window, bchanl_subject_t *sbjt)
-{
-	window->sbjt = sbjt;
-	window->draw = bchanl_subject_getdraw(sbjt);
-	wreq_dsp(window->wid);
-}
-
+/*
 LOCAL VOID bchanl_subjectwindow_setdraw(bchanl_subjectwindow_t *window, sbjtdraw_t *draw)
 {
 	window->sbjt = NULL;
 	window->draw = draw;
 	wreq_dsp(window->wid);
 }
+*/
 
-typedef struct bchanl_bbsmenuwindow_t_ bchanl_bbsmenuwindow_t;
-struct bchanl_bbsmenuwindow_t_ {
-	bchanl_t *owner;
-
-	W wid;
-	W gid;
-	bbsmndraw_t *draw;
-	bchanl_subjecthash_t *subjecthash;
-	commonwindow_t *window;
-};
+LOCAL VOID bchanl_bbsmenuwindow_draw(bchanl_t *bchanl)
+{
+	RECT r;
+	do {
+		if (bbsmenuwindow_startredisp(bchanl->bbsmenuwindow, &r) == 0) {
+			break;
+		}
+		bbsmenuwindow_eraseworkarea(bchanl->bbsmenuwindow, &r);
+		bbsmndraw_draw(bchanl->bbsmenu.draw, &r);
+	} while (bbsmenuwindow_endredisp(bchanl->bbsmenuwindow) > 0);
+}
 
 LOCAL VOID bchanl_bbsmenuwindow_scroll(VP arg, W dh, W dv)
 {
-	bchanl_bbsmenuwindow_t *bchanl = (bchanl_bbsmenuwindow_t*)arg;
-	bbsmndraw_scrollviewrect(bchanl->draw, dh, dv);
-	wscr_wnd(bchanl->wid, NULL, -dh, -dv, W_MOVE|W_RDSET);
+	bchanl_t *bchanl = (bchanl_t*)arg;
+	bbsmndraw_scrollviewrect(bchanl->bbsmenu.draw, dh, dv);
+	bbsmenuwindow_scrollworkarea(bchanl->bbsmenuwindow, -dh, -dv);
+	bchanl_bbsmenuwindow_draw(bchanl);
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_draw(VP arg, RECT *r)
+LOCAL VOID bchanl_bbsmenuwindow_resize(bchanl_t *bchanl, SIZE newsize)
 {
-	bchanl_bbsmenuwindow_t *bchanl = (bchanl_bbsmenuwindow_t*)arg;
-	bbsmndraw_draw(bchanl->draw, r);
-}
-
-LOCAL VOID bchanl_bbsmenuwindow_resize(VP arg)
-{
-	bchanl_bbsmenuwindow_t *bchanl = (bchanl_bbsmenuwindow_t*)arg;
 	W l,t,r,b;
-	RECT work;
 
-	bbsmndraw_getviewrect(bchanl->draw, &l, &t, &r, &b);
-	wget_wrk(bchanl->wid, &work);
+	bbsmndraw_getviewrect(bchanl->bbsmenu.draw, &l, &t, &r, &b);
 
-	r = l + work.c.right - work.c.left;
-	b = t + work.c.bottom - work.c.top;
+	r = l + newsize.h;
+	b = t + newsize.v;
 
-	bbsmndraw_setviewrect(bchanl->draw, l, t, r, b);
-	commonwindow_setworkrect(bchanl->window, l, t, r, b);
+	bbsmndraw_setviewrect(bchanl->bbsmenu.draw, l, t, r, b);
+	bbsmenuwindow_setworkrect(bchanl->bbsmenuwindow, l, t, r, b);
 
-	wreq_dsp(bchanl->wid);
+	bchanl_bbsmenuwindow_draw(bchanl);
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_close(VP arg)
+LOCAL VOID bchanl_bbsmenuwindow_close(bchanl_t *bchanl)
 {
-	bchanl_bbsmenuwindow_t *bchanl = (bchanl_bbsmenuwindow_t*)arg;
-	bchanl_killme(bchanl->owner);
+	bchanl_killme(bchanl);
 }
 
 LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject);
 
-LOCAL VOID bchanl_bbsmenuwindow_click(VP arg, PNT pos)
+LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
 {
-	bchanl_bbsmenuwindow_t *bchanl = (bchanl_bbsmenuwindow_t*)arg;
 	bbsmnparser_item_t *item;
 	bchanl_subject_t *subject;
 	W fnd;
@@ -428,7 +436,7 @@ LOCAL VOID bchanl_bbsmenuwindow_click(VP arg, PNT pos)
 	TC *title;
 	W title_len;
 
-	fnd = bbsmndraw_findboard(bchanl->draw, pos, &item);
+	fnd = bbsmndraw_findboard(bchanl->bbsmenu.draw, pos, &item);
 	if (fnd == 0) {
 		DP(("not found\n"));
 		return;
@@ -444,64 +452,21 @@ LOCAL VOID bchanl_bbsmenuwindow_click(VP arg, PNT pos)
 	}
 	bchanl_subject_gettitle(subject, &title, &title_len);
 
-	bchanl_sendsubjectrequest(bchanl->owner, subject);
+	bchanl_sendsubjectrequest(bchanl, subject);
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_press(VP arg, WEVENT *wev)
+LOCAL VOID bchanl_bbsmenuwindow_butdn(bchanl_t *bchanl, W dck, PNT evpos)
 {
-}
-
-LOCAL W bchanl_bbsmenuwindow_initialize(bchanl_t *owner, bchanl_bbsmenuwindow_t *window, RECT *r, TC *tit, bchanl_subjecthash_t *subjecthash)
-{
-	WID wid;
-	commonwindow_t *cwindow;
-
-	wid = wopn_wnd(WA_SIZE|WA_HHDL|WA_VHDL|WA_BBAR|WA_RBAR, 0, r, NULL, 1, tit, NULL, NULL);
-	if (wid < 0) {
-		return wid;
+	switch (dck) {
+	case	W_DCLICK:
+	case	W_PRESS:
+	case	W_QPRESS:
+	default:
+		return;
+	case	W_CLICK:
+		bchanl_bbsmenuwindow_click(bchanl, evpos);
 	}
-	cwindow = commonwindow_new(wid, window);
-	if (cwindow == NULL) {
-		return -1; /* TODO */
-	}
-	commonwindow_setscrollcallback(cwindow, bchanl_bbsmenuwindow_scroll);
-	commonwindow_setdrawcallback(cwindow, bchanl_bbsmenuwindow_draw);
-	commonwindow_setresizecallback(cwindow, bchanl_bbsmenuwindow_resize);
-	commonwindow_setclosecallback(cwindow, bchanl_bbsmenuwindow_close);
-	commonwindow_setclickcallback(cwindow, bchanl_bbsmenuwindow_click);
-	commonwindow_setdclickcallback(cwindow, bchanl_bbsmenuwindow_click);
-	commonwindow_setpresscallback(cwindow, bchanl_bbsmenuwindow_press);
-	commonwindow_setqpresscallback(cwindow, bchanl_bbsmenuwindow_press);
-
-	window->owner = owner;
-	window->wid = wid;
-	window->gid = wget_gid(wid);
-	window->window = cwindow;
-	window->draw = NULL;
-	window->subjecthash = subjecthash;
-
-	return 0;
 }
-
-LOCAL VOID bchanl_bbsmenuwindow_finalize(bchanl_bbsmenuwindow_t *window)
-{
-	commonwindow_delete(window->window);
-	wcls_wnd(window->wid, CLR);
-}
-
-typedef struct bchanl_bbsmenu_t_ bchanl_bbsmenu_t;
-struct bchanl_bbsmenu_t_ {
-	W gid;
-
-	bbsmnretriever_t *retriever;
-	bbsmncache_t *cache;
-	bbsmnparser_t *parser;
-	bbsmnfilter_t *filter;
-	bbsmnlayout_t *layout;
-	bbsmndraw_t *draw;
-
-	bchanl_subjecthash_t *subjecthash;
-};
 
 LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subjecthash_t *subjecthash)
 {
@@ -573,7 +538,7 @@ LOCAL W bchanl_bbsmenu_appenditemtohash(bchanl_bbsmenu_t *bchanl, bbsmnparser_it
 	return err;
 }
 
-LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwindow_t *bchanl_window)
+LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *window)
 {
 	W err, l, t, r, b, ret;
 	bbsmnparser_t *parser = bchanl->parser;
@@ -626,36 +591,10 @@ LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwindo
 	}
 
 	bbsmnlayout_getdrawrect(bchanl->layout, &l, &t, &r, &b);
-	commonwindow_setdrawrect(bchanl_window->window, l, t, r, b);
+	bbsmenuwindow_setdrawrect(window, l, t, r, b);
 
-	wreq_dsp(bchanl_window->wid);
+	bbsmenuwindow_requestredisp(window);
 }
-
-struct bchanl_t_ {
-	W taskid;
-	W mbfid;
-
-	MENUITEM *mnitem;
-	MNID mnid;
-	VID vid;
-	W exectype;
-
-	bchanl_hmistate_t hmistate;
-
-	sbjtretriever_t *retriever;
-
-	bchanl_subjecthash_t *subjecthash;
-	bchanl_subjectwindow_t subjectwindow;
-	bchanl_bbsmenuwindow_t bbsmenuwindow;
-	bchanl_bbsmenu_t bbsmenu;
-
-	struct {
-		sbjtcache_t *cache;
-		sbjtparser_t *parser;
-		sbjtlayout_t *layout;
-		sbjtdraw_t *draw;
-	} testdata;
-};
 
 #define BCHANL_MESSAGE_RETRIEVER_RELAYOUT 1
 #define BCHANL_MESSAGE_RETRIEVER_ERROR -1
@@ -749,45 +688,53 @@ LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 	return 0;
 }
 
-static	WEVENT	wev0;
-
 LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 {
 	static	RECT	r0 = {{400, 100, 700+7, 200+30}};
 	static	RECT	r1 = {{100, 100, 300+7, 300+30}};
 	TC *title0 = NULL, *title1 = NULL;
 	W len, err;
+	WID wid;
 	GID gid;
 	MENUITEM *mnitem_dbx, *mnitem;
 	MNID mnid;
 	RECT w_work;
 	sbjtretriever_t *retriever;
+	bchanlhmi_t *hmi;
 	bchanl_subjecthash_t *subjecthash;
+	subjectwindow_t *subjectwindow;
+	bbsmenuwindow_t *bbsmenuwindow;
 
 	retriever = sbjtretriever_new();
 	if (retriever == NULL) {
 		DP_ER("sbjtretriever_new error", 0);
 		goto error_retriever;
 	}
+	hmi = bchanlhmi_new();
+	if (hmi == NULL) {
+		DP_ER("bchanlhmi_new error", 0);
+		goto error_bchanlhmi;
+	}
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_SUBJECT, (void**)&title0);
-	err = bchanl_subjectwindow_initialize(bchanl, &(bchanl->subjectwindow), &r0, title0);
-	if (err < 0) {
-		DP_ER("bchanl_subjectwindow_initialize error", err);
+	subjectwindow = bchanlhmi_newsubjectwindow(hmi, &r0, title0, NULL, bchanl_subjectwindow_scroll, bchanl);
+	if (subjectwindow == NULL) {
+		DP_ER("bchanlhmi_newsubjectwindow error", 0);
 		goto error_subjectwindow;
 	}
-	gid = wget_gid(bchanl->subjectwindow.wid);
+	gid = subjectwindow_getGID(subjectwindow);
 	subjecthash = bchanl_subjecthash_new(gid, 100);
 	if (subjecthash == NULL) {
 		DP_ER("bchanl_subjecthash_new error", 0);
 		goto error_subjecthash;
 	}
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_BBSMENU, (void**)&title1);
-	err = bchanl_bbsmenuwindow_initialize(bchanl, &(bchanl->bbsmenuwindow), &r1, title1, subjecthash);
-	if (err < 0) {
-		DP_ER("bchanl_bbsmenuwindow_initialize error", err);
+	bbsmenuwindow = bchanlhmi_newbbsmenuwindow(hmi, &r1, title1, NULL, bchanl_bbsmenuwindow_scroll, bchanl);
+	if (bbsmenuwindow == NULL) {
+		DP_ER("bchanlhmi_newbbsmenuwindow error", 0);
 		goto error_bbsmenuwindow;
 	}
-	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), bchanl->bbsmenuwindow.gid, subjecthash);
+	gid = bbsmenuwindow_getGID(bbsmenuwindow);
+	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash);
 	if (err < 0) {
 		DP_ER("bchanl_bbsmenu_initialize error", err);
 		goto error_bbsmenu;
@@ -813,14 +760,13 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl_hmistate_initialize(&bchanl->hmistate);
 
 	if (exectype == EXECREQ) {
-		osta_prc(vid, bchanl->bbsmenuwindow.wid);
+		wid = bbsmenuwindow_getWID(bbsmenuwindow);
+		osta_prc(vid, wid);
 	}
 
-	wget_wrk(bchanl->bbsmenuwindow.wid, &w_work);
+	bbsmenuwindow_getworkrect(bbsmenuwindow, &w_work);
 	bbsmndraw_setviewrect(bchanl->bbsmenu.draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	commonwindow_setworkrect(bchanl->bbsmenuwindow.window, 0, 0, w_work.c.right, w_work.c.bottom);
-
-	bchanl->bbsmenuwindow.draw = bchanl->bbsmenu.draw;
+	bbsmenuwindow_setworkrect(bbsmenuwindow, 0, 0, w_work.c.right, w_work.c.bottom);
 
 	bchanl->retriever = retriever;
 	bchanl->subjecthash = subjecthash;
@@ -829,11 +775,16 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl->testdata.parser = NULL;
 	bchanl->testdata.layout = NULL;
 	bchanl->testdata.draw = NULL;
+	bchanl->currentsubject = NULL;
 
 	bchanl->mnitem = mnitem;
 	bchanl->mnid = mnid;
 	bchanl->vid = vid;
 	bchanl->exectype = exectype;
+
+	bchanl->hmi = hmi;
+	bchanl->subjectwindow = subjectwindow;
+	bchanl->bbsmenuwindow = bbsmenuwindow;
 
 	return 0;
 
@@ -842,12 +793,14 @@ error_mcre_men:
 error_mnitem:
 error_dget_dtp:
 error_bbsmenu:
-	bchanl_bbsmenuwindow_finalize(&(bchanl->bbsmenuwindow));
+	bchanlhmi_deletebbsmenuwindow(hmi, bbsmenuwindow);
 error_bbsmenuwindow:
 	bchanl_subjecthash_delete(subjecthash);
 error_subjecthash:
-	bchanl_subjectwindow_finalize(&(bchanl->subjectwindow));
+	bchanlhmi_deletesubjectwindow(hmi, subjectwindow);
 error_subjectwindow:
+	bchanlhmi_delete(hmi);
+error_bchanlhmi:
 	sbjtretriever_delete(retriever);
 error_retriever:
 	return -1; /* TODO */
@@ -876,9 +829,10 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	}
 	mdel_men(bchanl->mnid);
 	free(bchanl->mnitem);
-	bchanl_bbsmenuwindow_finalize(&(bchanl->bbsmenuwindow));
+	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);
 	bchanl_subjecthash_delete(bchanl->subjecthash);
-	bchanl_subjectwindow_finalize(&(bchanl->subjectwindow));
+	bchanlhmi_deletesubjectwindow(bchanl->hmi, bchanl->subjectwindow);
+	bchanlhmi_delete(bchanl->hmi);
 	sbjtretriever_delete(bchanl->retriever);
 
 	ext_prc(0);
@@ -909,23 +863,23 @@ LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject
 
 	bchanl_subject_relayout(subject);
 
-	bchanl_subjectwindow_setsubject(&bchanl->subjectwindow, subject);
+	bchanl_setcurrentsubject(bchanl, subject);
 
-	wget_wrk(bchanl->subjectwindow.wid, &w_work);
+	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
 	draw = bchanl_subject_getdraw(subject);
 	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	commonwindow_setworkrect(bchanl->subjectwindow.window, 0, 0, w_work.c.right, w_work.c.bottom);
+	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
 
 	layout = bchanl_subject_getlayout(subject);
 	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
-	commonwindow_setdrawrect(bchanl->subjectwindow.window, l, t, r, b);
+	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
 
 	bchanl_subject_gettitle(subject, &title, &title_len);
-	wset_tit(bchanl->subjectwindow.wid, -1, title, 0);
+	subjectwindow_settitle(bchanl->subjectwindow, title);
 }
 
 
-LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwindow_t *bchanl_window)
+LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *bchanl_window)
 {
 	TC fname[] = {TK_b, TK_b, TK_s, TK_m, TK_e, TK_n, TK_u, TK_PROD, TK_h, TK_t, TK_m, TK_l, TNULL};
 	LINK lnk;
@@ -933,6 +887,7 @@ LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwi
 	UB *bin;
 	RECT w_work;
 	bbsmncache_t *cache = bchanl->cache;
+	bbsmndraw_t *draw = bchanl->draw;
 
 	err = get_lnk(fname, &lnk, F_NORM);
 	if (err < 0) {
@@ -966,9 +921,9 @@ LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bchanl_bbsmenuwi
 
 	req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
 
-	wget_wrk(bchanl_window->wid, &w_work);
-	bbsmndraw_setviewrect(bchanl_window->draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	commonwindow_setworkrect(bchanl_window->window, 0, 0, w_work.c.right, w_work.c.bottom);
+	bbsmenuwindow_getworkrect(bchanl_window, &w_work);
+	bbsmndraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
+	bbsmenuwindow_setworkrect(bchanl_window, 0, 0, w_work.c.right, w_work.c.bottom);
 }
 
 LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
@@ -976,6 +931,7 @@ LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
 	W fd, len, err, l, t, r, b;
 	LINK lnk;
 	UB *bin;
+	GID gid;
 	RECT w_work;
 	COLOR color;
 	FSSPEC fspec;
@@ -995,7 +951,8 @@ LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
 		return -1;
 	}
 	bchanl->testdata.parser = parser;
-	layout = sbjtlayout_new(bchanl->subjectwindow.gid);
+	gid = subjectwindow_getGID(bchanl->subjectwindow);
+	layout = sbjtlayout_new(gid);
 	if (layout == NULL) {
 		return -1;
 	}
@@ -1059,40 +1016,42 @@ LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
 		}
 	}
 
-	bchanl_subjectwindow_setdraw(&bchanl->subjectwindow, draw);
+	//bchanl_subjectwindow_setdraw(&bchanl->subjectwindow, draw);
 
-	wget_wrk(bchanl->subjectwindow.wid, &w_work);
+	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
 	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	commonwindow_setworkrect(bchanl->subjectwindow.window, 0, 0, w_work.c.right, w_work.c.bottom);
+	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
 
 	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
-	commonwindow_setdrawrect(bchanl->subjectwindow.window, l, t, r, b);
+	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
 
 	return 0;
 }
 
-LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycode, TC ch, UW stat)
+LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW stat)
 {
 	W l,t,r,b,l1,t1,r1,b1,scr;
 	sbjtlayout_t *layout;
+	sbjtdraw_t *draw;
 
-	if (window->draw == NULL) {
+	if (bchanl->currentsubject == NULL) {
 		return;
 	}
+	draw = bchanl_subject_getdraw(bchanl->currentsubject);
 
 	switch (ch) {
 	case KC_CC_U:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
 		if (t < 16) {
 			scr = -t;
 		} else {
 			scr = -16;
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
 		break;
 	case KC_CC_D:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
-		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(bchanl->currentsubject);
 		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (b + 16 > b1) {
 			scr = b1 - b;
@@ -1100,12 +1059,12 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 			scr = 16;
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, 0, scr);
+			subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
 		}
 		break;
 	case KC_CC_R:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
-		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(bchanl->currentsubject);
 		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (r + 16 > r1) {
 			scr = r1 - r;
@@ -1113,30 +1072,30 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 			scr = 16;
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, scr, 0);
+			subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
 		}
 		break;
 	case KC_CC_L:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
 		if (l < 16) {
 			scr = -l;
 		} else {
 			scr = -16;
 		}
-		commonwindow_scrollbyvalue(window->window, scr, 0);
+		subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
 		break;
 	case KC_PG_U:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
 		if (t < (b - t)) {
 			scr = -t;
 		} else {
 			scr = - (b - t);
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
 		break;
 	case KC_PG_D:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
-		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(bchanl->currentsubject);
 		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (b + (b - t) > b1) {
 			scr = b1 - b;
@@ -1144,12 +1103,12 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 			scr = (b - t);
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, 0, scr);
+			subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
 		}
 		break;
 	case KC_PG_R:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
-		layout = bchanl_subject_getlayout(window->sbjt);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
+		layout = bchanl_subject_getlayout(bchanl->currentsubject);
 		sbjtlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (r + (r - l) > r1) {
 			scr = r1 - r;
@@ -1157,87 +1116,106 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_subjectwindow_t *window, UH keycod
 			scr = (r - l);
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, scr, 0);
+			subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
 		}
 		break;
 	case KC_PG_L:
-		sbjtdraw_getviewrect(window->draw, &l, &t, &r, &b);
+		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
 		if (l < (r - l)) {
 			scr = -l;
 		} else {
 			scr = - (r - l);
 		}
-		commonwindow_scrollbyvalue(window->window, scr, 0);
+		subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
 		break;
 	case TK_E: /* temporary */
 		if (stat & ES_CMD) {
-			bchanl_killme(window->owner);
+			bchanl_killme(bchanl);
 		}
 		break;
 	}
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_bbsmenuwindow_t *window, UH keycode, TC ch, UW stat)
+LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW stat)
 {
 	W l,t,r,b,l1,t1,r1,b1,scr;
+	bbsmndraw_t *draw = bchanl->bbsmenu.draw;
+	bbsmnlayout_t *layout = bchanl->bbsmenu.layout;
 
 	switch (ch) {
 	case KC_CC_U:
-		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
+		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
 		if (t < 16) {
 			scr = -t;
 		} else {
 			scr = -16;
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
 		break;
 	case KC_CC_D:
-		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
-		bbsmnlayout_getdrawrect(window->owner->bbsmenu.layout, &l1, &t1, &r1, &b1);
+		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
+		bbsmnlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (b + 16 > b1) {
 			scr = b1 - b;
 		} else {
 			scr = 16;
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, 0, scr);
+			bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
 		}
 		break;
 	case KC_CC_R:
 	case KC_CC_L:
 		break;
 	case KC_PG_U:
-		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
+		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
 		if (t < (b - t)) {
 			scr = -t;
 		} else {
 			scr = - (b - t);
 		}
-		commonwindow_scrollbyvalue(window->window, 0, scr);
+		bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
 		break;
 	case KC_PG_D:
-		bbsmndraw_getviewrect(window->draw, &l, &t, &r, &b);
-		bbsmnlayout_getdrawrect(window->owner->bbsmenu.layout, &l1, &t1, &r1, &b1);
+		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
+		bbsmnlayout_getdrawrect(layout, &l1, &t1, &r1, &b1);
 		if (b + (b - t) > b1) {
 			scr = b1 - b;
 		} else {
 			scr = (b - t);
 		}
 		if (scr > 0) {
-			commonwindow_scrollbyvalue(window->window, 0, scr);
+			bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
 		}
 		break;
 	case KC_PG_R:
 	case KC_PG_L:
 		break;
 	case KC_PF5:
-		bchanl_networkrequest_bbsmenu(window->owner);
+		bchanl_networkrequest_bbsmenu(bchanl);
 		break;
 	case TK_E: /* temporary */
 		if (stat & ES_CMD) {
-			bchanl_killme(window->owner);
+			bchanl_killme(bchanl);
 		}
 		break;
+	}
+}
+
+
+LOCAL VOID bchanl_keydwn(bchanl_t *bchanl, UH keytop, TC ch, UW stat)
+{
+	Bool act;
+
+	act = subjectwindow_isactive(bchanl->subjectwindow);
+	if (act == True) {
+		bchanl_subjectwindow_keydwn(bchanl, keytop, ch, stat);
+		return;
+	}
+	act = bbsmenuwindow_isactive(bchanl->bbsmenuwindow);
+	if (act == True) {
+		bchanl_bbsmenuwindow_keydwn(bchanl, keytop, ch, stat);
+		return;
 	}
 }
 
@@ -1258,8 +1236,8 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W i)
 	case 1: /* [表示] */
 		switch(i & 0xff) {
 		case 1: /* [再表示] */
-			wreq_dsp(bchanl->subjectwindow.wid);
-			wreq_dsp(bchanl->bbsmenuwindow.wid);
+			subjectwindow_requestredisp(bchanl->subjectwindow);
+			bbsmenuwindow_requestredisp(bchanl->bbsmenuwindow);
 			break;
 		}
 		break;
@@ -1292,29 +1270,114 @@ LOCAL VOID bchanl_popupmenu(bchanl_t *bchanl, PNT pos)
 	}
 }
 
-LOCAL VOID receive_message(bchanl_t *bchanl)
+LOCAL W bchanl_keyselect(bchanl_t *bchanl, TC keycode)
 {
-	MESSAGE msg;
-	W code, err;
+	W i;
+	i = mfnd_key(bchanl->mnid, keycode);
+	if (i < 0) {
+		DP_ER("mfnd_key error:", i);
+		return i;
+	}
+	if (i == 0) {
+		return 0;
+	}
+	bchanl_selectmenu(bchanl, i);
+	return 0;
+}
 
-    err = rcv_msg(MM_ALL, &msg, sizeof(MESSAGE), WAIT|NOCLR);
-	if (err >= 0) {
-		if (msg.msg_type == MS_TMOUT) { /* should be use other type? */
-			code = msg.msg_body.TMOUT.code;
-			switch (code) {
-			case BCHANL_MESSAGE_RETRIEVER_RELAYOUT:
-				bchanl_bbsmenu_relayout(&bchanl->bbsmenu, &bchanl->bbsmenuwindow);
-				bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-				pdsp_msg(NULL);
-				break;
-			case BCHANL_MESSAGE_RETRIEVER_ERROR:
-				bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-				pdsp_msg(NULL);
+LOCAL VOID bchanl_handletimeout(bchanl_t *bchanl, W code)
+{
+	switch (code) {
+	case BCHANL_MESSAGE_RETRIEVER_RELAYOUT:
+		bchanl_bbsmenu_relayout(&bchanl->bbsmenu, bchanl->bbsmenuwindow);
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+		pdsp_msg(NULL);
+		break;
+	case BCHANL_MESSAGE_RETRIEVER_ERROR:
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+		pdsp_msg(NULL);
+		break;
+	}
+}
+
+LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
+{
+	bchanlhmievent_t *evt;
+	W sel, err;
+
+	err = bchanlhmi_getevent(bchanl->hmi, &evt);
+	if (err < 0) {
+		return;
+	}
+
+	switch (evt->type) {
+	case BCHANLHMIEVENT_TYPE_COMMON_MOUSEMOVE:
+		break;
+	case BCHANLHMIEVENT_TYPE_COMMON_KEYDOWN:
+		if (evt->data.common_keydown.stat & ES_CMD) {	/*命令キー*/
+			bchanl_setupmenu(bchanl);
+			sel = bchanl_keyselect(bchanl, evt->data.common_keydown.keycode);
+			if (sel > 0) {
+				bchanl_selectmenu(bchanl, sel);
 				break;
 			}
 		}
+		bchanl_keydwn(bchanl, evt->data.common_keydown.keytop, evt->data.common_keydown.keycode, evt->data.common_keydown.stat);
+		break;
+	case BCHANLHMIEVENT_TYPE_COMMON_MENU:
+		bchanl_popupmenu(bchanl, evt->data.common_menu.pos);
+		break;
+	case BCHANLHMIEVENT_TYPE_COMMON_TIMEOUT:
+		bchanl_handletimeout(bchanl, evt->data.common_timeout.code);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_DRAW:
+		bchanl_subjectwindow_draw(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_RESIZE:
+		bchanl_subjectwindow_resize(bchanl, evt->data.subject_resize.work_sz);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_CLOSE:
+		bchanl_subjectwindow_close(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_BUTDN:
+		bchanl_subjectwindow_butdn(bchanl, evt->data.subject_butdn.type, evt->data.subject_butdn.pos);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_PASTE:
+		subjectwindow_responsepasterequest(bchanl->subjectwindow, /* NACK */ 1, NULL);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_SWITCH:
+		if (evt->data.subject_switch.needdraw == True) {
+			bchanl_subjectwindow_draw(bchanl);
+		}
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECT_MOUSEMOVE:
+		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_DRAW:
+		bchanl_bbsmenuwindow_draw(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_RESIZE:
+		bchanl_bbsmenuwindow_resize(bchanl, evt->data.bbsmenu_resize.work_sz);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_CLOSE:
+		bchanl_bbsmenuwindow_close(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_BUTDN:
+		bchanl_bbsmenuwindow_butdn(bchanl, evt->data.bbsmenu_butdn.type, evt->data.bbsmenu_butdn.pos);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_PASTE:
+		bbsmenuwindow_responsepasterequest(bchanl->bbsmenuwindow, /* NACK */ 1, NULL);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_SWITCH:
+		if (evt->data.bbsmenu_switch.needdraw == True) {
+			bchanl_bbsmenuwindow_draw(bchanl);
+		}
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENU_MOUSEMOVE:
+		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
+		break;
+	case BCHANLHMIEVENT_TYPE_NONE:
 	}
-	clr_msg(MM_ALL, MM_ALL);
 }
 
 typedef struct _arg {
@@ -1371,13 +1434,11 @@ LOCAL    CLI_arg   MESSAGEtoargv(const MESSAGE *src)
 
 EXPORT	W	MAIN(MESSAGE *msg)
 {
-	W	i, err;
-	WID wid, wid_bbsmenu, act;
+	W err;
 	VID vid = -1;
 	CLI_arg arg;
 	LINK dbx;
 	bchanl_t bchanl;
-	commonwindow_t *window, *window_bbsmenu;
 
 	err = dopn_dat(NULL);
 	if (err < 0) {
@@ -1434,13 +1495,9 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		bchanl_killme(&bchanl);
 		return err;
 	}
-	window = bchanl.subjectwindow.window;
-	wid = bchanl.subjectwindow.wid;
-	window_bbsmenu = bchanl.bbsmenuwindow.window;
-	wid_bbsmenu = bchanl.bbsmenuwindow.wid;
 
 	if (msg->msg_type == 0) {
-		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), &(bchanl.bbsmenuwindow));
+		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), bchanl.bbsmenuwindow);
 		if (arg.ac > 1) {
 			err = bchanl_readsubjecttestdata(&bchanl, arg.argv[1]);
 			if (err < 0) {
@@ -1453,81 +1510,11 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		bchanl_networkrequest_bbsmenu(&bchanl);
 	}
 
-	wreq_dsp(bchanl.subjectwindow.wid);
-	wreq_dsp(bchanl.bbsmenuwindow.wid);
+	subjectwindow_requestredisp(bchanl.subjectwindow);
+	bbsmenuwindow_requestredisp(bchanl.bbsmenuwindow);
 
 	for (;;) {
-		wget_evt(&wev0, WAIT);
-		switch (wev0.s.type) {
-			case	EV_NULL:
-				if ((wev0.s.wid != wid)&&(wev0.g.wid != wid_bbsmenu)) {
-					gset_ptr(bchanl.hmistate.ptr, NULL, -1, -1);
-					break;		/*ウィンドウ外*/
-				}
-				if (wev0.s.cmd != W_WORK)
-					break;		/*作業領域外*/
-				if (wev0.s.stat & ES_CMD)
-					break;	/*命令キーが押されている*/
-				gset_ptr(bchanl.hmistate.ptr, NULL, -1, -1);
-				break;
-			case	EV_REQUEST:
-				if (wev0.g.wid == wid) {
-					commonwindow_weventrequest(window, &wev0);
-				} else if (wev0.g.wid == wid_bbsmenu) {
-					commonwindow_weventrequest(window_bbsmenu, &wev0);
-				}
-				break;
-			case	EV_RSWITCH:
-				if (wev0.s.wid == wid) {
-					commonwindow_weventreswitch(window, &wev0);
-				} else if (wev0.g.wid == wid_bbsmenu) {
-					commonwindow_weventreswitch(window_bbsmenu, &wev0);
-				}
-				break;
-			case	EV_SWITCH:
-				if (wev0.s.wid == wid) {
-					commonwindow_weventswitch(window, &wev0);
-				} else if (wev0.g.wid == wid_bbsmenu) {
-					commonwindow_weventswitch(window_bbsmenu, &wev0);
-				}
-				break;
-			case	EV_BUTDWN:
-				if (wev0.g.wid == wid) {
-					commonwindow_weventbutdn(window, &wev0);
-				} else if (wev0.g.wid == wid_bbsmenu) {
-					commonwindow_weventbutdn(window_bbsmenu, &wev0);
-				}
-				break;
-			case	EV_KEYDWN:
-				if (wev0.s.stat & ES_CMD) {
-					bchanl_setupmenu(&bchanl);
-					i = mfnd_key(bchanl.mnid, wev0.e.data.key.code);
-					if (i > 0) {
-						bchanl_selectmenu(&bchanl, i);
-						break;
-					}
-				}
-			case	EV_AUTKEY:
-				act = wget_act(NULL);
-				if (act == wid) {
-					bchanl_subjectwindow_keydwn(&bchanl.subjectwindow, wev0.e.data.key.keytop, wev0.e.data.key.code, wev0.e.stat);
-				} else if (act == wid_bbsmenu) {
-					bchanl_bbsmenuwindow_keydwn(&bchanl.bbsmenuwindow, wev0.e.data.key.keytop, wev0.e.data.key.code, wev0.e.stat);
-				}
-				break;
-			case	EV_INACT:
-				pdsp_msg(NULL);
-				break;
-			case	EV_DEVICE:
-				oprc_dev(&wev0.e, NULL, 0);
-				break;
-			case	EV_MSG:
-				receive_message(&bchanl);
-				break;
-			case	EV_MENU:
-				bchanl_popupmenu(&bchanl, wev0.s.pos);
-				break;
-		}
+		bchanl_eventdispatch(&bchanl);
 	}
 
 	return 0;
