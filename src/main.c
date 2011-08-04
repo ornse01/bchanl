@@ -424,7 +424,45 @@ LOCAL VOID bchanl_bbsmenuwindow_close(bchanl_t *bchanl)
 	bchanl_killme(bchanl);
 }
 
-LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject);
+LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
+{
+	sbjtcache_t *cache;
+	sbjtlayout_t *layout;
+	sbjtdraw_t *draw;
+	TC *title;
+	RECT w_work;
+	W l, t, r, b, title_len, err;
+
+	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
+	pdsp_msg(bchanl->hmistate.msg_retr_subject);
+
+	cache = bchanl_subject_getcache(subject);
+	err = sbjtretriever_sendrequest(bchanl->retriever, cache);
+	if (err < 0) {
+		pdsp_msg(bchanl->hmistate.msg_error_retr);
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+		return;
+	}
+
+	pdsp_msg(NULL);
+	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+
+	bchanl_subject_relayout(subject);
+
+	bchanl_setcurrentsubject(bchanl, subject);
+
+	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
+	draw = bchanl_subject_getdraw(subject);
+	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
+	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
+
+	layout = bchanl_subject_getlayout(subject);
+	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
+	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
+
+	bchanl_subject_gettitle(subject, &title, &title_len);
+	subjectwindow_settitle(bchanl->subjectwindow, title);
+}
 
 LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
 {
@@ -837,47 +875,6 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 
 	ext_prc(0);
 }
-
-LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
-{
-	sbjtcache_t *cache;
-	sbjtlayout_t *layout;
-	sbjtdraw_t *draw;
-	TC *title;
-	RECT w_work;
-	W l, t, r, b, title_len, err;
-
-	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
-	pdsp_msg(bchanl->hmistate.msg_retr_subject);
-
-	cache = bchanl_subject_getcache(subject);
-	err = sbjtretriever_sendrequest(bchanl->retriever, cache);
-	if (err < 0) {
-		pdsp_msg(bchanl->hmistate.msg_error_retr);
-		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-		return;
-	}
-
-	pdsp_msg(NULL);
-	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-
-	bchanl_subject_relayout(subject);
-
-	bchanl_setcurrentsubject(bchanl, subject);
-
-	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
-	draw = bchanl_subject_getdraw(subject);
-	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
-
-	layout = bchanl_subject_getlayout(subject);
-	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
-	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
-
-	bchanl_subject_gettitle(subject, &title, &title_len);
-	subjectwindow_settitle(bchanl->subjectwindow, title);
-}
-
 
 LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *bchanl_window)
 {
