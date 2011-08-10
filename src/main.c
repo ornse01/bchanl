@@ -149,13 +149,6 @@ struct bchanl_t_ {
 	bchanlhmi_t *hmi;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
-
-	struct {
-		sbjtcache_t *cache;
-		sbjtparser_t *parser;
-		sbjtlayout_t *layout;
-		sbjtdraw_t *draw;
-	} testdata;
 };
 typedef struct bchanl_t_ bchanl_t;
 
@@ -795,10 +788,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl->retriever = retriever;
 	bchanl->subjecthash = subjecthash;
 
-	bchanl->testdata.cache = NULL;
-	bchanl->testdata.parser = NULL;
-	bchanl->testdata.layout = NULL;
-	bchanl->testdata.draw = NULL;
 	bchanl->currentsubject = NULL;
 
 	bchanl->vid = vid;
@@ -830,19 +819,6 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 {
 	gset_ptr(PS_BUSY, NULL, -1, -1);
 	pdsp_msg(NULL);
-
-	if (bchanl->testdata.draw != NULL) {
-		sbjtdraw_delete(bchanl->testdata.draw);
-	}
-	if (bchanl->testdata.layout != NULL) {
-		sbjtlayout_delete(bchanl->testdata.layout);
-	}
-	if (bchanl->testdata.parser != NULL) {
-		sbjtparser_delete(bchanl->testdata.parser);
-	}
-	if (bchanl->testdata.cache != NULL) {
-		sbjtcache_delete(bchanl->testdata.cache);
-	}
 
 	if (bchanl->exectype == EXECREQ) {
 		oend_prc(bchanl->vid, NULL, 0);
@@ -902,108 +878,6 @@ LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t 
 	bbsmenuwindow_getworkrect(bchanl_window, &w_work);
 	bbsmndraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
 	bbsmenuwindow_setworkrect(bchanl_window, 0, 0, w_work.c.right, w_work.c.bottom);
-}
-
-LOCAL W bchanl_readsubjecttestdata(bchanl_t *bchanl, TC *fname)
-{
-	W fd, len, err, l, t, r, b;
-	LINK lnk;
-	UB *bin;
-	GID gid;
-	RECT w_work;
-	COLOR color;
-	FSSPEC fspec;
-	sbjtcache_t *cache = bchanl->testdata.cache;
-	sbjtparser_t *parser = bchanl->testdata.parser;
-	sbjtparser_thread_t *item;
-	sbjtlayout_t *layout = bchanl->testdata.layout;
-	sbjtdraw_t *draw = bchanl->testdata.draw;
-
-	cache = sbjtcache_new();
-	if (cache == NULL) {
-		return -1;
-	}
-	bchanl->testdata.cache = cache;
-	parser = sbjtparser_new(cache);
-	if (parser == NULL) {
-		return -1;
-	}
-	bchanl->testdata.parser = parser;
-	gid = subjectwindow_getGID(bchanl->subjectwindow);
-	layout = sbjtlayout_new(gid);
-	if (layout == NULL) {
-		return -1;
-	}
-	bchanl->testdata.layout = layout;
-	draw = sbjtdraw_new(layout);
-	if (draw == NULL) {
-		return -1;
-	}
-	bchanl->testdata.draw = draw;
-
-	err = wget_inf(WI_FSVOBJ, &fspec, sizeof(FSSPEC));
-	if (err >= 0) {
-		sbjtlayout_setfsspec(layout, &fspec);
-	}
-	err = wget_inf(WI_VOBJBGCOL, &color, sizeof(COLOR));
-	if (err >= 0) {
-		sbjtlayout_setvobjbgcol(layout, color);
-	}
-
-	err = get_lnk(fname, &lnk, F_NORM);
-	if (err < 0) {
-		DP_ER("error get_lnk", err);
-		return err;
-	}
-	fd = opn_fil(&lnk, F_READ, NULL);
-	if (fd < 0) {
-		return fd;
-	}
-	err = rea_rec(fd, 0, NULL, 0, &len, NULL);
-	if (err < 0) {
-		cls_fil(fd);
-		return err;
-	}
-	bin = malloc(len);
-	if (bin == NULL) {
-		cls_fil(fd);
-		return -1;
-	}
-	err = rea_rec(fd, 0, bin, len, 0, NULL);
-	if (err < 0) {
-		free(bin);
-		cls_fil(fd);
-		return err;
-	}
-	cls_fil(fd);
-
-	sbjtcache_appenddata(cache, bin, len);
-	free(bin);
-
-	for (;;) {
-		err = sbjtparser_getnextthread(parser, &item);
-		if (err != 1) {
-			break;
-		}
-		if (item == NULL) {
-			break;
-		}
-		err = sbjtlayout_appendthread(layout, item);
-		if (err < 0) {
-			return err;
-		}
-	}
-
-	//bchanl_subjectwindow_setdraw(&bchanl->subjectwindow, draw);
-
-	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
-	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
-
-	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
-	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
-
-	return 0;
 }
 
 LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW stat)
@@ -1454,14 +1328,6 @@ EXPORT	W	MAIN(MESSAGE *msg)
 
 	if (msg->msg_type == 0) {
 		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), bchanl.bbsmenuwindow);
-		if (arg.ac > 1) {
-			err = bchanl_readsubjecttestdata(&bchanl, arg.argv[1]);
-			if (err < 0) {
-				DP_ER("bchanl_readsubjecttestdata error\n", err);
-				bchanl_killme(&bchanl);
-				return err;
-			}
-		}
 	} else if (msg->msg_type == EXECREQ) {
 		bchanl_networkrequest_bbsmenu(&bchanl);
 	}
