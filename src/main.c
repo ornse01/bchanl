@@ -52,6 +52,7 @@
 
 #include    "bchanl_subject.h"
 #include    "bchanl_hmi.h"
+#include    "bchanl_menus.h"
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -133,8 +134,7 @@ struct bchanl_t_ {
 	W taskid;
 	W mbfid;
 
-	MENUITEM *mnitem;
-	MNID mnid;
+	bchanl_mainmenu_t mainmenu;
 	VID vid;
 	W exectype;
 
@@ -731,11 +731,9 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	static	RECT	r0 = {{400, 100, 700+7, 200+30}};
 	static	RECT	r1 = {{100, 100, 300+7, 300+30}};
 	TC *title0 = NULL, *title1 = NULL;
-	W len, err;
+	W err;
 	WID wid;
 	GID gid;
-	MENUITEM *mnitem_dbx, *mnitem;
-	MNID mnid;
 	RECT w_work;
 	sbjtretriever_t *retriever;
 	bchanlhmi_t *hmi;
@@ -777,22 +775,10 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		DP_ER("bchanl_bbsmenu_initialize error", err);
 		goto error_bbsmenu;
 	}
-	err = dget_dtp(8, BCHANL_DBX_MENU_TEST, (void**)&mnitem_dbx);
+	err = bchanl_mainmenu_initialize(&(bchanl->mainmenu), BCHANL_DBX_MENU_TEST);
 	if (err < 0) {
-		DP_ER("dget_dtp error %d", err);
-		goto error_dget_dtp;
-	}
-	len = dget_siz((B*)mnitem_dbx);
-	mnitem = malloc(len);
-	if (mnitem == NULL) {
-		DP_ER("malloc error", 0);
-		goto error_mnitem;
-	}
-	memcpy(mnitem, mnitem_dbx, len);
-	mnid = mcre_men(BCHANL_MENU_WINDOW+2, mnitem, NULL);
-	if (mnid < 0) {
-		DP_ER("mcre_men error", mnid);
-		goto error_mcre_men;
+		DP_ER("bchanl_mainmenu_initialize %d", err);
+		goto error_mainmenu;
 	}
 
 	bchanl_hmistate_initialize(&bchanl->hmistate);
@@ -815,8 +801,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl->testdata.draw = NULL;
 	bchanl->currentsubject = NULL;
 
-	bchanl->mnitem = mnitem;
-	bchanl->mnid = mnid;
 	bchanl->vid = vid;
 	bchanl->exectype = exectype;
 
@@ -826,10 +810,8 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 
 	return 0;
 
-error_mcre_men:
-	free(mnitem);
-error_mnitem:
-error_dget_dtp:
+error_mainmenu:
+	//bchanl_bbsmenu_finalize(&(bchanl->bbsmenu));
 error_bbsmenu:
 	bchanlhmi_deletebbsmenuwindow(hmi, bbsmenuwindow);
 error_bbsmenuwindow:
@@ -865,8 +847,7 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	if (bchanl->exectype == EXECREQ) {
 		oend_prc(bchanl->vid, NULL, 0);
 	}
-	mdel_men(bchanl->mnid);
-	free(bchanl->mnitem);
+	bchanl_mainmenu_finalize(&bchanl->mainmenu);
 	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);
 	bchanl_subjecthash_delete(bchanl->subjecthash);
 	bchanlhmi_deletesubjectwindow(bchanl->hmi, bchanl->subjectwindow);
@@ -1218,38 +1199,21 @@ LOCAL VOID bchanl_keydwn(bchanl_t *bchanl, UH keytop, TC ch, UW stat)
 
 LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 {
-	wget_dmn(&(bchanl->mnitem[BCHANL_MENU_WINDOW].ptr));
-	mset_itm(bchanl->mnid, BCHANL_MENU_WINDOW, bchanl->mnitem+BCHANL_MENU_WINDOW);
-	oget_men(0, NULL, &(bchanl->mnitem[BCHANL_MENU_WINDOW+1].ptr), NULL, NULL);
-	mset_itm(bchanl->mnid, BCHANL_MENU_WINDOW+1, bchanl->mnitem+BCHANL_MENU_WINDOW+1);
+	bchanl_mainmenu_setup(&bchanl->mainmenu);
 }
 
-LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W i)
+LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 {
-	switch(i >> 8) {
-	case 0: /* [終了] */
+	switch(sel) {
+	case BCHANL_MAINMENU_SELECT_CLOSE: /* [終了] */
 		bchanl_killme(bchanl);
 		break;
-	case 1: /* [表示] */
-		switch(i & 0xff) {
-		case 1: /* [再表示] */
-			subjectwindow_requestredisp(bchanl->subjectwindow);
-			bbsmenuwindow_requestredisp(bchanl->bbsmenuwindow);
-			break;
-		}
+	case BCHANL_MAINMENU_SELECT_REDISPLAY: /* [再表示] */
+		subjectwindow_requestredisp(bchanl->subjectwindow);
+		bbsmenuwindow_requestredisp(bchanl->bbsmenuwindow);
 		break;
-	case 2:	/* [操作] */
-		switch(i & 0xff) {
-		case 1: /* [板一覧再取得] */
-			bchanl_networkrequest_bbsmenu(bchanl);
-			break;
-		}
-		break;
-	case BCHANL_MENU_WINDOW: /* [ウィンドウ] */
-		wexe_dmn(i);
-		break;
-	case BCHANL_MENU_WINDOW+1: /* [小物] */
-	    oexe_apg(0, i);
+	case BCHANL_MAINMENU_SELECT_BBSMENUFETCH: /* [板一覧再取得] */
+		bchanl_networkrequest_bbsmenu(bchanl);
 		break;
 	}
 	return;
@@ -1257,28 +1221,23 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W i)
 
 LOCAL VOID bchanl_popupmenu(bchanl_t *bchanl, PNT pos)
 {
-	W	i;
-
+	W sel;
 	bchanl_setupmenu(bchanl);
 	gset_ptr(PS_SELECT, NULL, -1, -1);
-	i = msel_men(bchanl->mnid, pos);
-	if (i > 0) {
-		bchanl_selectmenu(bchanl, i);
+	sel = bchanl_mainmenu_popup(&bchanl->mainmenu, pos);
+	if (sel > 0) {
+		bchanl_selectmenu(bchanl, sel);
 	}
 }
 
 LOCAL W bchanl_keyselect(bchanl_t *bchanl, TC keycode)
 {
-	W i;
-	i = mfnd_key(bchanl->mnid, keycode);
-	if (i < 0) {
-		DP_ER("mfnd_key error:", i);
-		return i;
+	W sel;
+	bchanl_setupmenu(bchanl);
+	sel = bchanl_mainmenu_keyselect(&bchanl->mainmenu, keycode);
+	if (sel > 0) {
+		bchanl_selectmenu(bchanl, sel);
 	}
-	if (i == 0) {
-		return 0;
-	}
-	bchanl_selectmenu(bchanl, i);
 	return 0;
 }
 
