@@ -368,15 +368,6 @@ LOCAL VOID bchanl_setcurrentsubject(bchanl_t *bchanl, bchanl_subject_t *sbjt)
 	subjectwindow_requestredisp(bchanl->subjectwindow);
 }
 
-/*
-LOCAL VOID bchanl_subjectwindow_setdraw(bchanl_subjectwindow_t *window, sbjtdraw_t *draw)
-{
-	window->sbjt = NULL;
-	window->draw = draw;
-	wreq_dsp(window->wid);
-}
-*/
-
 LOCAL VOID bchanl_bbsmenuwindow_draw(bchanl_t *bchanl)
 {
 	RECT r;
