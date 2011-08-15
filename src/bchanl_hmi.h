@@ -73,6 +73,33 @@ IMPORT WID bbsmenuwindow_getWID(bbsmenuwindow_t *window);
 IMPORT W bbsmenuwindow_settitle(bbsmenuwindow_t *window, TC *title);
 IMPORT Bool bbsmenuwindow_isactive(bbsmenuwindow_t *window);
 
+typedef struct subjectoptionwindow_t_ subjectoptionwindow_t;
+
+IMPORT W subjectoptionwindow_open(subjectoptionwindow_t *window);
+IMPORT VOID subjectoptionwindow_close(subjectoptionwindow_t *window);
+IMPORT Bool subjectoptionwindow_isopen(subjectoptionwindow_t *window);
+IMPORT W subjectoptionwindow_setorder(subjectoptionwindow_t *window, W order);
+IMPORT W subjectoptionwindow_setorderby(subjectoptionwindow_t *window, W orderby);
+IMPORT W subjectoptionwindow_settext(subjectoptionwindow_t *window, TC *str, W len);
+#define SUBJECTOPTIONWINDOW_ORDER_ASCENDING 1
+#define SUBJECTOPTIONWINDOW_ORDER_DESCENDING 2
+IMPORT W subjectoptionwindow_getorder(subjectoptionwindow_t *window);
+#define SUBJECTOPTIONWINDOW_ORDERBY_NUMBER 1
+#define SUBJECTOPTIONWINDOW_ORDERBY_RES 2
+#define SUBJECTOPTIONWINDOW_ORDERBY_SINCE 3
+#define SUBJECTOPTIONWINDOW_ORDERBY_VIGOR 4
+IMPORT W subjectoptionwindow_getorderby(subjectoptionwindow_t *window);
+IMPORT W subjectoptionwindow_gettext(subjectoptionwindow_t *window, TC *str, W len);
+IMPORT W subjectoptionwindow_starttextboxaction(subjectoptionwindow_t *window);
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH 0
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MENU 1
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_KEYMENU 2
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MOVE 3
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY 4
+#define SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND 5
+IMPORT W subjectoptionwindow_gettextboxaction(subjectoptionwindow_t *window, TC *key, TC **val, W *len);
+IMPORT W subjectoptionwindow_endtextboxaction(subjectoptionwindow_t *window);
+
 enum {
 	BCHANLHMIEVENT_TYPE_NONE,
 	BCHANLHMIEVENT_TYPE_COMMON_MOUSEMOVE,
@@ -93,6 +120,9 @@ enum {
 	BCHANLHMIEVENT_TYPE_BBSMENU_PASTE,
 	BCHANLHMIEVENT_TYPE_BBSMENU_SWITCH,
 	BCHANLHMIEVENT_TYPE_BBSMENU_MOUSEMOVE,
+	BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER,
+	BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY,
+	BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX,
 };
 
 struct bchanlhmi_eventdata_mousemove_t_ {
@@ -171,6 +201,14 @@ struct bbsmenuwindow_eventdata_mousemove_t_ {
 	UW stat;
 };
 
+struct subjectoptionwindow_eventdata_changeorder_t_ {
+	W order;
+};
+
+struct subjectoptionwindow_eventdata_changeorderby_t_ {
+	W orderby;
+};
+
 typedef struct bchanlhmi_eventdata_mousemove_t_ bchanlhmi_eventdata_mousemove_t;
 typedef struct bchanlhmi_eventdata_keydown_t_ bchanlhmi_eventdata_keydown_t;
 typedef struct bchanlhmi_eventdata_menu_t_ bchanlhmi_eventdata_menu_t;
@@ -189,6 +227,8 @@ typedef struct bbsmenuwindow_eventdata_butdn_t_ bbsmenuwindow_eventdata_butdn_t;
 typedef struct bbsmenuwindow_eventdata_paste_t_ bbsmenuwindow_eventdata_paste_t;
 typedef struct bbsmenuwindow_eventdata_switch_t_ bbsmenuwindow_eventdata_switch_t;
 typedef struct bbsmenuwindow_eventdata_mousemove_t_ bbsmenuwindow_eventdata_mousemove_t;
+typedef struct subjectoptionwindow_eventdata_changeorder_t_ subjectoptionwindow_eventdata_changeorder_t;
+typedef struct subjectoptionwindow_eventdata_changeorderby_t_ subjectoptionwindow_eventdata_changeorderby_t;
 
 struct bchanlhmievent_t_ {
 	W type;
@@ -211,6 +251,8 @@ struct bchanlhmievent_t_ {
 		bbsmenuwindow_eventdata_paste_t bbsmenu_paste;
 		bbsmenuwindow_eventdata_switch_t bbsmenu_switch;
 		bbsmenuwindow_eventdata_mousemove_t bbsmenu_mousemove;
+		subjectoptionwindow_eventdata_changeorder_t subjectoption_changeorder;
+		subjectoptionwindow_eventdata_changeorderby_t subjectoption_changeorderby;
 	} data;
 };
 typedef struct bchanlhmievent_t_ bchanlhmievent_t;
@@ -222,7 +264,9 @@ IMPORT VOID bchanlhmi_delete(bchanlhmi_t *hmi);
 IMPORT W bchanlhmi_getevent(bchanlhmi_t *hmi, bchanlhmievent_t **evt);
 IMPORT subjectwindow_t* bchanlhmi_newsubjectwindow(bchanlhmi_t *hmi, RECT *r, TC *title, PAT *bgpat, subjectwindow_scrollcalback scrollcallback, VP arg);
 IMPORT bbsmenuwindow_t *bchanlhmi_newbbsmenuwindow(bchanlhmi_t *hmi, RECT *r, TC *title, PAT *bgpat, bbsmenuwindow_scrollcalback scrollcallback, VP arg);
+IMPORT subjectoptionwindow_t *bchanlhmi_newsubjectoptionwindow(bchanlhmi_t *hmi, PNT *p, W dnum_text, W dnum_orderselect, W dnum_orderbyselect);
 IMPORT VOID bchanlhmi_deletesubjectwindow(bchanlhmi_t *hmi, subjectwindow_t *window);
 IMPORT VOID bchanlhmi_deletebbsmenuwindow(bchanlhmi_t *hmi, bbsmenuwindow_t *window);
+IMPORT VOID bchanlhmi_deletesubjectoptionwindow(bchanlhmi_t *hmi, subjectoptionwindow_t *window);
 
 #endif

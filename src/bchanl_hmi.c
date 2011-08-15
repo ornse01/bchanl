@@ -61,6 +61,25 @@ struct bbsmenuwindow_t_ {
 	WEVENT savedwev;
 };
 
+#define SUBJECTOPTIONWINDOW_STRBUF_LEN 512
+struct subjectoptionwindow_t_ {
+	WID wid;
+	GID gid;
+	WID parent;
+	RECT r;
+	PAT bgpat;
+	W dnum_filter;
+	W dnum_order;
+	W dnum_orderby;
+	PAID tb_filter_id;
+	PAID ws_order_id;
+	PAID ws_orderby_id;
+	WEVENT savedwev;
+	W order;
+	W orderby;
+	TC strbuf[SUBJECTOPTIONWINDOW_STRBUF_LEN];
+};
+
 #define BCHANLHMI_FLAG_SWITCHBUTDN 0x00000001
 
 struct bchanlhmi_t_ {
@@ -69,6 +88,7 @@ struct bchanlhmi_t_ {
 	UW flag;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
+	subjectoptionwindow_t *subjectoptionwindow;
 };
 
 EXPORT W subjectwindow_startredisp(subjectwindow_t *window, RECT *r)
@@ -275,6 +295,227 @@ EXPORT W bbsmenuwindow_setworkrect(bbsmenuwindow_t *window, W l, W t, W r, W b)
 	return windowscroll_setworkrect(&window->wscr, l, t, r, b);
 }
 
+EXPORT W subjectoptionwindow_open(subjectoptionwindow_t *window)
+{
+	WID wid;
+
+	if (window->wid > 0) {
+		return 0;
+	}
+
+	wid = wopn_wnd(WA_SUBW|WA_TITL|WA_HHDL, window->parent, &(window->r), NULL, 2, NULL, &window->bgpat, NULL);
+	if (wid < 0) {
+		DP_ER("wopn_wnd: subjectoption error", wid);
+		return wid;
+	}
+	window->wid = wid;
+	window->gid = wget_gid(wid);
+
+	window->tb_filter_id = copn_par(wid, window->dnum_filter, NULL);
+	if (window->tb_filter_id < 0) {
+		DP_ER("copn_par list error:", window->tb_filter_id);
+	}
+	window->ws_order_id = copn_par(wid, window->dnum_order, NULL);
+	if (window->ws_order_id < 0) {
+		DP_ER("copn_par delete error:", window->ws_order_id);
+	}
+	window->ws_orderby_id = copn_par(wid, window->dnum_orderby, NULL);
+	if (window->ws_orderby_id < 0) {
+		DP_ER("copn_par input error:", window->ws_orderby_id);
+	}
+
+	wreq_dsp(wid);
+
+	return 0;
+}
+
+EXPORT VOID subjectoptionwindow_close(subjectoptionwindow_t *window)
+{
+	WDSTAT stat;
+	W err;
+
+	if (window->wid < 0) {
+		return;
+	}
+
+	stat.attr = WA_STD;
+	err = wget_sts(window->wid, &stat, NULL);
+	if (err >= 0) {
+		window->r = stat.r;
+	}
+	cdel_pwd(window->wid, NOCLR);
+	wcls_wnd(window->wid, CLR);
+	window->wid = -1;
+	window->gid = -1;
+}
+
+EXPORT Bool subjectoptionwindow_isopen(subjectoptionwindow_t *window)
+{
+	if (window->wid < 0) {
+		return False;
+	}
+	return True;
+}
+
+EXPORT W subjectoptionwindow_setorder(subjectoptionwindow_t *window, W order)
+{
+	if ((order != SUBJECTOPTIONWINDOW_ORDER_ASCENDING)
+		&&(order != SUBJECTOPTIONWINDOW_ORDER_DESCENDING)) {
+		return -1; /* TODO */
+	}
+	window->order = order;
+	if (window->wid < 0) {
+		return 0;
+	}
+	return cset_val(window->ws_order_id, 1, (W*)&order);
+}
+
+EXPORT W subjectoptionwindow_setorderby(subjectoptionwindow_t *window, W orderby)
+{
+	if ((orderby != SUBJECTOPTIONWINDOW_ORDERBY_NUMBER)
+		&&(orderby != SUBJECTOPTIONWINDOW_ORDERBY_RES)
+		&&(orderby != SUBJECTOPTIONWINDOW_ORDERBY_SINCE)
+		&&(orderby != SUBJECTOPTIONWINDOW_ORDERBY_VIGOR)) {
+		return -1; /* TODO */
+	}
+	window->orderby = orderby;
+	if (window->wid < 0) {
+		return 0;
+	}
+	return cset_val(window->ws_order_id, 1, (W*)&orderby);
+}
+
+EXPORT W subjectoptionwindow_settext(subjectoptionwindow_t *window, TC *str, W len)
+{
+	W cp_len;
+
+	if (len < SUBJECTOPTIONWINDOW_STRBUF_LEN) {
+		cp_len = len;
+	} else {
+		cp_len = SUBJECTOPTIONWINDOW_STRBUF_LEN;
+	}
+	memcpy(window->strbuf, str, cp_len * sizeof(TC));
+	if (window->wid < 0) {
+		return 0;
+	}
+
+	return cset_val(window->tb_filter_id, cp_len, (W*)window->strbuf);
+}
+
+EXPORT W subjectoptionwindow_getorder(subjectoptionwindow_t *window)
+{
+	return window->order;
+}
+
+EXPORT W subjectoptionwindow_getorderby(subjectoptionwindow_t *window)
+{
+	return window->orderby;
+}
+
+EXPORT W subjectoptionwindow_gettext(subjectoptionwindow_t *window, TC *str, W len)
+{
+	W cp_len;
+
+	if (len < SUBJECTOPTIONWINDOW_STRBUF_LEN) {
+		cp_len = len;
+	} else {
+		cp_len = SUBJECTOPTIONWINDOW_STRBUF_LEN;
+	}
+	memcpy(str, window->strbuf, cp_len * sizeof(TC));
+
+	return cp_len;
+}
+
+EXPORT W subjectoptionwindow_starttextboxaction(subjectoptionwindow_t *window)
+{
+	return 0;
+}
+
+EXPORT W subjectoptionwindow_gettextboxaction(subjectoptionwindow_t *window, TC *key, TC **val, W *len)
+{
+	W ret, len0;
+	WEVENT *wev;
+
+	wev = &window->savedwev;
+
+	for (;;) {
+		ret = cact_par(window->tb_filter_id, wev);
+		if (ret < 0) {
+			DP_ER("cact_par tb_filter_id error:", ret);
+			return ret;
+		}
+		switch (ret & 0xefff) {
+		case P_EVENT:
+			switch (wev->s.type) {
+			case EV_INACT:
+			case EV_REQUEST:
+				wugt_evt(wev);
+				return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+			case EV_DEVICE:
+				oprc_dev(&wev->e, NULL, 0);
+				break;
+			}
+			wev->s.type = EV_NULL;
+			continue;
+		case P_MENU:
+			wev->s.type = EV_NULL;
+			if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
+				*key = wev->e.data.key.code;
+				return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_KEYMENU;
+			}
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MENU;
+		case (0x4000|P_MOVE):
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MOVE;
+		case (0x4000|P_COPY):
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY;
+		case (0x4000|P_NL):
+			len0 = cget_val(window->tb_filter_id, 128, (W*)window->strbuf);
+			if (len0 <= 0) {
+				return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+			}
+			*val = window->strbuf;
+			*len = len0;
+			ret = cset_val(window->tb_filter_id, 0, NULL);
+			if (ret < 0) {
+				DP_ER("cset_val tb_filter_id error", ret);
+				return ret;
+			}
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND;
+		case (0x4000|P_TAB):
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+		case (0x4000|P_BUT):
+			wugt_evt(wev);
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+		default:
+			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+		}
+	}
+
+	return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+}
+
+EXPORT W subjectoptionwindow_endtextboxaction(subjectoptionwindow_t *window)
+{
+	return 0;
+}
+
+LOCAL VOID subjectoptionwindow_draw(subjectoptionwindow_t *window, RECT *r)
+{
+	cdsp_pwd(window->wid, r, P_RDISP);
+}
+
+LOCAL VOID subjectoptionwindow_redisp(subjectoptionwindow_t *window)
+{
+	RECT r;
+	do {
+		if (wsta_dsp(window->wid, &r, NULL) == 0) {
+			break;
+		}
+		wera_wnd(window->wid, &r);
+		subjectoptionwindow_draw(window, &r);
+	} while (wend_dsp(window->wid) > 0);
+}
+
 LOCAL VOID bchanlhmi_setswitchbutdnflag(bchanlhmi_t *hmi)
 {
 	hmi->flag = hmi->flag | BCHANLHMI_FLAG_SWITCHBUTDN;
@@ -309,12 +550,21 @@ LOCAL WID bchanlhmi_getbbsmenuWID(bchanlhmi_t *hmi)
 	return hmi->bbsmenuwindow->wid;
 }
 
+LOCAL WID bchanlhmi_getsubjectoptionWID(bchanlhmi_t *hmi)
+{
+	if (hmi->subjectoptionwindow == NULL) {
+		return -1;
+	}
+	return hmi->subjectoptionwindow->wid;
+}
+
 LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t *evt)
 {
-	WID subject_wid, bbsmenu_wid;
+	WID subject_wid, bbsmenu_wid, subjectoption_wid;
 
 	subject_wid = bchanlhmi_getsubjectWID(hmi);
 	bbsmenu_wid = bchanlhmi_getbbsmenuWID(hmi);
+	subjectoption_wid = bchanlhmi_getsubjectoptionWID(hmi);
 
 	switch (wev->g.cmd) {
 	case	W_REDISP:	/*ºÆÉ½¼¨Í×µá*/
@@ -322,6 +572,8 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 			evt->type = BCHANLHMIEVENT_TYPE_SUBJECT_DRAW;
 		} else if (wev->g.wid == bbsmenu_wid) {
 			evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_DRAW;
+		} else if (wev->g.wid == subjectoption_wid) {
+			subjectoptionwindow_redisp(hmi->subjectoptionwindow);
 		}
 		break;
 	case	W_PASTE:	/*Å½¹þ¤ßÍ×µá*/
@@ -343,6 +595,8 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 		} else if (wev->g.wid == bbsmenu_wid) {
 			evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_CLOSE;
 			evt->data.bbsmenu_close.save = True;
+		} else if (wev->g.wid == subjectoption_wid) {
+			subjectoptionwindow_close(hmi->subjectoptionwindow);
 		}
 		break;
 	case	W_FINISH:	/*ÇÑ´þ½ªÎ»*/
@@ -353,6 +607,8 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 		} else if (wev->g.wid == bbsmenu_wid) {
 			evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_CLOSE;
 			evt->data.bbsmenu_close.save = False;
+		} else if (wev->g.wid == subjectoption_wid) {
+			subjectoptionwindow_close(hmi->subjectoptionwindow);
 		}
 		break;
 	}
@@ -410,13 +666,50 @@ LOCAL VOID bbsmenuwindow_resize(bbsmenuwindow_t *window, SIZE *sz)
 	sz->h = work.c.right - work.c.left;
 }
 
+LOCAL VOID subjectoptionwindow_butdnwork(subjectoptionwindow_t *window, WEVENT *wev, bchanlhmievent_t *evt)
+{
+	PAID id;
+	W ret;
+
+	ret = cfnd_par(window->wid, wev->s.pos, &id);
+	if (ret <= 0) {
+		return;
+	}
+	if (id == window->tb_filter_id) {
+		memcpy(&window->savedwev, wev, sizeof(WEVENT));
+		evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX;
+		return;
+	}
+	if (id == window->ws_order_id) {
+		ret = cact_par(window->ws_order_id, wev);
+		if ((ret & 0x5000) != 0x5000) {
+			return;
+		}
+		window->order = ret & 0xfff;
+		evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER;
+		evt->data.subjectoption_changeorder.order = window->order;
+		return;
+	}
+	if (id == window->ws_orderby_id) {
+		ret = cact_par(window->ws_orderby_id, wev);
+		if ((ret & 0x5000) != 0x5000) {
+			return;
+		}
+		window->orderby = ret & 0xfff;
+		evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY;
+		evt->data.subjectoption_changeorderby.orderby = window->orderby;
+		return;
+	}
+}
+
 LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t *evt)
 {
 	W i;
-	WID subject_wid, bbsmenu_wid;
+	WID subject_wid, bbsmenu_wid, subjectoption_wid;
 
 	subject_wid = bchanlhmi_getsubjectWID(hmi);
 	bbsmenu_wid = bchanlhmi_getbbsmenuWID(hmi);
+	subjectoption_wid = bchanlhmi_getsubjectoptionWID(hmi);
 
 	switch	(wev->s.cmd) {
 	case	W_PICT:
@@ -428,6 +721,8 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			} else if (wev->s.wid == bbsmenu_wid) {
 				evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_CLOSE;
 				evt->data.bbsmenu_close.save = True; /* TODO: tmp value. */
+			} else if (wev->s.wid == subjectoption_wid) {
+				subjectoptionwindow_close(hmi->subjectoptionwindow);
 			}
 			return;
 		case	W_PRESS:
@@ -442,6 +737,8 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 				evt->type = BCHANLHMIEVENT_TYPE_SUBJECT_DRAW;
 			} else if (wev->s.wid == bbsmenu_wid) {
 				evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_DRAW;
+			} else if (wev->s.wid == subjectoption_wid) {
+				subjectoptionwindow_redisp(hmi->subjectoptionwindow);
 			}
 		}
 		return;
@@ -483,6 +780,7 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 				evt->data.bbsmenu_resize.needdraw = False;
 			}
 		}
+		/* subject option window need not do nothing. */
 		return;
 	case	W_RBAR:
 		if (wev->s.wid == subject_wid) {
@@ -490,7 +788,7 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 		} else if (wev->s.wid == bbsmenu_wid) {
 			windowscroll_weventrbar(&hmi->bbsmenuwindow->wscr, wev);
 		}
-		/* ngword window need not do nothing. */
+		/* subject option window need not do nothing. */
 		return;
 	case	W_BBAR:
 		if (wev->s.wid == subject_wid) {
@@ -498,7 +796,7 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 		} else if (wev->s.wid == bbsmenu_wid) {
 			windowscroll_weventbbar(&hmi->bbsmenuwindow->wscr, wev);
 		}
-		/* ngword window need not do nothing. */
+		/* subject option window need not do nothing. */
 		return;
 	case	W_WORK:
 		if (wev->s.wid == subject_wid) {
@@ -511,6 +809,8 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			evt->data.bbsmenu_butdn.type = wchk_dck(wev->s.time);
 			evt->data.bbsmenu_butdn.pos = wev->s.pos;
 			memcpy(&hmi->bbsmenuwindow->savedwev, wev, sizeof(WEVENT));
+		} else if (wev->s.wid == subjectoption_wid) {
+			subjectoptionwindow_butdnwork(hmi->subjectoptionwindow, wev, evt);
 		}
 		return;
 	}
@@ -537,10 +837,11 @@ LOCAL VOID bchanlhmi_weventswitch(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_
 
 LOCAL VOID bchanlhmi_weventreswitch(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t *evt)
 {
-	WID subject_wid, bbsmenu_wid;
+	WID subject_wid, bbsmenu_wid, subjectoption_wid;
 
 	subject_wid = bchanlhmi_getsubjectWID(hmi);
 	bbsmenu_wid = bchanlhmi_getbbsmenuWID(hmi);
+	subjectoption_wid = bchanlhmi_getsubjectoptionWID(hmi);
 
 	if (wev->s.wid == subject_wid) {
 		evt->type = BCHANLHMIEVENT_TYPE_SUBJECT_SWITCH;
@@ -548,6 +849,8 @@ LOCAL VOID bchanlhmi_weventreswitch(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmieven
 	} else if (wev->s.wid == bbsmenu_wid) {
 		evt->type = BCHANLHMIEVENT_TYPE_BBSMENU_SWITCH;
 		evt->data.bbsmenu_switch.needdraw = True;
+	} else if (wev->s.wid == subjectoption_wid) {
+		subjectoptionwindow_redisp(hmi->subjectoptionwindow);
 	}
 	bchanlhmi_setswitchbutdnflag(hmi);
 }
@@ -570,11 +873,12 @@ LOCAL VOID bchanlhmi_receivemessage(bchanlhmi_t *hmi, bchanlhmievent_t *evt)
 EXPORT W bchanlhmi_getevent(bchanlhmi_t *hmi, bchanlhmievent_t **evt)
 {
 	WEVENT	*wev0;
-	WID subject_wid, bbsmenu_wid;
+	WID subject_wid, bbsmenu_wid, subjectoption_wid;
 	Bool ok;
 
 	subject_wid = bchanlhmi_getsubjectWID(hmi);
 	bbsmenu_wid = bchanlhmi_getbbsmenuWID(hmi);
+	subjectoption_wid = bchanlhmi_getsubjectoptionWID(hmi);
 
 	hmi->evt.type = BCHANLHMIEVENT_TYPE_NONE;
 	wev0 = &hmi->wev;
@@ -609,6 +913,10 @@ EXPORT W bchanlhmi_getevent(bchanlhmi_t *hmi, bchanlhmievent_t **evt)
 			hmi->evt.type = BCHANLHMIEVENT_TYPE_BBSMENU_MOUSEMOVE;
 			hmi->evt.data.bbsmenu_mousemove.pos = wev0->s.pos;
 			hmi->evt.data.bbsmenu_mousemove.stat = wev0->s.stat;
+			break;
+		}
+		if (wev0->s.wid == subjectoption_wid) {
+			cidl_par(wev0->s.wid, &wev0->s.pos);
 			break;
 		}
 		break;
@@ -757,6 +1065,72 @@ EXPORT VOID bchanlhmi_deletebbsmenuwindow(bchanlhmi_t *hmi, bbsmenuwindow_t *win
 	hmi->bbsmenuwindow = NULL;
 }
 
+LOCAL subjectoptionwindow_t* subjectoptionwindow_new(PNT *p, WID parent, W dnum_filter, W dnum_order, W dnum_orderby)
+{
+	subjectoptionwindow_t *window;
+	W err;
+
+	window = (subjectoptionwindow_t*)malloc(sizeof(subjectoptionwindow_t));
+	if (window == NULL) {
+		DP_ER("malloc error:", 0);
+		return NULL;
+	}
+	window->wid = -1;
+	window->gid = -1;
+	window->parent = parent;
+	window->r.p.lefttop = *p;
+	window->r.p.rightbot.x = p->x + 8+360+8+80+8 + 7;
+	window->r.p.rightbot.y = p->y + 8+24+16+70+8 + 7;
+	err = wget_inf(WI_PANELBACK, &window->bgpat, sizeof(PAT));
+	if (err != sizeof(PAT)) {
+		DP_ER("wget_inf error:", err);
+		window->bgpat.spat.kind = 0;
+		window->bgpat.spat.hsize = 16;
+		window->bgpat.spat.vsize = 16;
+		window->bgpat.spat.fgcol = 0x10ffffff;
+		window->bgpat.spat.bgcol = 0;
+		window->bgpat.spat.mask = FILL100;
+	}
+	window->dnum_filter = dnum_filter;
+	window->dnum_order = dnum_order;
+	window->dnum_orderby = dnum_orderby;
+	window->tb_filter_id = -1;
+	window->ws_order_id = -1;
+	window->ws_orderby_id = -1;
+	window->order = SUBJECTOPTIONWINDOW_ORDER_ASCENDING;
+	window->orderby = SUBJECTOPTIONWINDOW_ORDERBY_NUMBER;
+	memset(window->strbuf, 0, sizeof(TC)*SUBJECTOPTIONWINDOW_STRBUF_LEN);
+
+	return window;
+}
+
+LOCAL VOID subjectoptionwindow_delete(subjectoptionwindow_t *window)
+{
+	if (window->wid > 0) {
+		cdel_pwd(window->wid, NOCLR);
+		wcls_wnd(window->wid, CLR);
+	}
+	free(window);
+}
+
+EXPORT subjectoptionwindow_t *bchanlhmi_newsubjectoptionwindow(bchanlhmi_t *hmi, PNT *p, W dnum_filter, W dnum_order, W dnum_orderby)
+{
+	W subject_wid;
+	subject_wid = bchanlhmi_getsubjectWID(hmi);
+	if (subject_wid < 0) {
+		DP_ER("subject window not exist", 0);
+		return NULL;
+	}
+	hmi->subjectoptionwindow = subjectoptionwindow_new(p, subject_wid, dnum_filter, dnum_order, dnum_orderby);
+	return hmi->subjectoptionwindow;
+}
+
+EXPORT VOID bchanlhmi_deletesubjectoptionwindow(bchanlhmi_t *hmi, subjectoptionwindow_t *window)
+{
+	subjectoptionwindow_delete(window);
+	hmi->subjectoptionwindow = NULL;
+}
+
 EXPORT bchanlhmi_t* bchanlhmi_new()
 {
 	bchanlhmi_t *hmi;
@@ -767,12 +1141,16 @@ EXPORT bchanlhmi_t* bchanlhmi_new()
 	}
 	hmi->subjectwindow = NULL;
 	hmi->bbsmenuwindow = NULL;
+	hmi->subjectoptionwindow = NULL;
 
 	return hmi;
 }
 
 EXPORT VOID bchanlhmi_delete(bchanlhmi_t *hmi)
 {
+	if (hmi->subjectoptionwindow != NULL) {
+		subjectoptionwindow_delete(hmi->subjectoptionwindow);
+	}
 	if (hmi->bbsmenuwindow != NULL) {
 		bbsmenuwindow_delete(hmi->bbsmenuwindow);
 	}
