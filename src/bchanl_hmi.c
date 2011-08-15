@@ -78,6 +78,7 @@ struct subjectoptionwindow_t_ {
 	W order;
 	W orderby;
 	TC strbuf[SUBJECTOPTIONWINDOW_STRBUF_LEN];
+	Bool tb_appended;
 };
 
 #define BCHANLHMI_FLAG_SWITCHBUTDN 0x00000001
@@ -428,6 +429,7 @@ EXPORT W subjectoptionwindow_gettext(subjectoptionwindow_t *window, TC *str, W l
 
 EXPORT W subjectoptionwindow_starttextboxaction(subjectoptionwindow_t *window)
 {
+	window->tb_appended = False;
 	return 0;
 }
 
@@ -435,6 +437,10 @@ EXPORT W subjectoptionwindow_gettextboxaction(subjectoptionwindow_t *window, TC 
 {
 	W ret, len0;
 	WEVENT *wev;
+
+	if (window->tb_appended == True) {
+		return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
+	}
 
 	wev = &window->savedwev;
 
@@ -475,11 +481,7 @@ EXPORT W subjectoptionwindow_gettextboxaction(subjectoptionwindow_t *window, TC 
 			}
 			*val = window->strbuf;
 			*len = len0;
-			ret = cset_val(window->tb_filter_id, 0, NULL);
-			if (ret < 0) {
-				DP_ER("cset_val tb_filter_id error", ret);
-				return ret;
-			}
+			window->tb_appended = True;
 			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND;
 		case (0x4000|P_TAB):
 			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
