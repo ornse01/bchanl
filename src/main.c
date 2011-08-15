@@ -72,6 +72,9 @@
 #define BCHANL_DBX_TEXT_MSG_RETRBBSMENU 27
 #define BCHANL_DBX_TEXT_MSG_RETRSUBJECT 28
 #define BCHANL_DBX_TEXT_MSG_ERRRETR 29
+#define BCHANL_DBX_TB_SBJTOPT_FLT 30
+#define BCHANL_DBX_WS_SBJTOPT_ODR 31
+#define BCHANL_DBX_WS_SBJTOPT_ODRBY	32
 
 #define BCHANL_MENU_WINDOW 3
 
@@ -149,6 +152,7 @@ struct bchanl_t_ {
 	bchanlhmi_t *hmi;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
+	subjectoptionwindow_t *subjectoptionwindow;
 };
 typedef struct bchanl_t_ bchanl_t;
 
@@ -719,11 +723,13 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	WID wid;
 	GID gid;
 	RECT w_work;
+	PNT p0 = {450, 0};
 	sbjtretriever_t *retriever;
 	bchanlhmi_t *hmi;
 	bchanl_subjecthash_t *subjecthash;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
+	subjectoptionwindow_t *subjectoptionwindow;
 
 	retriever = sbjtretriever_new();
 	if (retriever == NULL) {
@@ -747,6 +753,12 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		DP_ER("bchanl_subjecthash_new error", 0);
 		goto error_subjecthash;
 	}
+	subjectoptionwindow = bchanlhmi_newsubjectoptionwindow(hmi, &p0, BCHANL_DBX_TB_SBJTOPT_FLT, BCHANL_DBX_WS_SBJTOPT_ODR, BCHANL_DBX_WS_SBJTOPT_ODRBY);
+	if (subjectoptionwindow == NULL) {
+		DP_ER("bchanlhmi_newsubjectoptionwindow", 0);
+		goto error_subjectoptionwindow;
+	}
+	subjectoptionwindow_open(subjectoptionwindow);
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_BBSMENU, (void**)&title1);
 	bbsmenuwindow = bchanlhmi_newbbsmenuwindow(hmi, &r1, title1, NULL, bchanl_bbsmenuwindow_scroll, bchanl);
 	if (bbsmenuwindow == NULL) {
@@ -787,6 +799,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl->hmi = hmi;
 	bchanl->subjectwindow = subjectwindow;
 	bchanl->bbsmenuwindow = bbsmenuwindow;
+	bchanl->subjectoptionwindow = subjectoptionwindow;
 
 	return 0;
 
@@ -795,6 +808,8 @@ error_mainmenu:
 error_bbsmenu:
 	bchanlhmi_deletebbsmenuwindow(hmi, bbsmenuwindow);
 error_bbsmenuwindow:
+	bchanlhmi_deletesubjectoptionwindow(hmi, subjectoptionwindow);
+error_subjectoptionwindow:
 	bchanl_subjecthash_delete(subjecthash);
 error_subjecthash:
 	bchanlhmi_deletesubjectwindow(hmi, subjectwindow);
@@ -816,6 +831,7 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	}
 	bchanl_mainmenu_finalize(&bchanl->mainmenu);
 	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);
+	bchanlhmi_deletesubjectoptionwindow(bchanl->hmi, bchanl->subjectoptionwindow);
 	bchanl_subjecthash_delete(bchanl->subjecthash);
 	bchanlhmi_deletesubjectwindow(bchanl->hmi, bchanl->subjectwindow);
 	bchanlhmi_delete(bchanl->hmi);
@@ -1121,6 +1137,36 @@ LOCAL VOID bchanl_handletimeout(bchanl_t *bchanl, W code)
 	}
 }
 
+
+LOCAL VOID bchanl_event_subjectoptiontextbox(bchanl_t *bchanl)
+{
+	subjectoptionwindow_t *subjectoption;
+	W ret, len;
+	TC key, *str;
+
+	subjectoption = bchanl->subjectoptionwindow;
+
+	subjectoptionwindow_starttextboxaction(subjectoption);
+
+	for (;;) {
+		ret = subjectoptionwindow_gettextboxaction(subjectoption, &key, &str, &len);
+		if (ret < 0) {
+			break;
+		}
+		if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH) {
+			break;
+		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MENU) {
+		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_KEYMENU) {
+		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MOVE) {
+		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY) {
+		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND) {
+			printf("textbox %S\n", str);
+		}
+	}
+
+	subjectoptionwindow_endtextboxaction(subjectoption);
+}
+
 LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 {
 	bchanlhmievent_t *evt;
@@ -1196,6 +1242,15 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		break;
 	case BCHANLHMIEVENT_TYPE_BBSMENU_MOUSEMOVE:
 		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER:
+		printf("change order to %d\n", evt->data.subjectoption_changeorder.order);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY:
+		printf("change orderby to %d\n", evt->data.subjectoption_changeorderby.orderby);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX:
+		bchanl_event_subjectoptiontextbox(bchanl);
 		break;
 	case BCHANLHMIEVENT_TYPE_NONE:
 	}
