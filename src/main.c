@@ -758,7 +758,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		DP_ER("bchanlhmi_newsubjectoptionwindow", 0);
 		goto error_subjectoptionwindow;
 	}
-	subjectoptionwindow_open(subjectoptionwindow);
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_BBSMENU, (void**)&title1);
 	bbsmenuwindow = bchanlhmi_newbbsmenuwindow(hmi, &r1, title1, NULL, bchanl_bbsmenuwindow_scroll, bchanl);
 	if (bbsmenuwindow == NULL) {
@@ -1080,11 +1079,17 @@ LOCAL VOID bchanl_keydwn(bchanl_t *bchanl, UH keytop, TC ch, UW stat)
 
 LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 {
-	bchanl_mainmenu_setup(&bchanl->mainmenu);
+	Bool isopen;
+
+	isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
+
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 {
+	Bool isopen;
+
 	switch(sel) {
 	case BCHANL_MAINMENU_SELECT_CLOSE: /* [終了] */
 		bchanl_killme(bchanl);
@@ -1095,6 +1100,14 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 		break;
 	case BCHANL_MAINMENU_SELECT_BBSMENUFETCH: /* [板一覧再取得] */
 		bchanl_networkrequest_bbsmenu(bchanl);
+		break;
+	case BCHANL_MAINMENU_SELECT_SUBJECTOPTION: /* [スレ一覧設定] */
+		isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
+		if (isopen == False) {
+			subjectoptionwindow_open(bchanl->subjectoptionwindow);
+		} else {
+			subjectoptionwindow_close(bchanl->subjectoptionwindow);
+		}
 		break;
 	}
 	return;

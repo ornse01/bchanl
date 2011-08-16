@@ -38,11 +38,12 @@ typedef struct bchanl_mainmenu_t_ bchanl_mainmenu_t;
 
 IMPORT W bchanl_mainmenu_initialize(bchanl_mainmenu_t *mainmenu, W dnum);
 IMPORT VOID bchanl_mainmenu_finalize(bchanl_mainmenu_t *mainmenu);
-IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu);
+IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable);
 #define BCHANL_MAINMENU_SELECT_NOSELECT 0
 #define BCHANL_MAINMENU_SELECT_CLOSE 1
 #define BCHANL_MAINMENU_SELECT_REDISPLAY 2
 #define BCHANL_MAINMENU_SELECT_BBSMENUFETCH 3
+#define BCHANL_MAINMENU_SELECT_SUBJECTOPTION 4
 IMPORT W bchanl_mainmenu_popup(bchanl_mainmenu_t *mainmenu, PNT pos);
 IMPORT W bchanl_mainmenu_keyselect(bchanl_mainmenu_t *mainmenu, TC keycode);
 

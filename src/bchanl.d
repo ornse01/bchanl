@@ -106,7 +106,9 @@
 	MC_STRKEY1 "Ｅ終了\0"
 
 	{# TEXT_MLIST1 0 0}	-- data number
-	MC_STR "表示" MC_STR "再表示\0"
+	MC_STR "表示"
+	MC_STR "再表示"
+	MC_IND "スレ一覧設定\0"
 
 	{# TEXT_MLIST2 0 0}	-- data number
 	MC_STR "操作"

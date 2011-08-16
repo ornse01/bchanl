@@ -43,8 +43,15 @@
 #define BCHANL_MAINMENU_ITEMNUM_WINDOW 3
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
-EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu)
+EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable)
 {
+	/* [表示] -> [スレ一覧設定] */
+	if (subectjoptionenable == False) {
+		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_NOSEL);
+	} else {
+		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_SEL);
+	}
+
 	wget_dmn(&(mainmenu->mnitem[BCHANL_MAINMENU_ITEMNUM_WINDOW].ptr));
 	mset_itm(mainmenu->mnid, BCHANL_MAINMENU_ITEMNUM_WINDOW, mainmenu->mnitem+BCHANL_MAINMENU_ITEMNUM_WINDOW);
 	oget_men(0, NULL, &(mainmenu->mnitem[BCHANL_MAINMENU_ITEMNUM_GADGET].ptr), NULL, NULL);
@@ -65,6 +72,9 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 		switch(i & 0xff) {
 		case 1: /* [再表示] */
 			ret = BCHANL_MAINMENU_SELECT_REDISPLAY;
+			break;
+		case 2: /* [スレ一覧設定] */
+			ret = BCHANL_MAINMENU_SELECT_SUBJECTOPTION;
 			break;
 		default:
 			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
