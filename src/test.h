@@ -1,7 +1,7 @@
 /*
  * test.h
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -39,6 +39,9 @@ IMPORT VOID test_sbjtcache_main();
 
 /* test_subjectparser.c */
 IMPORT VOID test_sbjtparser_main();
+
+/* test_subjectlist.c */
+IMPORT VOID test_sbjtlist_main();
 
 /* test_subjectlayout.c */
 IMPORT VOID test_sbjtlayout_main();

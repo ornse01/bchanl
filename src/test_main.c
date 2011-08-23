@@ -1,7 +1,7 @@
 /*
  * test_main.c
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -33,6 +33,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 {
 	test_sbjtcache_main();
 	test_sbjtparser_main();
+	test_sbjtlist_main();
 	test_sbjtlayout_main();
 	test_bbsmncache_main();
 	test_bbsmnparser_main();
