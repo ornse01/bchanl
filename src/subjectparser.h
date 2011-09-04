@@ -1,7 +1,7 @@
 /*
  * subjectparser.h
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -35,10 +35,13 @@ struct sbjtparser_thread_t_ {
 	W number_len;
 	TC *title;
 	W title_len;
+	W i_titlesepareter;
 };
 typedef struct sbjtparser_thread_t_ sbjtparser_thread_t;
 typedef struct sbjtparser_t_ sbjtparser_t;
 
+EXPORT VOID sbjtparser_thread_gettitlestr(sbjtparser_thread_t *thr, TC **str, W *len);
+EXPORT VOID sbjtparser_thread_getresnumstr(sbjtparser_thread_t *thr, TC **str, W *len);
 EXPORT VOID sbjtparser_thread_delete(sbjtparser_thread_t *thr);
 
 EXPORT sbjtparser_t* sbjtparser_new(sbjtcache_t *cache);

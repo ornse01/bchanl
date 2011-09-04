@@ -1,7 +1,7 @@
 /*
  * subjectparser.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -29,6 +29,8 @@
 #include	<bstdlib.h>
 #include	<bstring.h>
 #include	<bctype.h>
+#include	<tstring.h>
+#include	<tcode.h>
 #include	<btron/tf.h>
 
 #include    "subjectparser.h"
@@ -60,6 +62,30 @@ struct sbjtparser_t_ {
 	sbjtparser_thread_t *threadbuffer;
 };
 
+EXPORT VOID sbjtparser_thread_gettitlestr(sbjtparser_thread_t *thr, TC **str, W *len)
+{
+	*str = thr->title;
+	*len = thr->i_titlesepareter;
+}
+
+EXPORT VOID sbjtparser_thread_getresnumstr(sbjtparser_thread_t *thr, TC **str, W *len)
+{
+	*str = thr->title + thr->i_titlesepareter;
+	*len = thr->title_len - thr->i_titlesepareter;
+}
+
+LOCAL VOID sbjtparser_thread_updatetitlesepareter(sbjtparser_thread_t *thr)
+{
+	TC *str;
+
+	str = tc_strrchr(thr->title, TK_LPAR);
+	if (str == NULL) {
+		thr->i_titlesepareter = thr->title_len;
+	} else {
+		thr->i_titlesepareter = (str - thr->title) - 1;
+	}
+}
+
 EXPORT sbjtparser_thread_t* sbjtparser_thread_new()
 {
 	sbjtparser_thread_t *thr;
@@ -73,6 +99,7 @@ EXPORT sbjtparser_thread_t* sbjtparser_thread_new()
 	thr->number[0] = '\0';
 	thr->title = NULL;
 	thr->title_len = 0;
+	thr->i_titlesepareter = 0;
 
 	return thr;
 }
@@ -90,6 +117,7 @@ LOCAL VOID sbjtparser_thread_clear(sbjtparser_thread_t *thr)
 	thr->number[0] = '\0';
 	thr->title = NULL;
 	thr->title_len = 0;
+	thr->i_titlesepareter = 0;
 }
 
 EXPORT VOID sbjtparser_thread_delete(sbjtparser_thread_t *thr)
@@ -274,6 +302,7 @@ EXPORT W sbjtparser_getnextthread(sbjtparser_t *parser, sbjtparser_thread_t **th
 			break;
 		}
 		if (err == 1) {
+			sbjtparser_thread_updatetitlesepareter(parser->threadbuffer);
 			*thr = parser->threadbuffer;
 			parser->threadbuffer = sbjtparser_thread_new();
 			break;

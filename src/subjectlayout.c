@@ -1,7 +1,7 @@
 /*
  * subjectlayout.c
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -30,7 +30,6 @@
 
 #include	<bstdio.h>
 #include	<bstdlib.h>
-#include	<tstring.h>
 #include	<tcode.h>
 #include	<btron/btron.h>
 #include	<btron/dp.h>
@@ -110,7 +109,6 @@ struct sbjtlayout_thread_t_ {
 	sbjtparser_thread_t *parser_thread;
 	W index;
 	W view_l,view_t,view_r,view_b;
-	W i_titlesepareter;
 	SIZE sz_title;
 	W baseline;
 	RECT vframe;
@@ -128,7 +126,6 @@ struct sbjtlayout_t_ {
 LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtparser_thread_t *thread)
 {
 	sbjtlayout_thread_t *layout_thread;
-	TC *str;
 
 	layout_thread = (sbjtlayout_thread_t*)malloc(sizeof(sbjtlayout_thread_t));
 	if (layout_thread == NULL) {
@@ -139,13 +136,6 @@ LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtparser_thread_t *thread)
 	layout_thread->view_t = 0;
 	layout_thread->view_r = 0;
 	layout_thread->view_b = 0;
-
-	str = tc_strrchr(thread->title, TK_LPAR);
-	if (str == NULL) {
-		layout_thread->i_titlesepareter = thread->title_len;
-	} else {
-		layout_thread->i_titlesepareter = (str - thread->title) - 1;
-	}
 
 	return layout_thread;
 }
@@ -181,12 +171,18 @@ LOCAL W sbjtlayout_thread_calcindexdrawsize(sbjtlayout_thread_t *layout_thread, 
 
 LOCAL W sbjtlayout_thread_calctitledrawsize(sbjtlayout_thread_t *layout_thread, GID gid, SIZE *sz)
 {
-	return tadlib_calcdrawsize(layout_thread->parser_thread->title, layout_thread->i_titlesepareter, gid, sz);
+	TC *str;
+	W len;
+	sbjtparser_thread_gettitlestr(layout_thread->parser_thread, &str, &len);
+	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
 LOCAL W sbjtlayout_thread_calcresnumdrawsize(sbjtlayout_thread_t *layout_thread, GID gid, SIZE *sz)
 {
-	return tadlib_calcdrawsize(layout_thread->parser_thread->title + layout_thread->i_titlesepareter, layout_thread->parser_thread->title_len - layout_thread->i_titlesepareter, gid, sz);
+	TC *str;
+	W len;
+	sbjtparser_thread_getresnumstr(layout_thread->parser_thread, &str, &len);
+	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
 LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top, W index)
@@ -356,15 +352,17 @@ struct sbjtdraw_t_ {
 
 LOCAL W sbjtdraw_entrydraw_drawtitle(sbjtlayout_thread_t *entry, GID gid, W dh, W dv)
 {
-	TC *str = entry->parser_thread->title;
-	W len = entry->i_titlesepareter;
+	TC *str;
+	W len;
+	sbjtparser_thread_gettitlestr(entry->parser_thread, &str, &len);
 	return tadlib_drawtext(str, len, gid, dh, dv);
 }
 
 LOCAL W sbjtdraw_entrydraw_drawresnum(sbjtlayout_thread_t *entry, GID gid, W dh, W dv)
 {
-	TC *str = entry->parser_thread->title + entry->i_titlesepareter;
-	W len = entry->parser_thread->title_len - entry->i_titlesepareter;
+	TC *str;
+	W len;
+	sbjtparser_thread_getresnumstr(entry->parser_thread, &str, &len);
 	return tadlib_drawtext(str, len, gid, dh, dv);
 }
 
