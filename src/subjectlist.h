@@ -50,10 +50,12 @@ IMPORT VOID sbjtlist_endread(sbjtlist_t *list, sbjtlist_iterator_t *iter);
 IMPORT Bool sbjtlist_iterator_next(sbjtlist_iterator_t *iter, sbjtlist_tuple_t **item);
 
 IMPORT VOID sbjtlist_tuple_gettitle(sbjtlist_tuple_t *tuple, TC **str, W *len);
+IMPORT VOID sbjtlist_tuple_getthreadnumberstr(sbjtlist_tuple_t *tuple, UB **str, W *len);
 IMPORT VOID sbjtlist_tuple_getnumber(sbjtlist_tuple_t *tuple, W *num);
 IMPORT VOID sbjtlist_tuple_getresnumber(sbjtlist_tuple_t *tuple, W *num);
+IMPORT VOID sbjtlist_tuple_getresnumberstr(sbjtlist_tuple_t *tuple, TC **str, W *len);
 IMPORT VOID sbjtlist_tuple_getsince(sbjtlist_tuple_t *tuple, DATE_TIM *since);
-IMPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, W *vigor);
+IMPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, STIME current, W *vigor);
 /* vigor = res / minutes * 60 * 24 * (for modify) 10 */
 
 #endif

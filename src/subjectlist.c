@@ -28,6 +28,7 @@
 #include	<bstdio.h>
 #include	<bstdlib.h>
 #include	<bstring.h>
+#include	<tstring.h>
 
 #include    "subjectlist.h"
 #include    "subjectparser.h"
@@ -146,6 +147,12 @@ EXPORT VOID sbjtlist_tuple_gettitle(sbjtlist_tuple_t *tuple, TC **str, W *len)
 	*len = tuple->parser_thread->title_len;
 }
 
+EXPORT VOID sbjtlist_tuple_getthreadnumberstr(sbjtlist_tuple_t *tuple, UB **str, W *len)
+{
+	*str = tuple->parser_thread->number;
+	*len = tuple->parser_thread->number_len;
+}
+
 EXPORT VOID sbjtlist_tuple_getnumber(sbjtlist_tuple_t *tuple, W *num)
 {
 	*num = tuple->index + 1;
@@ -153,14 +160,38 @@ EXPORT VOID sbjtlist_tuple_getnumber(sbjtlist_tuple_t *tuple, W *num)
 
 EXPORT VOID sbjtlist_tuple_getresnumber(sbjtlist_tuple_t *tuple, W *num)
 {
+	TC *str;
+	W len;
+	sbjtparser_thread_getresnumstr(tuple->parser_thread, &str, &len);
+	*num = tc_atoi(str + 1);
+}
+
+EXPORT VOID sbjtlist_tuple_getresnumberstr(sbjtlist_tuple_t *tuple, TC **str, W *len)
+{
+	sbjtparser_thread_getresnumstr(tuple->parser_thread, str, len);
+}
+
+EXPORT VOID sbjtlist_tuple_getsinceSTIME(sbjtlist_tuple_t *tuple, STIME *since)
+{
+	W since_u;
+	since_u = atoi(tuple->parser_thread->number);
+	*since = since_u - 473385600;
 }
 
 EXPORT VOID sbjtlist_tuple_getsince(sbjtlist_tuple_t *tuple, DATE_TIM *since)
 {
+	STIME tim;
+	sbjtlist_tuple_getsinceSTIME(tuple, &tim);
+	get_tod(since, tim, 0);
 }
 
-EXPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, W *vigor)
+EXPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, STIME current, W *vigor)
 {
+	STIME since;
+	W resnum;
+	sbjtlist_tuple_getsinceSTIME(tuple, &since);
+	sbjtlist_tuple_getresnumber(tuple, &resnum);
+	*vigor = resnum * 60 * 60 * 24 * 10 / (current - since); /* res per day */
 }
 
 /**/
