@@ -111,6 +111,7 @@ EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 	sbjtlist_tuple_t *tuple;
 	W err;
 	Bool next;
+	STIME current;
 
 	parser = subject->parser;
 	list = subject->list;
@@ -119,13 +120,15 @@ EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 	sbjtlayout_clear(layout);
 	sbjtparser_clear(parser);
 
+	get_tim(&current, NULL);
+
 	for (;;) {
 		err = sbjtparser_getnextthread(parser, &thread);
 		if (err != 1) {
 			break;
 		}
 		if (thread != NULL) {
-			sbjtlist_appendthread(list, thread);
+			sbjtlist_appendthread(list, thread, current);
 		} else {
 			break;
 		}

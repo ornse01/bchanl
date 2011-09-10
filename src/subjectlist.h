@@ -37,7 +37,7 @@ typedef struct sbjtlist_iterator_t_ sbjtlist_iterator_t;
 
 IMPORT sbjtlist_t* sbjtlist_new();
 IMPORT VOID sbjtlist_delete(sbjtlist_t *list);
-IMPORT W sbjtlist_appendthread(sbjtlist_t *list, sbjtparser_thread_t *parser_thread);
+IMPORT W sbjtlist_appendthread(sbjtlist_t *list, sbjtparser_thread_t *parser_thread, STIME current);
 #define SBJTLIST_SORTBY_NUMBER 1
 #define SBJTLIST_SORTBY_RES 2
 #define SBJTLIST_SORTBY_SINCE 3
@@ -55,7 +55,7 @@ IMPORT VOID sbjtlist_tuple_getnumber(sbjtlist_tuple_t *tuple, W *num);
 IMPORT VOID sbjtlist_tuple_getresnumber(sbjtlist_tuple_t *tuple, W *num);
 IMPORT VOID sbjtlist_tuple_getresnumberstr(sbjtlist_tuple_t *tuple, TC **str, W *len);
 IMPORT VOID sbjtlist_tuple_getsince(sbjtlist_tuple_t *tuple, DATE_TIM *since);
-IMPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, STIME current, W *vigor);
+IMPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, W *vigor);
 /* vigor = res / minutes * 60 * 24 * (for modify) 10 */
 
 #endif

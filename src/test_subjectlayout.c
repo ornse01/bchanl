@@ -132,7 +132,7 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 			break;
 		}
 		if (thread != NULL) {
-			sbjtlist_appendthread(list, thread);
+			sbjtlist_appendthread(list, thread, 0x3eec16c0);
 		} else {
 			break;
 		}
