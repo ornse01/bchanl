@@ -30,6 +30,7 @@
 #include    <bstdio.h>
 #include    <bstring.h>
 #include    <bstdlib.h>
+#include    <tstring.h>
 
 #include    "test.h"
 
@@ -70,9 +71,21 @@ LOCAL UB test_sbjtlist_testdata_01[] = {
 	0x28, 0x35, 0x32, 0x33, 0x29
 };
 
-LOCAL TEST_RESULT test_sbjtlist_1()
+LOCAL TC test_sbjtlist_title_01[] = {0x217a, 0x2332, 0x2441, 0x2463, 0x2473, 0x244d, 0x246b, 0x2331, 0x2330, 0x3c7e, 0x472f, 0x352d, 0x4730, 0x217a, 0x2121, 0x467c, 0x4b5c, 0x2537, 0x256a, 0x213c, 0x253a, 0x2472, 0x4d3d, 0x415b, 0x2437, 0x2446, 0x2557, 0x256c, 0x253c, 0x2573, 0x2548, 0x2472, 0x2532, 0x2543, 0x2548, 0x212a, TNULL};
+LOCAL TC test_sbjtlist_title_02[] = {0x2361, 0x2361, 0x2361, 0x2121, 0x2362, 0x2362, 0x2362, 0x2362, TNULL};
+LOCAL TC test_sbjtlist_title_03[] = {0x215a, 0x4b68, 0x376e, 0x2332, 0x467c, 0x482f, 0x4764, 0x215b, 0x386c, 0x246b, 0x2539, 0x256c, 0x2333, TNULL};
+LOCAL TC test_sbjtlist_title_04[] = {0x2539, 0x256c, TNULL};
+
+struct testsbjtlist_expected_t_ {
+	W num;
+	TC *title;
+	W title_len;
+};
+typedef struct testsbjtlist_expected_t_ testsbjtlist_expected_t;
+
+LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby, Bool descendant, TC *filterword, W filterword_len, testsbjtlist_expected_t *expected, W expected_len)
 {
-	W err, num, len;
+	W err, num, len, i;
 	Bool next;
 	TC *title;
 	sbjtlist_t *list;
@@ -84,7 +97,7 @@ LOCAL TEST_RESULT test_sbjtlist_1()
 	TEST_RESULT result = TEST_RESULT_PASS;
 
 	cache = sbjtcache_new();
-	sbjtcache_appenddata(cache, test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01));
+	sbjtcache_appenddata(cache, testdata, testdata_len);
 
 	parser = sbjtparser_new(cache);
 	list = sbjtlist_new();
@@ -95,23 +108,38 @@ LOCAL TEST_RESULT test_sbjtlist_1()
 			break;
 		}
 		if (thread != NULL) {
-			sbjtlist_appendthread(list, thread, 0x3eec16c0);
+			sbjtlist_appendthread(list, thread, 1300000000);
 		} else {
 			break;
 		}
 	}
 
-	sbjtlist_sort(list, SBJTLIST_SORTBY_NUMBER, NULL, 0);
+	sbjtlist_sort(list, sortby, filterword, filterword_len);
 
-	list_iter = sbjtlist_startread(list, False);
-	for (;;) {
+	list_iter = sbjtlist_startread(list, descendant);
+	for (i = 0;; i++) {
 		next = sbjtlist_iterator_next(list_iter, &tuple);
 		if (next == False) {
 			break;
 		}
+		if (i >= expected_len) {
+			result = False;
+			break;
+		}
 		sbjtlist_tuple_gettitle(tuple, &title, &len);
 		sbjtlist_tuple_getnumber(tuple, &num);
-		printf("%d: %S\n", num, title);
+		if (expected[i].num != num) {
+			result = TEST_RESULT_FAIL;
+			break;
+		}
+		if (expected[i].title_len != len) {
+			result = TEST_RESULT_FAIL;
+			break;
+		}
+		if (tc_strncmp(title, expected[i].title, len) != 0) {
+			result = TEST_RESULT_FAIL;
+			break;
+		}
 	}
 	sbjtlist_endread(list, list_iter);
 
@@ -121,6 +149,222 @@ LOCAL TEST_RESULT test_sbjtlist_1()
 	sbjtcache_delete(cache);
 
 	return result;
+}
+
+LOCAL TEST_RESULT test_sbjtlist_1()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_2()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_RES, False, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_3()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_SINCE, False, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_4()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		}, /* vigor = 0.00 */
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		}, /* vigor = 0.07 */
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		}, /* vigor = 0.14 */
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		}, /* vigor = 0.02 */
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_VIGOR, False, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_5()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, True, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_6()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_RES, True, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_7()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_SINCE, True, NULL, 0, expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_8()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		}, /* vigor = 0.02 */
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		}, /* vigor = 0.14 */
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		}, /* vigor = 0.07 */
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		}, /* vigor = 0.00 */
+	};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_VIGOR, True, NULL, 0, expected, sizeof(expected));
 }
 
 LOCAL VOID test_sbjtlist_printresult(TEST_RESULT (*proc)(), B *test_name)
@@ -141,4 +385,11 @@ LOCAL VOID test_sbjtlist_printresult(TEST_RESULT (*proc)(), B *test_name)
 EXPORT VOID test_sbjtlist_main()
 {
 	test_sbjtlist_printresult(test_sbjtlist_1, "test_sbjtlist_1");
+	test_sbjtlist_printresult(test_sbjtlist_2, "test_sbjtlist_2");
+	test_sbjtlist_printresult(test_sbjtlist_3, "test_sbjtlist_3");
+	test_sbjtlist_printresult(test_sbjtlist_4, "test_sbjtlist_4");
+	test_sbjtlist_printresult(test_sbjtlist_5, "test_sbjtlist_5");
+	test_sbjtlist_printresult(test_sbjtlist_6, "test_sbjtlist_6");
+	test_sbjtlist_printresult(test_sbjtlist_7, "test_sbjtlist_7");
+	test_sbjtlist_printresult(test_sbjtlist_8, "test_sbjtlist_8");
 }
