@@ -47,7 +47,7 @@ struct sbjtlist_tuple_t_ {
 	W index; /* by subject.txt */
 	W resnum;
 	STIME since;
-	W vigor;
+	DOUBLE vigor;
 };
 
 struct sbjtlist_originarray_t_ {
@@ -112,14 +112,14 @@ EXPORT VOID sbjtlist_tuple_getsince(sbjtlist_tuple_t *tuple, DATE_TIM *since)
 
 EXPORT VOID sbjtlist_tuple_getvigor(sbjtlist_tuple_t *tuple, W *vigor)
 {
-	*vigor = tuple->vigor;
+	*vigor = tuple->vigor * 10;
 }
 
 LOCAL W sbjtlist_tuple_compare_resnumber(sbjtlist_tuple_t *t1, sbjtlist_tuple_t *t2)
 {
 	W n1, n2;
-	sbjtlist_tuple_getnumber(t1, &n1);
-	sbjtlist_tuple_getnumber(t2, &n2);
+	sbjtlist_tuple_getresnumber(t1, &n1);
+	sbjtlist_tuple_getresnumber(t2, &n2);
 	if (n1 > n2) {
 		return 1;
 	}
@@ -131,13 +131,10 @@ LOCAL W sbjtlist_tuple_compare_resnumber(sbjtlist_tuple_t *t1, sbjtlist_tuple_t 
 
 LOCAL W sbjtlist_tuple_compare_vigor(sbjtlist_tuple_t *t1, sbjtlist_tuple_t *t2)
 {
-	W n1, n2;
-	sbjtlist_tuple_getvigor(t1, &n1);
-	sbjtlist_tuple_getvigor(t2, &n2);
-	if (n1 > n2) {
+	if (t1->vigor > t2->vigor) {
 		return 1;
 	}
-	if (n1 < n2) {
+	if (t1->vigor < t2->vigor) {
 		return -1;
 	}
 	return 0;
@@ -155,9 +152,9 @@ LOCAL W sbjtlist_tuple_initialize(sbjtlist_tuple_t *tuple, sbjtparser_thread_t *
 	tuple->since = since_u - 473385600;
 
 	sbjtparser_thread_getresnumstr(tuple->parser_thread, &str, &len);
-	tuple->resnum = tc_atoi(str + 1);
+	tuple->resnum = tc_atoi(str + 2);
 
-	tuple->vigor = tuple->resnum * 60 * 60 * 24 * 10 / (current - tuple->since); /* res per day */
+	tuple->vigor = (DOUBLE)tuple->resnum * 60.0 * 60.0 * 24.0 / (DOUBLE)(current - tuple->since); /* res per day */
 
 	return 0;
 }
