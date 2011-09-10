@@ -383,7 +383,7 @@ EXPORT W subjectoptionwindow_setorderby(subjectoptionwindow_t *window, W orderby
 	if (window->wid < 0) {
 		return 0;
 	}
-	return cset_val(window->ws_order_id, 1, (W*)&orderby);
+	return cset_val(window->ws_orderby_id, 1, (W*)&orderby);
 }
 
 EXPORT W subjectoptionwindow_settext(subjectoptionwindow_t *window, TC *str, W len)
