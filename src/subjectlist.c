@@ -157,8 +157,7 @@ LOCAL VOID sbjtlist_sortedarray_finalize(sbjtlist_sortedarray_t *array)
 
 EXPORT VOID sbjtlist_tuple_gettitle(sbjtlist_tuple_t *tuple, TC **str, W *len)
 {
-	*str = tuple->parser_thread->title;
-	*len = tuple->parser_thread->title_len;
+	sbjtparser_thread_gettitlestr(tuple->parser_thread, str, len);
 }
 
 EXPORT VOID sbjtlist_tuple_getthreadnumberstr(sbjtlist_tuple_t *tuple, UB **str, W *len)
