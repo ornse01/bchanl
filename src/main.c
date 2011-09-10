@@ -413,6 +413,69 @@ LOCAL VOID bchanl_bbsmenuwindow_close(bchanl_t *bchanl)
 	bchanl_killme(bchanl);
 }
 
+LOCAL VOID bchanl_updatesubjectorder(bchanl_t *bchanl, W order, W orderby, TC *filterword, W filterword_len)
+{
+	Bool descending;
+	W sbjt_orderby;
+
+	if (order == SUBJECTOPTIONWINDOW_ORDER_DESCENDING) {
+		descending = True;
+	} else {
+		descending = False;
+	}
+	switch (orderby) {
+	case SUBJECTOPTIONWINDOW_ORDERBY_NUMBER:
+	default:
+		sbjt_orderby = BCHANL_SUBJECT_SORTBY_NUMBER;
+		break;
+	case SUBJECTOPTIONWINDOW_ORDERBY_RES:
+		sbjt_orderby = BCHANL_SUBJECT_SORTBY_RES;
+		break;
+	case SUBJECTOPTIONWINDOW_ORDERBY_SINCE:
+		sbjt_orderby = BCHANL_SUBJECT_SORTBY_SINCE;
+		break;
+	case SUBJECTOPTIONWINDOW_ORDERBY_VIGOR:
+		sbjt_orderby = BCHANL_SUBJECT_SORTBY_VIGOR;
+		break;
+	}
+
+	bchanl_subject_reorder(bchanl->currentsubject, filterword, filterword_len, sbjt_orderby, descending);
+
+	subjectwindow_requestredisp(bchanl->subjectwindow);
+}
+
+LOCAL VOID bchanl_changesubjectorder(bchanl_t *bchanl, W neworder)
+{
+	W orderby, len;
+	TC buf[512];
+
+	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
+	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
+
+	bchanl_updatesubjectorder(bchanl, neworder, orderby, buf, len);
+}
+
+LOCAL VOID bchanl_changesubjectorderby(bchanl_t *bchanl, W neworderby)
+{
+	W order, len;
+	TC buf[512];
+
+	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
+	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
+
+	bchanl_updatesubjectorder(bchanl, order, neworderby, buf, len);
+}
+
+LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr_len)
+{
+	W order, orderby;
+
+	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
+	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
+
+	bchanl_updatesubjectorder(bchanl, order, orderby, newstr, newstr_len);
+}
+
 LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
 {
 	sbjtcache_t *cache;
@@ -435,6 +498,10 @@ LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject
 
 	pdsp_msg(NULL);
 	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+
+	subjectoptionwindow_settext(bchanl->subjectoptionwindow, NULL, 0);
+	err = subjectoptionwindow_setorder(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDER_ASCENDING);
+	subjectoptionwindow_setorderby(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBY_NUMBER);
 
 	bchanl_subject_relayout(subject);
 
@@ -1175,6 +1242,7 @@ LOCAL VOID bchanl_event_subjectoptiontextbox(bchanl_t *bchanl)
 		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY) {
 		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND) {
 			printf("textbox %S\n", str);
+			bchanl_changesubjectfilterword(bchanl, str, len);
 		}
 	}
 
@@ -1259,9 +1327,11 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER:
 		printf("change order to %d\n", evt->data.subjectoption_changeorder.order);
+		bchanl_changesubjectorder(bchanl, evt->data.subjectoption_changeorder.order);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY:
 		printf("change orderby to %d\n", evt->data.subjectoption_changeorderby.orderby);
+		bchanl_changesubjectorderby(bchanl, evt->data.subjectoption_changeorderby.orderby);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX:
 		bchanl_event_subjectoptiontextbox(bchanl);

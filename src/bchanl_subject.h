@@ -43,7 +43,12 @@ IMPORT VOID bchanl_subject_gettitle(bchanl_subject_t *subject, TC **title, W *ti
 IMPORT sbjtcache_t* bchanl_subject_getcache(bchanl_subject_t *subject);
 IMPORT sbjtlayout_t* bchanl_subject_getlayout(bchanl_subject_t *subject);
 IMPORT sbjtdraw_t* bchanl_subject_getdraw(bchanl_subject_t *subject);
+#define BCHANL_SUBJECT_SORTBY_NUMBER SBJTLIST_SORTBY_NUMBER
+#define BCHANL_SUBJECT_SORTBY_RES SBJTLIST_SORTBY_RES
+#define BCHANL_SUBJECT_SORTBY_SINCE SBJTLIST_SORTBY_SINCE
+#define BCHANL_SUBJECT_SORTBY_VIGOR SBJTLIST_SORTBY_VIGOR
 IMPORT W bchanl_subject_relayout(bchanl_subject_t *subject);
+IMPORT W bchanl_subject_reorder(bchanl_subject_t *subject, TC *filterword, W filterword_len, W sortby, Bool descending);
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED 0
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED  1
 IMPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk);

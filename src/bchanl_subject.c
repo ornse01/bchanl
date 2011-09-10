@@ -149,6 +149,34 @@ EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 	return 0;
 }
 
+EXPORT W bchanl_subject_reorder(bchanl_subject_t *subject, TC *filterword, W filterword_len, W sortby, Bool descending)
+{
+	sbjtlist_t *list;
+	sbjtlayout_t *layout;
+	sbjtlist_iterator_t *list_iter;
+	sbjtlist_tuple_t *tuple;
+	Bool next;
+
+	list = subject->list;
+	layout = subject->layout;
+
+	sbjtlayout_clear(layout);
+
+	sbjtlist_sort(list, sortby, filterword, filterword_len);
+
+	list_iter = sbjtlist_startread(list, descending);
+	for (;;) {
+		next = sbjtlist_iterator_next(list_iter, &tuple);
+		if (next == False) {
+			break;
+		}
+		sbjtlayout_appendthread(layout, tuple);
+	}
+	sbjtlist_endread(list, list_iter);
+
+	return 0;
+}
+
 EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk)
 {
 	W fd, len, err;
