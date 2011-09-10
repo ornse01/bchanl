@@ -1,7 +1,7 @@
 /*
  * bchanl_subject.h
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -30,6 +30,7 @@
 
 #include    "subjectcache.h"
 #include    "subjectparser.h"
+#include    "subjectlist.h"
 #include    "subjectlayout.h"
 
 #ifndef __BCHANL_SUBJECT_H__
@@ -45,7 +46,7 @@ IMPORT sbjtdraw_t* bchanl_subject_getdraw(bchanl_subject_t *subject);
 IMPORT W bchanl_subject_relayout(bchanl_subject_t *subject);
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED 0
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED  1
-IMPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_thread_t *thread, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk);
+IMPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk);
 
 IMPORT bchanl_subjecthash_t* bchanl_subjecthash_new(GID gid, W base);
 IMPORT VOID bchanl_subjecthash_delete(bchanl_subjecthash_t *subjecthash);

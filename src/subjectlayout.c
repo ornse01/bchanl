@@ -25,7 +25,7 @@
  */
 
 #include    "subjectlayout.h"
-#include    "subjectparser.h"
+#include    "subjectlist.h"
 #include    "tadlib.h"
 
 #include	<bstdio.h>
@@ -106,8 +106,8 @@ LOCAL W WtoTCS(W num, TC *dest)
 
 typedef struct sbjtlayout_thread_t_ sbjtlayout_thread_t;
 struct sbjtlayout_thread_t_ {
-	sbjtparser_thread_t *parser_thread;
-	W index;
+	sbjtlist_tuple_t *tuple;
+	//W index;
 	W view_l,view_t,view_r,view_b;
 	SIZE sz_title;
 	W baseline;
@@ -123,7 +123,7 @@ struct sbjtlayout_t_ {
 	COLOR vobjbgcol;
 };
 
-LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtparser_thread_t *thread)
+LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtlist_tuple_t *thread)
 {
 	sbjtlayout_thread_t *layout_thread;
 
@@ -131,7 +131,7 @@ LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtparser_thread_t *thread)
 	if (layout_thread == NULL) {
 		return NULL;
 	}
-	layout_thread->parser_thread = thread;
+	layout_thread->tuple = thread;
 	layout_thread->view_l = 0;
 	layout_thread->view_t = 0;
 	layout_thread->view_r = 0;
@@ -142,16 +142,17 @@ LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtparser_thread_t *thread)
 
 LOCAL VOID sbjtlayout_thread_delete(sbjtlayout_thread_t *layout_thread)
 {
-	sbjtparser_thread_delete(layout_thread->parser_thread);
 	free(layout_thread);
 }
 
 LOCAL W sbjtlayout_thread_calcindexdrawsize(sbjtlayout_thread_t *layout_thread, GID gid, SIZE *sz)
 {
 	TC str[12];
-	W err, len;
+	W err, len, num;
 
-	len = WtoTCS(layout_thread->index, str);
+	sbjtlist_tuple_getnumber(layout_thread->tuple, &num);
+
+	len = WtoTCS(num, str);
 	str[len++] = TK_COLN;
 	str[len] = TNULL;
 
@@ -173,7 +174,7 @@ LOCAL W sbjtlayout_thread_calctitledrawsize(sbjtlayout_thread_t *layout_thread, 
 {
 	TC *str;
 	W len;
-	sbjtparser_thread_gettitlestr(layout_thread->parser_thread, &str, &len);
+	sbjtlist_tuple_gettitle(layout_thread->tuple, &str, &len);
 	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
@@ -181,16 +182,14 @@ LOCAL W sbjtlayout_thread_calcresnumdrawsize(sbjtlayout_thread_t *layout_thread,
 {
 	TC *str;
 	W len;
-	sbjtparser_thread_getresnumstr(layout_thread->parser_thread, &str, &len);
+	sbjtlist_tuple_getresnumberstr(layout_thread->tuple, &str, &len);
 	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
-LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top, W index)
+LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top)
 {
 	SIZE sz_index, sz_title, sz_resnum;
 	W err;
-
-	layout_res->index = index;
 
 	err = sbjtlayout_thread_calcindexdrawsize(layout_res, gid, &sz_index);
 	if (err < 0) {
@@ -230,12 +229,12 @@ LOCAL W sbjtlayout_setupgid(sbjtlayout_t *layout, GID gid)
 	return gset_fon(gid, &layout->fspec);
 }
 
-EXPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtparser_thread_t *parser_thread)
+EXPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtlist_tuple_t *tuple)
 {
 	sbjtlayout_thread_t *layout_thread;
 	W len;
 
-	layout_thread = sbjtlayout_thread_new(parser_thread);
+	layout_thread = sbjtlayout_thread_new(tuple);
 	if (layout_thread == NULL) {
 		return -1; /* TODO */
 	}
@@ -247,7 +246,7 @@ EXPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtparser_thread_t *pars
 
 	sbjtlayout_setupgid(layout, layout->target);
 
-	sbjtlayout_thread_calcsize(layout_thread, layout->target, layout->draw_b, layout->len);
+	sbjtlayout_thread_calcsize(layout_thread, layout->target, layout->draw_b);
 
 	/* orrect */
 	if (layout->draw_l > layout_thread->view_l) {
@@ -354,7 +353,7 @@ LOCAL W sbjtdraw_entrydraw_drawtitle(sbjtlayout_thread_t *entry, GID gid, W dh, 
 {
 	TC *str;
 	W len;
-	sbjtparser_thread_gettitlestr(entry->parser_thread, &str, &len);
+	sbjtlist_tuple_gettitle(entry->tuple, &str, &len);
 	return tadlib_drawtext(str, len, gid, dh, dv);
 }
 
@@ -362,7 +361,7 @@ LOCAL W sbjtdraw_entrydraw_drawresnum(sbjtlayout_thread_t *entry, GID gid, W dh,
 {
 	TC *str;
 	W len;
-	sbjtparser_thread_getresnumstr(entry->parser_thread, &str, &len);
+	sbjtlist_tuple_getresnumberstr(entry->tuple, &str, &len);
 	return tadlib_drawtext(str, len, gid, dh, dv);
 }
 
@@ -380,9 +379,9 @@ LOCAL int sectrect_tmp(RECT a, W left, W top, W right, W bottom)
 	return (a.c.left<right && left<a.c.right && a.c.top<bottom && top<a.c.bottom);
 }
 
-LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, W index, GID target, RECT *r, W dh, W dv, COLOR vobjbgcol)
+LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W dh, W dv, COLOR vobjbgcol)
 {
-	W sect, err;
+	W sect, err, num;
 	RECT view, vframe, vframe_b;
 	static	PAT	pat0 = {{
 		0,
@@ -410,11 +409,13 @@ LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, W index, GID target, REC
 	view.c.right = entry->view_r - dh;
 	view.c.bottom = entry->view_b - dv;
 
+	sbjtlist_tuple_getnumber(entry->tuple, &num);
+
 	err = gset_chp(target, - dh, entry->view_t + entry->baseline - dv, 1);
 	if (err < 0) {
 		return err;
 	}
-	err = sbjtdraw_entrydraw_resnumber(entry, index+1, target);
+	err = sbjtdraw_entrydraw_resnumber(entry, num, target);
 	if (err < 0) {
 		return err;
 	}
@@ -476,7 +477,7 @@ EXPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r)
 
 	for (i=0;i < layout->len;i++) {
 		sbjtlayout_setupgid(layout, layout->target);
-		err = sbjtdraw_drawthread(layout->layout_thread[i], i, target, r, draw->view_l, draw->view_t, layout->vobjbgcol);
+		err = sbjtdraw_drawthread(layout->layout_thread[i], target, r, draw->view_l, draw->view_t, layout->vobjbgcol);
 		if (err < 0) {
 			return err;
 		}
@@ -485,7 +486,7 @@ EXPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r)
 	return 0;
 }
 
-EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread, RECT *vframe)
+EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtlist_tuple_t **thread, RECT *vframe)
 {
 	W i,abs_x,abs_y,l,t,r,b;
 	sbjtlayout_t *layout;
@@ -503,7 +504,7 @@ EXPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t 
 		b = sbjt_thread->view_t + sbjt_thread->vframe.c.bottom;
 		if ((l <= abs_x)&&(abs_x < r)
 			&&(t <= abs_y)&&(abs_y < b)) {
-			*thread = sbjt_thread->parser_thread;
+			*thread = sbjt_thread->tuple;
 			if (vframe != NULL) {
 				vframe->c.left = l - draw->view_l;
 				vframe->c.top = t - draw->view_t;

@@ -43,6 +43,7 @@
 #include	"subjectretriever.h"
 #include	"subjectcache.h"
 #include	"subjectparser.h"
+#include	"subjectlist.h"
 #include	"subjectlayout.h"
 #include    "bbsmenuretriever.h"
 #include    "bbsmenucache.h"
@@ -222,7 +223,7 @@ LOCAL VOID bchanl_subjectwindow_close(bchanl_t *bchanl)
 
 LOCAL VOID bchanl_subjectwindow_press(bchanl_t *bchanl, PNT evpos)
 {
-	sbjtparser_thread_t *thread;
+	sbjtlist_tuple_t *tuple;
 	sbjtdraw_t *draw;
 	WID wid_butup;
 	W event_type, size, err, fsn_len, dx, dy;
@@ -240,7 +241,7 @@ LOCAL VOID bchanl_subjectwindow_press(bchanl_t *bchanl, PNT evpos)
 	}
 	draw = bchanl_subject_getdraw(bchanl->currentsubject);
 
-	err = sbjtdraw_findthread(draw, evpos, &thread, &vframe);
+	err = sbjtdraw_findthread(draw, evpos, &tuple, &vframe);
 	if (err == 0) {
 		return;
 	}
@@ -305,7 +306,7 @@ LOCAL VOID bchanl_subjectwindow_press(bchanl_t *bchanl, PNT evpos)
 		return;
 	}
 	fsn_len = dget_siz((B*)fsn);
-	err = bchanl_subject_createviewervobj(bchanl->currentsubject, thread, fsn, fsn_len, &vrec.vseg, (LINK*)&vrec.vlnk);
+	err = bchanl_subject_createviewervobj(bchanl->currentsubject, tuple, fsn, fsn_len, &vrec.vseg, (LINK*)&vrec.vlnk);
 	if (err < 0) {
 		DP_ER("bchanl_subject_createviewervobj error", err);
 		return;

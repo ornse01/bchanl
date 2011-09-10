@@ -1,7 +1,7 @@
 /*
  * bchanl_subject.c
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -60,6 +60,7 @@ struct bchanl_subject_t_ {
 	GID gid;
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
+	sbjtlist_t *list;
 	sbjtlayout_t *layout;
 	sbjtdraw_t *draw;
 	TC *title;
@@ -103,11 +104,16 @@ EXPORT sbjtdraw_t* bchanl_subject_getdraw(bchanl_subject_t *subject)
 EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 {
 	sbjtparser_t *parser;
+	sbjtlist_t *list;
 	sbjtlayout_t *layout;
 	sbjtparser_thread_t *thread = NULL;
+	sbjtlist_iterator_t *list_iter;
+	sbjtlist_tuple_t *tuple;
 	W err;
+	Bool next;
 
 	parser = subject->parser;
+	list = subject->list;
 	layout = subject->layout;
 
 	sbjtlayout_clear(layout);
@@ -119,16 +125,28 @@ EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 			break;
 		}
 		if (thread != NULL) {
-			sbjtlayout_appendthread(layout, thread);
+			sbjtlist_appendthread(list, thread);
 		} else {
 			break;
 		}
 	}
 
+	sbjtlist_sort(list, SBJTLIST_SORTBY_NUMBER, NULL, 0);
+
+	list_iter = sbjtlist_startread(list, False);
+	for (;;) {
+		next = sbjtlist_iterator_next(list_iter, &tuple);
+		if (next == False) {
+			break;
+		}
+		sbjtlayout_appendthread(layout, tuple);
+	}
+	sbjtlist_endread(list, list_iter);
+
 	return 0;
 }
 
-EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_thread_t *thread, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk)
+EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk)
 {
 	W fd, len, err;
 	UB *bin;
@@ -145,17 +163,11 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 	seg->bgcol = 0x10ffffff;
 	seg->dlen = 0;
 
-	/* should move to parser? */
-	str = tc_strrchr(thread->title, TK_LPAR);
-	if (str == NULL) {
-		len = thread->title_len;
-	} else {
-		len = (str - thread->title) - 1;
-	}
+	sbjtlist_tuple_gettitle(tuple, &str, &len);
 	if (len > 20) {
 		len = 20;
 	}
-	tc_strncpy(title, thread->title, len);
+	tc_strncpy(title, str, len);
 	title[len] = TNULL;
 
 	fd = cre_fil(lnk, title, NULL, 1, F_FLOAT);
@@ -217,8 +229,7 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtparser_t
 		del_fil(NULL, lnk, 0);
 		return fd;
 	}
-	bin = thread->number;
-	len = thread->number_len;
+	sbjtlist_tuple_getthreadnumberstr(tuple, &bin, &len);
 	err = wri_rec(fd, -1, bin, len, NULL, NULL, 0);
 	if (err < 0) {
 		DP_ER("wri_rec:thread error", err);
@@ -279,6 +290,7 @@ LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, 
 {
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
+	sbjtlist_t *list;
 	sbjtlayout_t *layout;
 	sbjtdraw_t *draw;
 	TC *title_buf;
@@ -291,6 +303,10 @@ LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, 
 	parser = sbjtparser_new(cache);
 	if (parser == NULL) {
 		goto error_parser;
+	}
+	list = sbjtlist_new();
+	if (list == NULL) {
+		goto error_list;
 	}
 	layout = sbjtlayout_new(gid);
 	if (layout == NULL) {
@@ -320,6 +336,7 @@ LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, 
 	subject->gid = gid;
 	subject->cache = cache;
 	subject->parser = parser;
+	subject->list = list;
 	subject->layout = layout;
 	subject->draw = draw;
 	subject->title = title_buf;
@@ -333,6 +350,8 @@ error_title:
 error_draw:
 	sbjtlayout_delete(layout);
 error_layout:
+	sbjtlist_delete(list);
+error_list:
 	sbjtparser_delete(parser);
 error_parser:
 	sbjtcache_delete(cache);
@@ -345,6 +364,7 @@ LOCAL VOID bchanl_subject_finalize(bchanl_subject_t *subject)
 	free(subject->title);
 	sbjtdraw_delete(subject->draw);
 	sbjtlayout_delete(subject->layout);
+	sbjtlist_delete(subject->list);
 	sbjtparser_delete(subject->parser);
 	sbjtcache_delete(subject->cache);
 }

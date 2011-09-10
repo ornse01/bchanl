@@ -1,7 +1,7 @@
 /*
  * subjectlayout.h
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -27,7 +27,7 @@
 #include    <basic.h>
 #include	<btron/dp.h>
 
-#include    "subjectparser.h"
+#include    "subjectlist.h"
 
 #ifndef __SUBJECTLAYOUT_H__
 #define __SUBJECTLAYOUT_H__
@@ -36,7 +36,7 @@ typedef struct sbjtlayout_t_ sbjtlayout_t;
 
 IMPORT sbjtlayout_t* sbjtlayout_new(GID gid);
 IMPORT VOID sbjtlayout_delete(sbjtlayout_t *layout);
-IMPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtparser_thread_t *parser_thread);
+IMPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtlist_tuple_t *tuple);
 IMPORT VOID sbjtlayout_getdrawrect(sbjtlayout_t *layout, W *l, W *t, W *r, W *b);
 IMPORT TC* sbjtlayout_gettitle(sbjtlayout_t *layout);
 IMPORT VOID sbjtlayout_clear(sbjtlayout_t *layout);
@@ -49,7 +49,7 @@ typedef struct sbjtdraw_t_ sbjtdraw_t;
 IMPORT sbjtdraw_t* sbjtdraw_new(sbjtlayout_t *layout);
 IMPORT VOID sbjtdraw_delete(sbjtdraw_t *draw);
 IMPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r);
-IMPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtparser_thread_t **thread, RECT *vframe);
+IMPORT W sbjtdraw_findthread(sbjtdraw_t *draw, PNT rel_pos, sbjtlist_tuple_t **thread, RECT *vframe);
 IMPORT VOID sbjtdraw_setviewrect(sbjtdraw_t *draw, W l, W t, W r, W b);
 IMPORT VOID sbjtdraw_getviewrect(sbjtdraw_t *draw, W *l, W *t, W *r, W *b);
 IMPORT VOID sbjtdraw_scrollviewrect(sbjtdraw_t *draw, W dh, W dv);

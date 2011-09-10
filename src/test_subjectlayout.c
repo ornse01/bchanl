@@ -1,7 +1,7 @@
 /*
  * test_subjectlayout.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2011 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,6 +34,7 @@
 #include    "test.h"
 
 #include    "subjectlayout.h"
+#include    "subjectlist.h"
 #include    "subjectparser.h"
 #include    "subjectcache.h"
 
@@ -99,7 +100,11 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 	BMP *bmp;
 	GID gid;
 	W err;
+	Bool next;
 	sbjtlayout_t *layout;
+	sbjtlist_t *list;
+	sbjtlist_iterator_t *list_iter;
+	sbjtlist_tuple_t *tuple;
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
 	sbjtparser_thread_t *thread = NULL;
@@ -118,6 +123,7 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 	sbjtcache_appenddata(cache, test_sbjtlayout_testdata_01, strlen(test_sbjtlayout_testdata_01));
 
 	parser = sbjtparser_new(cache);
+	list = sbjtlist_new();
 	layout = sbjtlayout_new(gid);
 
 	for (;;) {
@@ -126,13 +132,26 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 			break;
 		}
 		if (thread != NULL) {
-			sbjtlayout_appendthread(layout, thread);
+			sbjtlist_appendthread(list, thread);
 		} else {
 			break;
 		}
 	}
 
+	sbjtlist_sort(list, SBJTLIST_SORTBY_NUMBER, NULL, 0);
+
+	list_iter = sbjtlist_startread(list, False);
+	for (;;) {
+		next = sbjtlist_iterator_next(list_iter, &tuple);
+		if (next == False) {
+			break;
+		}
+		sbjtlayout_appendthread(layout, tuple);
+	}
+	sbjtlist_endread(list, list_iter);
+
 	sbjtlayout_delete(layout);
+	sbjtlist_delete(list);
 	sbjtparser_delete(parser);
 
 	sbjtcache_delete(cache);
