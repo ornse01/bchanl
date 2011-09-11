@@ -248,17 +248,64 @@ EXPORT W sbjtlist_appendthread(sbjtlist_t *list, sbjtparser_thread_t *parser_thr
 	return sbjtlist_originarray_append(&list->origin, parser_thread, current);
 }
 
+LOCAL Bool sbjtlist_checkfilterwordexist(TC *title, W title_len, TC *filterword, W filterword_len)
+{
+	Bool found = False;
+	TC *cur;
+	TC ch;
+	W cmp;
+
+	cur = title;
+	ch = filterword[0];
+	for (;;) {
+		cur = tc_strchr(cur, ch);
+		if (cur == NULL) {
+			break;
+		}
+		if (cur > title + title_len) {
+			break;
+		}
+		cmp = tc_strncmp(cur, filterword, filterword_len);
+		if (cmp == 0) {
+			found = True;
+			break;
+		}
+		cur++;
+	}
+
+	return found;
+}
+
 LOCAL W sbjtlist_copyarraywithfilter(sbjtlist_t *list, TC *filterword, W filterword_len)
 {
-	W i, len, err;
-	Bool found;
+	W i, len, err, title_len;
+	TC *title;
+	Bool found, exist;
 	sbjtlist_tuple_t *tuple;
 
 	len = sbjtlist_originarray_length(&list->origin);
-	for (i = 0; i < len; i++) {
-		found = sbjtlist_originarray_getbyindex(&list->origin, i, &tuple);
-		if (found == True) {
-			/* TODO: check filter word */
+	if (filterword != NULL) {
+		for (i = 0; i < len; i++) {
+			found = sbjtlist_originarray_getbyindex(&list->origin, i, &tuple);
+			if (found == False) {
+				break;
+			}
+			sbjtlist_tuple_gettitle(tuple, &title, &title_len);
+			exist = sbjtlist_checkfilterwordexist(title, title_len, filterword, filterword_len);
+			if (exist == False) {
+				continue;
+			}
+			err = sbjtlist_sortedarray_append(&list->sorted, tuple);
+			if (err < 0) {
+				return err;
+			}
+		}
+	} else {
+		for (i = 0; i < len; i++) {
+			found = sbjtlist_originarray_getbyindex(&list->origin, i, &tuple);
+			if (found == False) {
+				break;
+			}
 			err = sbjtlist_sortedarray_append(&list->sorted, tuple);
 			if (err < 0) {
 				return err;
