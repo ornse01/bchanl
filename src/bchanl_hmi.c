@@ -478,7 +478,7 @@ EXPORT W subjectoptionwindow_gettextboxaction(subjectoptionwindow_t *window, TC 
 			return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY;
 		case (0x4000|P_NL):
 			len0 = cget_val(window->tb_filter_id, 128, (W*)window->strbuf);
-			if (len0 <= 0) {
+			if (len0 < 0) {
 				return SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH;
 			}
 			*val = window->strbuf;
