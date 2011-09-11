@@ -449,6 +449,10 @@ LOCAL VOID bchanl_changesubjectorder(bchanl_t *bchanl, W neworder)
 	W orderby, len;
 	TC buf[512];
 
+	if (bchanl->currentsubject == NULL) {
+		return;
+	}
+
 	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
 	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
 
@@ -459,6 +463,10 @@ LOCAL VOID bchanl_changesubjectorderby(bchanl_t *bchanl, W neworderby)
 {
 	W order, len;
 	TC buf[512];
+
+	if (bchanl->currentsubject == NULL) {
+		return;
+	}
 
 	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
 	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
@@ -473,6 +481,10 @@ LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr
 	W order, orderby;
 	RECT w_work;
 	W l, t, r, b;
+
+	if (bchanl->currentsubject == NULL) {
+		return;
+	}
 
 	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
 	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
