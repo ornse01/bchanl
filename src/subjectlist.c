@@ -352,6 +352,9 @@ LOCAL VOID sbjtlist_sortedarray_combsort(sbjtlist_sortedarray_t *array, W by)
 	sbjtlist_tuple_t *tuple_i, *tuple_i_h;
 
 	len = sbjtlist_sortedarray_length(array);
+	if (len <= 1) {
+		return;
+	}
 	h = len * 10 / 13;
 
 	for (;;) {
