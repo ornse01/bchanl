@@ -468,12 +468,25 @@ LOCAL VOID bchanl_changesubjectorderby(bchanl_t *bchanl, W neworderby)
 
 LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr_len)
 {
+	sbjtlayout_t *layout;
+	sbjtdraw_t *draw;
 	W order, orderby;
+	RECT w_work;
+	W l, t, r, b;
 
 	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
 	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
 
 	bchanl_updatesubjectorder(bchanl, order, orderby, newstr, newstr_len);
+
+	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
+	draw = bchanl_subject_getdraw(bchanl->currentsubject);
+	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
+	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
+
+	layout = bchanl_subject_getlayout(bchanl->currentsubject);
+	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
+	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
 }
 
 LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
