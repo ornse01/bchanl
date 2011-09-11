@@ -1254,7 +1254,6 @@ LOCAL VOID bchanl_event_subjectoptiontextbox(bchanl_t *bchanl)
 		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MOVE) {
 		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY) {
 		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND) {
-			printf("textbox %S\n", str);
 			bchanl_changesubjectfilterword(bchanl, str, len);
 		}
 	}
@@ -1339,11 +1338,9 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER:
-		printf("change order to %d\n", evt->data.subjectoption_changeorder.order);
 		bchanl_changesubjectorder(bchanl, evt->data.subjectoption_changeorder.order);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY:
-		printf("change orderby to %d\n", evt->data.subjectoption_changeorderby.orderby);
 		bchanl_changesubjectorderby(bchanl, evt->data.subjectoption_changeorderby.orderby);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX:
