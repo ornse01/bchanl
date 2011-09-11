@@ -78,6 +78,7 @@ struct subjectoptionwindow_t_ {
 	W order;
 	W orderby;
 	TC strbuf[SUBJECTOPTIONWINDOW_STRBUF_LEN];
+	W strbuf_written;
 	Bool tb_appended;
 };
 
@@ -396,6 +397,7 @@ EXPORT W subjectoptionwindow_settext(subjectoptionwindow_t *window, TC *str, W l
 		cp_len = SUBJECTOPTIONWINDOW_STRBUF_LEN;
 	}
 	memcpy(window->strbuf, str, cp_len * sizeof(TC));
+	window->strbuf_written = cp_len;
 	if (window->wid < 0) {
 		return 0;
 	}
@@ -417,10 +419,10 @@ EXPORT W subjectoptionwindow_gettext(subjectoptionwindow_t *window, TC *str, W l
 {
 	W cp_len;
 
-	if (len < SUBJECTOPTIONWINDOW_STRBUF_LEN) {
+	if (len < window->strbuf_written) {
 		cp_len = len;
 	} else {
-		cp_len = SUBJECTOPTIONWINDOW_STRBUF_LEN;
+		cp_len = window->strbuf_written;
 	}
 	memcpy(str, window->strbuf, cp_len * sizeof(TC));
 
@@ -1102,6 +1104,7 @@ LOCAL subjectoptionwindow_t* subjectoptionwindow_new(PNT *p, WID parent, W dnum_
 	window->order = SUBJECTOPTIONWINDOW_ORDER_ASCENDING;
 	window->orderby = SUBJECTOPTIONWINDOW_ORDERBY_NUMBER;
 	memset(window->strbuf, 0, sizeof(TC)*SUBJECTOPTIONWINDOW_STRBUF_LEN);
+	window->strbuf_written = 0;
 
 	return window;
 }
