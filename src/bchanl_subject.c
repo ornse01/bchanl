@@ -118,6 +118,7 @@ EXPORT W bchanl_subject_relayout(bchanl_subject_t *subject)
 	layout = subject->layout;
 
 	sbjtlayout_clear(layout);
+	sbjtlist_clear(list);
 	sbjtparser_clear(parser);
 
 	get_tim(&current, NULL);
