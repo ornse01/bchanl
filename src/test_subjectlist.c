@@ -123,7 +123,7 @@ LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby
 			break;
 		}
 		if (i >= expected_len) {
-			result = False;
+			result = TEST_RESULT_FAIL;
 			break;
 		}
 		sbjtlist_tuple_gettitle(tuple, &title, &len);
@@ -142,6 +142,10 @@ LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby
 		}
 	}
 	sbjtlist_endread(list, list_iter);
+
+	if ((result = TEST_RESULT_PASS) && (i != expected_len)) {
+		result = TEST_RESULT_FAIL;
+	}
 
 	sbjtlist_delete(list);
 	sbjtparser_delete(parser);
@@ -367,6 +371,79 @@ LOCAL TEST_RESULT test_sbjtlist_8()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_VIGOR, True, NULL, 0, expected, sizeof(expected));
 }
 
+LOCAL TEST_RESULT test_sbjtlist_9()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+	};
+	TC filter[] = {0x2332, 0x2441, 0x2463, 0x2473, 0x244d, 0x246b, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_10()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			2,
+			test_sbjtlist_title_02,
+			tc_strlen(test_sbjtlist_title_02)
+		},
+	};
+	TC filter[] = {0x2361, 0x2361, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_11()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			3,
+			test_sbjtlist_title_03,
+			tc_strlen(test_sbjtlist_title_03)
+		},
+		{
+			4,
+			test_sbjtlist_title_04,
+			tc_strlen(test_sbjtlist_title_04)
+		},
+	};
+	TC filter[] = {0x2539, 0x256c, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_12()
+{
+	testsbjtlist_expected_t expected[] = {
+		{
+			1,
+			test_sbjtlist_title_01,
+			tc_strlen(test_sbjtlist_title_01)
+		},
+	};
+	TC filter[] = {0x2532, 0x2543, 0x2548, 0x212a, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_13()
+{
+	testsbjtlist_expected_t expected[] = {
+	};
+	TC filter[] = {0x2422, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
+LOCAL TEST_RESULT test_sbjtlist_14()
+{
+	testsbjtlist_expected_t expected[] = {
+	};
+	TC filter[] = {0x2332, 0x2441, 0x2463, 0x2473, 0x244d, 0x2422, TNULL};
+	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
+}
+
 LOCAL VOID test_sbjtlist_printresult(TEST_RESULT (*proc)(), B *test_name)
 {
 	TEST_RESULT result;
@@ -392,4 +469,10 @@ EXPORT VOID test_sbjtlist_main()
 	test_sbjtlist_printresult(test_sbjtlist_6, "test_sbjtlist_6");
 	test_sbjtlist_printresult(test_sbjtlist_7, "test_sbjtlist_7");
 	test_sbjtlist_printresult(test_sbjtlist_8, "test_sbjtlist_8");
+	test_sbjtlist_printresult(test_sbjtlist_9, "test_sbjtlist_9");
+	test_sbjtlist_printresult(test_sbjtlist_10, "test_sbjtlist_10");
+	test_sbjtlist_printresult(test_sbjtlist_11, "test_sbjtlist_11");
+	test_sbjtlist_printresult(test_sbjtlist_12, "test_sbjtlist_12");
+	test_sbjtlist_printresult(test_sbjtlist_13, "test_sbjtlist_13");
+	test_sbjtlist_printresult(test_sbjtlist_14, "test_sbjtlist_14");
 }
