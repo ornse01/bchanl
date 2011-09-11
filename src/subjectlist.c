@@ -284,7 +284,7 @@ LOCAL W sbjtlist_copyarraywithfilter(sbjtlist_t *list, TC *filterword, W filterw
 	sbjtlist_tuple_t *tuple;
 
 	len = sbjtlist_originarray_length(&list->origin);
-	if (filterword != NULL) {
+	if (filterword_len > 0) {
 		for (i = 0; i < len; i++) {
 			found = sbjtlist_originarray_getbyindex(&list->origin, i, &tuple);
 			if (found == False) {
