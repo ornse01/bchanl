@@ -1,7 +1,7 @@
 /*
  * subjectlist.c
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -32,7 +32,7 @@
 
 #include    "subjectlist.h"
 #include    "subjectparser.h"
-#include    "array.h"
+#include	<coll/arraybase.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg

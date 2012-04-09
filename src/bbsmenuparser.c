@@ -1,7 +1,7 @@
 /*
  * bbsmenuparser.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -32,7 +32,7 @@
 #include	<btron/tf.h>
 
 #include    "bbsmenuparser.h"
-#include    "parselib.h"
+#include	<parse/tokenchecker.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -43,10 +43,8 @@
 #endif
 
 LOCAL tokenchecker_valuetuple_t nList_element[] = {
-  {NULL,0},
   {"A HREF", 1},
   {"B", 2},
-  {NULL,0}
 };
 LOCAL B eToken_element[] = ">=";
 
@@ -170,7 +168,7 @@ LOCAL W bbsmnparser_convert_str(bbsmnparser_t *parser, const UB *src, W slen, UW
 LOCAL W bbsmnparser_parsechar(bbsmnparser_t *parser, UB ch, bbsmnparser_item_t *item)
 {
 	TC **str;
-	W *len, ret, err;
+	W *len, ret, err, val;
 
 	switch (parser->state) {
 	case STATE_READBOARDTITLE:
@@ -194,22 +192,21 @@ LOCAL W bbsmnparser_parsechar(bbsmnparser_t *parser, UB ch, bbsmnparser_item_t *
 		}
 		break;
 	case STATE_ELEMENTCHECK:
-		ret = tokenchecker_inputcharacter(&(parser->tokenchecker), ch);
-		if (ret == TOKENCHECK_CONTINUE) {
+		ret = tokenchecker_inputchar(&(parser->tokenchecker), ch, &val);
+		if (ret == TOKENCHECKER_RESULT_CONTINUE) {
 			break;
 		}
-		tokenchecker_resetstate(&(parser->tokenchecker));
-		if (ret == TOKENCHECK_NOMATCH) {
-		} else if (ret == 1) {
-			/* "A HREF " */
-			parser->state = STATE_READBOARDURL;
-			break;
-		} else if (ret == 2) {
-			/* "B" */
-			parser->state = STATE_READCATEGORY;
-			break;
-		} else {
-			DP(("error\n"));
+		tokenchecker_clear(&(parser->tokenchecker));
+		if (ret == TOKENCHECKER_RESULT_DETERMINE) {
+			if (val == 1) {
+				/* "A HREF " */
+				parser->state = STATE_READBOARDURL;
+				break;
+			} else if (val == 2) {
+				/* "B" */
+				parser->state = STATE_READCATEGORY;
+				break;
+			}
 		}
 		parser->state = STATE_SEARCHTAG;
 		break;
@@ -454,7 +451,7 @@ EXPORT bbsmnparser_t* bbsmnparser_new(bbsmncache_t *cache)
 		return NULL;
 	}
 
-	tokenchecker_initialize(&(parser->tokenchecker), nList_element, eToken_element);
+	tokenchecker_initialize(&(parser->tokenchecker), nList_element, 2, eToken_element);
 
 	return parser;
 }

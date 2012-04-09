@@ -35,10 +35,10 @@ S = ../src
 VPATH = $(S)
 
 # ヘッダファイルのディレクトリ追加
-HEADER := $(S) $(HEADER)
+HEADER := $(S) $(HEADER) ../src/bchanf/src
 
 # ソースファイル
-SRC =	main.c subjectcache.c subjectparser.c subjectlayout.c cache.c bbsmenucache.c bbsmenuparser.c bbsmenulayout.c bchanl_subject.c retriever.c subjectretriever.c tadlib.c bbsmenuretriever.c parselib.c bbsmenufilter.c bchanl_hmi.c hmi_wscr.c bchanl_menus.c subjectlist.c array.c
+SRC =	main.c subjectcache.c subjectparser.c subjectlayout.c cache.c bbsmenucache.c bbsmenuparser.c bbsmenulayout.c bchanl_subject.c retriever.c subjectretriever.c tadlib.c bbsmenuretriever.c bbsmenufilter.c bchanl_hmi.c hmi_wscr.c bchanl_menus.c subjectlist.c
 
 # データボックスソースファイル
 DBSRC =
@@ -67,10 +67,14 @@ NOINST = $(addprefix $(TARGET), .out .fsn .dbx)
 
 all: $(INST)
 
-$(TARGET).out: $(OBJ)
+bchanf/libbchanf.a:
+	@$(MAKE) -f Makefile.lib -C ./bchanf
+
+$(TARGET).out: $(OBJ) bchanf/libbchanf.a
 	$(LINK.o) $(LDOBJS) $^ $(LOADLIBES) $(LDLIBS) $(OUTPUT_OPTION)
 
 clean:
+	@$(MAKE) clean -f Makefile.lib -C ./bchanf
 	$(RM) $(OBJ)
 	$(RM) $(WC_SRC:%.C=%.c) $(DBSRC)
 	$(RM) $(INST) $(NOINST) *.lst $(DEPS)

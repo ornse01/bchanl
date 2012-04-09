@@ -1,7 +1,7 @@
 /*
  * subjectparser.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,7 +34,8 @@
 #include	<btron/tf.h>
 
 #include    "subjectparser.h"
-#include    "parselib.h"
+#include	<parse/tokenchecker.h>
+#include	<parse/charreferparser.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -182,7 +183,7 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 	TC **str;
 	W *len;
 	UB chref;
-	charreferparser_result_t chref_result;
+	CHARREFERPARSER_RESULT chref_result;
 
 	str = &(thr->title);
 	len = &(thr->title_len);
