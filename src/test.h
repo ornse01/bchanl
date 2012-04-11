@@ -25,37 +25,33 @@
  */
 
 #include    <basic.h>
+#include    <unittest_driver.h>
 
 #ifndef __BCHANL_TEST_H__
 #define __BCHANL_TEST_H__
 
-typedef enum {
-	TEST_RESULT_PASS,
-	TEST_RESULT_FAIL
-} TEST_RESULT;
-
 /* test_subjectcache.c */
-IMPORT VOID test_sbjtcache_main();
+IMPORT VOID test_sbjtcache_main(unittest_driver_t *driver);
 
 /* test_subjectparser.c */
-IMPORT VOID test_sbjtparser_main();
+IMPORT VOID test_sbjtparser_main(unittest_driver_t *driver);
 
 /* test_subjectlist.c */
-IMPORT VOID test_sbjtlist_main();
+IMPORT VOID test_sbjtlist_main(unittest_driver_t *driver);
 
 /* test_subjectlayout.c */
-IMPORT VOID test_sbjtlayout_main();
+IMPORT VOID test_sbjtlayout_main(unittest_driver_t *driver);
 
 /* test_bbsmenucache.c */
-IMPORT VOID test_bbsmncache_main();
+IMPORT VOID test_bbsmncache_main(unittest_driver_t *driver);
 
 /* test_bbsmenuparser.c */
-IMPORT VOID test_bbsmnparser_main();
+IMPORT VOID test_bbsmnparser_main(unittest_driver_t *driver);
 
 /* test_bbsmenulayout.c */
-IMPORT VOID test_bbsmnlayout_main();
+IMPORT VOID test_bbsmnlayout_main(unittest_driver_t *driver);
 
 /* test_bbsmenufilter.c */
-IMPORT VOID test_bbsmnfilter_main();
+IMPORT VOID test_bbsmnfilter_main(unittest_driver_t *driver);
 
 #endif

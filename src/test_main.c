@@ -27,18 +27,32 @@
 #include	<basic.h>
 #include	<btron/btron.h>
 
+#include    <unittest_driver.h>
+
 #include    "test.h"
 
 EXPORT	W	MAIN(MESSAGE *msg)
 {
-	test_sbjtcache_main();
-	test_sbjtparser_main();
-	test_sbjtlist_main();
-	test_sbjtlayout_main();
-	test_bbsmncache_main();
-	test_bbsmnparser_main();
-	test_bbsmnlayout_main();
-	test_bbsmnfilter_main();
+	unittest_driver_t *driver;
+
+	malloctest(-2);
+
+	driver = unittest_driver_new();
+	if (driver == NULL) {
+		return 0;
+	}
+
+	test_sbjtcache_main(driver);
+	test_sbjtparser_main(driver);
+	test_sbjtlist_main(driver);
+	test_sbjtlayout_main(driver);
+	test_bbsmncache_main(driver);
+	test_bbsmnparser_main(driver);
+	test_bbsmnlayout_main(driver);
+	test_bbsmnfilter_main(driver);
+
+	unittest_driver_runnning(driver);
+	unittest_driver_delete(driver);
 
 	return 0;
 }

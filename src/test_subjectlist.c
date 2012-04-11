@@ -1,7 +1,7 @@
 /*
  * test_subjectlist.c
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,10 @@
  *
  */
 
+#include    "test.h"
+
+#include    "subjectlist.h"
+
 #include    <btron/btron.h>
 #include	<btron/dp.h>
 #include	<tcode.h>
@@ -32,9 +36,8 @@
 #include    <bstdlib.h>
 #include    <tstring.h>
 
-#include    "test.h"
+#include    <unittest_driver.h>
 
-#include    "subjectlist.h"
 #include    "subjectparser.h"
 #include    "subjectcache.h"
 
@@ -83,7 +86,7 @@ struct testsbjtlist_expected_t_ {
 };
 typedef struct testsbjtlist_expected_t_ testsbjtlist_expected_t;
 
-LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby, Bool descendant, TC *filterword, W filterword_len, testsbjtlist_expected_t *expected, W expected_len)
+LOCAL UNITTEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby, Bool descendant, TC *filterword, W filterword_len, testsbjtlist_expected_t *expected, W expected_len)
 {
 	W err, num, len, i;
 	Bool next;
@@ -94,7 +97,7 @@ LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
 	sbjtparser_thread_t *thread = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	cache = sbjtcache_new();
 	sbjtcache_appenddata(cache, testdata, testdata_len);
@@ -123,28 +126,28 @@ LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby
 			break;
 		}
 		if (i >= expected_len) {
-			result = TEST_RESULT_FAIL;
+			result = UNITTEST_RESULT_FAIL;
 			break;
 		}
 		sbjtlist_tuple_gettitle(tuple, &title, &len);
 		sbjtlist_tuple_getnumber(tuple, &num);
 		if (expected[i].num != num) {
-			result = TEST_RESULT_FAIL;
+			result = UNITTEST_RESULT_FAIL;
 			break;
 		}
 		if (expected[i].title_len != len) {
-			result = TEST_RESULT_FAIL;
+			result = UNITTEST_RESULT_FAIL;
 			break;
 		}
 		if (tc_strncmp(title, expected[i].title, len) != 0) {
-			result = TEST_RESULT_FAIL;
+			result = UNITTEST_RESULT_FAIL;
 			break;
 		}
 	}
 	sbjtlist_endread(list, list_iter);
 
-	if ((result = TEST_RESULT_PASS) && (i != expected_len)) {
-		result = TEST_RESULT_FAIL;
+	if ((result = UNITTEST_RESULT_PASS) && (i != expected_len)) {
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtlist_delete(list);
@@ -155,7 +158,7 @@ LOCAL TEST_RESULT test_sbjtlist_checksort(UB *testdata, W testdata_len, W sortby
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtlist_1()
+LOCAL UNITTEST_RESULT test_sbjtlist_1()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -182,7 +185,7 @@ LOCAL TEST_RESULT test_sbjtlist_1()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_2()
+LOCAL UNITTEST_RESULT test_sbjtlist_2()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -209,7 +212,7 @@ LOCAL TEST_RESULT test_sbjtlist_2()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_RES, False, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_3()
+LOCAL UNITTEST_RESULT test_sbjtlist_3()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -236,7 +239,7 @@ LOCAL TEST_RESULT test_sbjtlist_3()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_SINCE, False, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_4()
+LOCAL UNITTEST_RESULT test_sbjtlist_4()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -263,7 +266,7 @@ LOCAL TEST_RESULT test_sbjtlist_4()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_VIGOR, False, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_5()
+LOCAL UNITTEST_RESULT test_sbjtlist_5()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -290,7 +293,7 @@ LOCAL TEST_RESULT test_sbjtlist_5()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, True, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_6()
+LOCAL UNITTEST_RESULT test_sbjtlist_6()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -317,7 +320,7 @@ LOCAL TEST_RESULT test_sbjtlist_6()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_RES, True, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_7()
+LOCAL UNITTEST_RESULT test_sbjtlist_7()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -344,7 +347,7 @@ LOCAL TEST_RESULT test_sbjtlist_7()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_SINCE, True, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_8()
+LOCAL UNITTEST_RESULT test_sbjtlist_8()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -371,7 +374,7 @@ LOCAL TEST_RESULT test_sbjtlist_8()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_VIGOR, True, NULL, 0, expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_9()
+LOCAL UNITTEST_RESULT test_sbjtlist_9()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -384,7 +387,7 @@ LOCAL TEST_RESULT test_sbjtlist_9()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_10()
+LOCAL UNITTEST_RESULT test_sbjtlist_10()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -397,7 +400,7 @@ LOCAL TEST_RESULT test_sbjtlist_10()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_11()
+LOCAL UNITTEST_RESULT test_sbjtlist_11()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -415,7 +418,7 @@ LOCAL TEST_RESULT test_sbjtlist_11()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_12()
+LOCAL UNITTEST_RESULT test_sbjtlist_12()
 {
 	testsbjtlist_expected_t expected[] = {
 		{
@@ -428,7 +431,7 @@ LOCAL TEST_RESULT test_sbjtlist_12()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_13()
+LOCAL UNITTEST_RESULT test_sbjtlist_13()
 {
 	testsbjtlist_expected_t expected[] = {
 	};
@@ -436,7 +439,7 @@ LOCAL TEST_RESULT test_sbjtlist_13()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL TEST_RESULT test_sbjtlist_14()
+LOCAL UNITTEST_RESULT test_sbjtlist_14()
 {
 	testsbjtlist_expected_t expected[] = {
 	};
@@ -444,35 +447,20 @@ LOCAL TEST_RESULT test_sbjtlist_14()
 	return test_sbjtlist_checksort(test_sbjtlist_testdata_01, strlen(test_sbjtlist_testdata_01), SBJTLIST_SORTBY_NUMBER, False, filter, tc_strlen(filter), expected, sizeof(expected));
 }
 
-LOCAL VOID test_sbjtlist_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_sbjtlist_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_sbjtlist: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_sbjtlist_main()
-{
-	test_sbjtlist_printresult(test_sbjtlist_1, "test_sbjtlist_1");
-	test_sbjtlist_printresult(test_sbjtlist_2, "test_sbjtlist_2");
-	test_sbjtlist_printresult(test_sbjtlist_3, "test_sbjtlist_3");
-	test_sbjtlist_printresult(test_sbjtlist_4, "test_sbjtlist_4");
-	test_sbjtlist_printresult(test_sbjtlist_5, "test_sbjtlist_5");
-	test_sbjtlist_printresult(test_sbjtlist_6, "test_sbjtlist_6");
-	test_sbjtlist_printresult(test_sbjtlist_7, "test_sbjtlist_7");
-	test_sbjtlist_printresult(test_sbjtlist_8, "test_sbjtlist_8");
-	test_sbjtlist_printresult(test_sbjtlist_9, "test_sbjtlist_9");
-	test_sbjtlist_printresult(test_sbjtlist_10, "test_sbjtlist_10");
-	test_sbjtlist_printresult(test_sbjtlist_11, "test_sbjtlist_11");
-	test_sbjtlist_printresult(test_sbjtlist_12, "test_sbjtlist_12");
-	test_sbjtlist_printresult(test_sbjtlist_13, "test_sbjtlist_13");
-	test_sbjtlist_printresult(test_sbjtlist_14, "test_sbjtlist_14");
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_1);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_2);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_3);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_4);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_5);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_6);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_7);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_8);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_9);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_10);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_11);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_12);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_13);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlist_14);
 }

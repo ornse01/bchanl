@@ -1,7 +1,7 @@
 /*
  * test_subjectcache.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,10 @@
  *
  */
 
+#include    "test.h"
+
+#include    "subjectcache.h"
+
 #include    <btron/btron.h>
 #include	<tcode.h>
 #include    <bstdio.h>
@@ -31,9 +35,7 @@
 #include    <bstdlib.h>
 #include	<errcode.h>
 
-#include    "test.h"
-
-#include    "subjectcache.h"
+#include    <unittest_driver.h>
 
 LOCAL UB test_sbjtcache_testdata_01[] = {"aaaaabbbbbcccccddddd"};
 LOCAL UB test_sbjtcache_testdata_01_1[] = {"aaaaa"};
@@ -75,10 +77,10 @@ LOCAL Bool test_sbjtcache_util_cmp_ctx_str(sbjtcache_datareadcontext_t *context,
 
 /* test_sbjtcache_1 */
 
-LOCAL TEST_RESULT test_sbjtcache_1()
+LOCAL UNITTEST_RESULT test_sbjtcache_1()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *host;
 	W host_len;
 
@@ -86,7 +88,7 @@ LOCAL TEST_RESULT test_sbjtcache_1()
 
 	sbjtcache_gethost(cache, &host, &host_len);
 	if ((host != NULL)||(host_len != 0)) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -96,10 +98,10 @@ LOCAL TEST_RESULT test_sbjtcache_1()
 
 /* test_sbjtcache_2 */
 
-LOCAL TEST_RESULT test_sbjtcache_2()
+LOCAL UNITTEST_RESULT test_sbjtcache_2()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *host;
 	W err, host_len, cmp;
 
@@ -107,14 +109,14 @@ LOCAL TEST_RESULT test_sbjtcache_2()
 
 	err = sbjtcache_updatehost(cache, test_sbjtcache_testdata_04, strlen(test_sbjtcache_testdata_04));
 	if (err < 0) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_gethost(cache, &host, &host_len);
 	cmp = memcmp(host, test_sbjtcache_testdata_04, host_len);
 	if (cmp != 0) {
 		printf("sbjtcache_gethost: data error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -124,10 +126,10 @@ LOCAL TEST_RESULT test_sbjtcache_2()
 
 /* test_sbjtcache_3 */
 
-LOCAL TEST_RESULT test_sbjtcache_3()
+LOCAL UNITTEST_RESULT test_sbjtcache_3()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *board;
 	W board_len;
 
@@ -135,7 +137,7 @@ LOCAL TEST_RESULT test_sbjtcache_3()
 
 	sbjtcache_getboard(cache, &board, &board_len);
 	if ((board != NULL)||(board_len != 0)) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -145,10 +147,10 @@ LOCAL TEST_RESULT test_sbjtcache_3()
 
 /* test_sbjtcache_4 */
 
-LOCAL TEST_RESULT test_sbjtcache_4()
+LOCAL UNITTEST_RESULT test_sbjtcache_4()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *board;
 	W err, board_len, cmp;
 
@@ -156,14 +158,14 @@ LOCAL TEST_RESULT test_sbjtcache_4()
 
 	err = sbjtcache_updateboard(cache, test_sbjtcache_testdata_05, strlen(test_sbjtcache_testdata_05));
 	if (err < 0) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_getboard(cache, &board, &board_len);
 	cmp = memcmp(board, test_sbjtcache_testdata_05, board_len);
 	if (cmp != 0) {
 		printf("sbjtcache_getboard: data error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -173,10 +175,10 @@ LOCAL TEST_RESULT test_sbjtcache_4()
 
 /* test_sbjtcache_5 */
 
-LOCAL TEST_RESULT test_sbjtcache_5_testseq()
+LOCAL UNITTEST_RESULT test_sbjtcache_5_testseq()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *header;
 	W err, header_len, cmp;
 
@@ -186,18 +188,18 @@ LOCAL TEST_RESULT test_sbjtcache_5_testseq()
 	if (err < 0) {
 		printf("sbjtcache_updatelataestheade error\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_getlatestheader(cache, &header, &header_len);
 	if (header_len != strlen(test_sbjtcache_testdata_07)) {
 		printf("sbjtcache_getlatestheader: length error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 	cmp = memcmp(header, test_sbjtcache_testdata_07, header_len);
 	if (cmp != 0) {
 		printf("sbjtcache_getlatestheader: data error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -205,17 +207,17 @@ LOCAL TEST_RESULT test_sbjtcache_5_testseq()
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtcache_5()
+LOCAL UNITTEST_RESULT test_sbjtcache_5()
 {
 	return test_sbjtcache_5_testseq();
 }
 
 /* test_sbjtcache_6 */
 
-LOCAL TEST_RESULT test_sbjtcache_6_testseq()
+LOCAL UNITTEST_RESULT test_sbjtcache_6_testseq()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *header;
 	W err, header_len, cmp;
 
@@ -225,24 +227,24 @@ LOCAL TEST_RESULT test_sbjtcache_6_testseq()
 	if (err < 0) {
 		printf("sbjtcache_updatelataestheade error\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_updatelatestheader(cache, test_sbjtcache_testdata_02, strlen(test_sbjtcache_testdata_02));
 	if (err < 0) {
 		printf("sbjtcache_updatelataestheade error\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_getlatestheader(cache, &header, &header_len);
 	if (header_len != strlen(test_sbjtcache_testdata_02)) {
 		printf("sbjtcache_getlatestheader: length error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 	cmp = memcmp(header, test_sbjtcache_testdata_02, header_len);
 	if (cmp != 0) {
 		printf("sbjtcache_getlatestheader: data error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -250,17 +252,17 @@ LOCAL TEST_RESULT test_sbjtcache_6_testseq()
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtcache_6()
+LOCAL UNITTEST_RESULT test_sbjtcache_6()
 {
 	return test_sbjtcache_6_testseq();
 }
 
 /* test_sbjtcache_7 */
 
-LOCAL TEST_RESULT test_sbjtcache_7_testseq()
+LOCAL UNITTEST_RESULT test_sbjtcache_7_testseq()
 {
 	sbjtcache_t *cache;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *header;
 	W header_len;
 
@@ -269,11 +271,11 @@ LOCAL TEST_RESULT test_sbjtcache_7_testseq()
 	sbjtcache_getlatestheader(cache, &header, &header_len);
 	if (header != NULL) {
 		printf("sbjtcache_getlatestheader: data error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 	if (header_len != 0) {
 		printf("sbjtcache_getlatestheader: length error\n");
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 
 	sbjtcache_delete(cache);
@@ -281,19 +283,19 @@ LOCAL TEST_RESULT test_sbjtcache_7_testseq()
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtcache_7()
+LOCAL UNITTEST_RESULT test_sbjtcache_7()
 {
 	return test_sbjtcache_7_testseq();
 }
 
 /* test_sbjtcache_8 */
 
-LOCAL TEST_RESULT test_sbjtcache_8_testseq()
+LOCAL UNITTEST_RESULT test_sbjtcache_8_testseq()
 {
 	W err;
 	sbjtcache_t *cache;
 	sbjtcache_datareadcontext_t *context;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	Bool ok;
 
 	cache = sbjtcache_new();
@@ -302,36 +304,36 @@ LOCAL TEST_RESULT test_sbjtcache_8_testseq()
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 1\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_2, strlen(test_sbjtcache_testdata_01_2));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 2\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_3, strlen(test_sbjtcache_testdata_01_3));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 3\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_4, strlen(test_sbjtcache_testdata_01_4));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 4\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	context = sbjtcache_startdataread(cache, 0);
 	if (context == NULL) {
 		printf("sbjtcache_startdataread error\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	ok = test_sbjtcache_util_cmp_ctx_str(context, test_sbjtcache_testdata_01, strlen(test_sbjtcache_testdata_01));
 	if (ok != True) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 	sbjtcache_enddataread(cache, context);
 
@@ -340,19 +342,19 @@ LOCAL TEST_RESULT test_sbjtcache_8_testseq()
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtcache_8()
+LOCAL UNITTEST_RESULT test_sbjtcache_8()
 {
 	return test_sbjtcache_8_testseq();
 }
 
 /* test_sbjtcache_9 */
 
-LOCAL TEST_RESULT test_sbjtcache_9_testseq()
+LOCAL UNITTEST_RESULT test_sbjtcache_9_testseq()
 {
 	W err;
 	sbjtcache_t *cache;
 	sbjtcache_datareadcontext_t *context;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 	UB *bin_cache;
 	W len_cache;
 	Bool ok;
@@ -363,35 +365,35 @@ LOCAL TEST_RESULT test_sbjtcache_9_testseq()
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 1\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_2, strlen(test_sbjtcache_testdata_01_2));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 2\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_3, strlen(test_sbjtcache_testdata_01_3));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 3\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	err = sbjtcache_appenddata(cache, test_sbjtcache_testdata_01_4, strlen(test_sbjtcache_testdata_01_4));
 	if (err < 0) {
 		printf("sbjtcache_appenddata error 4\n");
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	context = sbjtcache_startdataread(cache, strlen(test_sbjtcache_testdata_01)+5);
 	if (context == NULL) {
 		sbjtcache_delete(cache);
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	ok = sbjtcache_datareadcontext_nextdata(context, &bin_cache, &len_cache);
 	if (ok == True) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 	}
 	sbjtcache_enddataread(cache, context);
 
@@ -400,35 +402,20 @@ LOCAL TEST_RESULT test_sbjtcache_9_testseq()
 	return result;
 }
 
-LOCAL TEST_RESULT test_sbjtcache_9()
+LOCAL UNITTEST_RESULT test_sbjtcache_9()
 {
 	return test_sbjtcache_9_testseq();
 }
 
-LOCAL VOID test_sbjtcache_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_sbjtcache_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_sbjtcache: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_sbjtcache_main()
-{
-	test_sbjtcache_printresult(test_sbjtcache_1, "test_sbjtcache_1");
-	test_sbjtcache_printresult(test_sbjtcache_2, "test_sbjtcache_2");
-	test_sbjtcache_printresult(test_sbjtcache_3, "test_sbjtcache_3");
-	test_sbjtcache_printresult(test_sbjtcache_4, "test_sbjtcache_4");
-	test_sbjtcache_printresult(test_sbjtcache_5, "test_sbjtcache_5");
-	test_sbjtcache_printresult(test_sbjtcache_6, "test_sbjtcache_6");
-	test_sbjtcache_printresult(test_sbjtcache_7, "test_sbjtcache_7");
-	test_sbjtcache_printresult(test_sbjtcache_8, "test_sbjtcache_8");
-	test_sbjtcache_printresult(test_sbjtcache_9, "test_sbjtcache_9");
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_1);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_2);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_3);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_4);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_5);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_6);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_7);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_8);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_9);
 }

@@ -1,7 +1,7 @@
 /*
  * test_bbsmenuparser.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,14 +24,17 @@
  *
  */
 
+#include    "test.h"
+
+#include    "bbsmenuparser.h"
+
 #include    <btron/btron.h>
 #include	<tcode.h>
 #include    <bstdio.h>
 #include    <bstring.h>
 
-#include    "test.h"
+#include    <unittest_driver.h>
 
-#include    "bbsmenuparser.h"
 #include    "bbsmenucache.h"
 
 LOCAL UB test_bbsmnparser_testdata_01[] = {
@@ -71,13 +74,13 @@ LOCAL UB test_bbsmnparser_testdata_01[] = {
 </BODY></HTML>
 "};
 
-LOCAL TEST_RESULT test_bbsmnparser_1()
+LOCAL UNITTEST_RESULT test_bbsmnparser_1()
 {
 	W err;
 	bbsmncache_t *cache;
 	bbsmnparser_t *parser;
 	bbsmnparser_item_t *item = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	cache = bbsmncache_new();
 	bbsmncache_appenddata(cache, test_bbsmnparser_testdata_01, strlen(test_bbsmnparser_testdata_01));
@@ -112,7 +115,7 @@ LOCAL TEST_RESULT test_bbsmnparser_1()
 	return result;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_2()
+LOCAL UNITTEST_RESULT test_bbsmnparser_2()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -126,13 +129,13 @@ LOCAL TEST_RESULT test_bbsmnparser_2()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_3()
+LOCAL UNITTEST_RESULT test_bbsmnparser_3()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -146,13 +149,13 @@ LOCAL TEST_RESULT test_bbsmnparser_3()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == True) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_4()
+LOCAL UNITTEST_RESULT test_bbsmnparser_4()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -166,13 +169,13 @@ LOCAL TEST_RESULT test_bbsmnparser_4()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_5()
+LOCAL UNITTEST_RESULT test_bbsmnparser_5()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -186,13 +189,13 @@ LOCAL TEST_RESULT test_bbsmnparser_5()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_6()
+LOCAL UNITTEST_RESULT test_bbsmnparser_6()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -206,13 +209,13 @@ LOCAL TEST_RESULT test_bbsmnparser_6()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_7()
+LOCAL UNITTEST_RESULT test_bbsmnparser_7()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -226,13 +229,13 @@ LOCAL TEST_RESULT test_bbsmnparser_7()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_8()
+LOCAL UNITTEST_RESULT test_bbsmnparser_8()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -246,13 +249,13 @@ LOCAL TEST_RESULT test_bbsmnparser_8()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == True) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_9()
+LOCAL UNITTEST_RESULT test_bbsmnparser_9()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -266,13 +269,13 @@ LOCAL TEST_RESULT test_bbsmnparser_9()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_10()
+LOCAL UNITTEST_RESULT test_bbsmnparser_10()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -286,13 +289,13 @@ LOCAL TEST_RESULT test_bbsmnparser_10()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_11()
+LOCAL UNITTEST_RESULT test_bbsmnparser_11()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -306,13 +309,13 @@ LOCAL TEST_RESULT test_bbsmnparser_11()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_12()
+LOCAL UNITTEST_RESULT test_bbsmnparser_12()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -326,13 +329,13 @@ LOCAL TEST_RESULT test_bbsmnparser_12()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_13()
+LOCAL UNITTEST_RESULT test_bbsmnparser_13()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -346,13 +349,13 @@ LOCAL TEST_RESULT test_bbsmnparser_13()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_14()
+LOCAL UNITTEST_RESULT test_bbsmnparser_14()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -366,13 +369,13 @@ LOCAL TEST_RESULT test_bbsmnparser_14()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL TEST_RESULT test_bbsmnparser_15()
+LOCAL UNITTEST_RESULT test_bbsmnparser_15()
 {
 	bbsmnparser_item_t item;
 	Bool check;
@@ -386,42 +389,27 @@ LOCAL TEST_RESULT test_bbsmnparser_15()
 
 	check = bbsmnparser_item_checkboradurl(&item);
 	if (check == False) {
-		return TEST_RESULT_PASS;
+		return UNITTEST_RESULT_PASS;
 	}
 
-	return TEST_RESULT_FAIL;
+	return UNITTEST_RESULT_FAIL;
 }
 
-LOCAL VOID test_bbsmnparser_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_bbsmnparser_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_bbsmnparser: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_bbsmnparser_main()
-{
-	test_bbsmnparser_printresult(test_bbsmnparser_1, "test_bbsmnparser_1");
-	test_bbsmnparser_printresult(test_bbsmnparser_2, "test_bbsmnparser_2");
-	test_bbsmnparser_printresult(test_bbsmnparser_3, "test_bbsmnparser_3");
-	test_bbsmnparser_printresult(test_bbsmnparser_4, "test_bbsmnparser_4");
-	test_bbsmnparser_printresult(test_bbsmnparser_5, "test_bbsmnparser_5");
-	test_bbsmnparser_printresult(test_bbsmnparser_6, "test_bbsmnparser_6");
-	test_bbsmnparser_printresult(test_bbsmnparser_7, "test_bbsmnparser_7");
-	test_bbsmnparser_printresult(test_bbsmnparser_8, "test_bbsmnparser_8");
-	test_bbsmnparser_printresult(test_bbsmnparser_9, "test_bbsmnparser_9");
-	test_bbsmnparser_printresult(test_bbsmnparser_10, "test_bbsmnparser_10");
-	test_bbsmnparser_printresult(test_bbsmnparser_11, "test_bbsmnparser_11");
-	test_bbsmnparser_printresult(test_bbsmnparser_12, "test_bbsmnparser_12");
-	test_bbsmnparser_printresult(test_bbsmnparser_13, "test_bbsmnparser_13");
-	test_bbsmnparser_printresult(test_bbsmnparser_14, "test_bbsmnparser_14");
-	test_bbsmnparser_printresult(test_bbsmnparser_15, "test_bbsmnparser_15");
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_2);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_3);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_4);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_5);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_6);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_7);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_8);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_9);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_10);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_11);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_12);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_13);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_14);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnparser_15);
 }

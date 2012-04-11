@@ -1,7 +1,7 @@
 /*
  * test_bbsmenufilter.c
  *
- * Copyright (c) 2010 project bchan
+ * Copyright (c) 2010-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,11 +24,14 @@
  *
  */
 
-#include    <bstdio.h>
-
 #include    "test.h"
 
 #include    "bbsmenufilter.h"
+
+#include    <bstdio.h>
+
+#include    <unittest_driver.h>
+
 #include    "bbsmenuparser.h"
 #include    "bbsmenucache.h"
 
@@ -69,14 +72,14 @@ LOCAL UB test_bbsmnfilter_testdata_01[] = {
 </BODY></HTML>
 "};
 
-LOCAL TEST_RESULT test_bbsmnfilter_1()
+LOCAL UNITTEST_RESULT test_bbsmnfilter_1()
 {
 	W ret,err;
 	bbsmncache_t *cache;
 	bbsmnparser_t *parser;
 	bbsmnparser_item_t *item = NULL;
 	bbsmnfilter_t *filter = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	cache = bbsmncache_new();
 	bbsmncache_appenddata(cache, test_bbsmnfilter_testdata_01, strlen(test_bbsmnfilter_testdata_01));
@@ -120,13 +123,13 @@ LOCAL TEST_RESULT test_bbsmnfilter_1()
 	return result;
 }
 
-LOCAL TEST_RESULT test_bbsmnfilter_2_checkitem_index(bbsmnparser_item_t *item, W i)
+LOCAL UNITTEST_RESULT test_bbsmnfilter_2_checkitem_index(bbsmnparser_item_t *item, W i)
 {
 	switch(i) {
 	case 0:
 	case 5:
 		if (item->category == NULL) {
-			return TEST_RESULT_FAIL;
+			return UNITTEST_RESULT_FAIL;
 		}
 		break;
 	case 1:
@@ -138,24 +141,24 @@ LOCAL TEST_RESULT test_bbsmnfilter_2_checkitem_index(bbsmnparser_item_t *item, W
 	case 8:
 	case 9:
 		if ((item->category != NULL)||(item->url == NULL)||(item->title == NULL)) {
-			return TEST_RESULT_FAIL;
+			return UNITTEST_RESULT_FAIL;
 		}
 		break;
 	default:
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 		break;
 	}
-	return TEST_RESULT_PASS;
+	return UNITTEST_RESULT_PASS;
 }
 
-LOCAL TEST_RESULT test_bbsmnfilter_2()
+LOCAL UNITTEST_RESULT test_bbsmnfilter_2()
 {
 	W i = 0, ret,err;
 	bbsmncache_t *cache;
 	bbsmnparser_t *parser;
 	bbsmnparser_item_t *item = NULL;
 	bbsmnfilter_t *filter = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	cache = bbsmncache_new();
 	bbsmncache_appenddata(cache, test_bbsmnfilter_testdata_01, strlen(test_bbsmnfilter_testdata_01));
@@ -176,14 +179,14 @@ LOCAL TEST_RESULT test_bbsmnfilter_2()
 				i++;
 				bbsmnparser_item_delete(item);
 
-				if (result == TEST_RESULT_FAIL) {
+				if (result == UNITTEST_RESULT_FAIL) {
 					printf("fail i = %d\n", i-1);
 					break;
 				}
 			} else {
 				if ((ret != BBSMNFILTER_OUTPUTITEM_WAITNEXT)&&(ret != BBSMNFILTER_OUTPUTITEM_END)) {
 					printf("invalid return value\n");
-					result = TEST_RESULT_FAIL;
+					result = UNITTEST_RESULT_FAIL;
 				}
 				break;
 			}
@@ -191,7 +194,7 @@ LOCAL TEST_RESULT test_bbsmnfilter_2()
 				break;
 			}
 		}
-		if (result == TEST_RESULT_FAIL) {
+		if (result == UNITTEST_RESULT_FAIL) {
 			break;
 		}
 	}
@@ -204,7 +207,7 @@ LOCAL TEST_RESULT test_bbsmnfilter_2()
 			i++;
 			bbsmnparser_item_delete(item);
 
-			if (result == TEST_RESULT_FAIL) {
+			if (result == UNITTEST_RESULT_FAIL) {
 				printf("fail i = %d\n", i-1);
 				break;
 			}
@@ -215,12 +218,12 @@ LOCAL TEST_RESULT test_bbsmnfilter_2()
 		if (ret == BBSMNFILTER_OUTPUTITEM_END) {
 			break;
 		}
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 		printf("invalid return value\n");
 		break;
 	}
 	if (i != 10) {
-		result = TEST_RESULT_FAIL;
+		result = UNITTEST_RESULT_FAIL;
 		printf("fail: too meny items\n");
 	}
 
@@ -232,23 +235,8 @@ LOCAL TEST_RESULT test_bbsmnfilter_2()
 	return result;
 }
 
-LOCAL VOID test_bbsmnfilter_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_bbsmnfilter_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_bbsmnfilter: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_bbsmnfilter_main()
-{
-	test_bbsmnfilter_printresult(test_bbsmnfilter_1, "test_bbsmnfilter_1");
-	test_bbsmnfilter_printresult(test_bbsmnfilter_2, "test_bbsmnfilter_2");
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnfilter_1);
+	UNITTEST_DRIVER_REGIST(driver, test_bbsmnfilter_2);
 }

@@ -1,7 +1,7 @@
 /*
  * test_subjectparser.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,14 +24,17 @@
  *
  */
 
+#include    "test.h"
+
+#include    "subjectparser.h"
+
 #include    <btron/btron.h>
 #include	<tcode.h>
 #include    <bstdio.h>
 #include    <bstring.h>
 
-#include    "test.h"
+#include    <unittest_driver.h>
 
-#include    "subjectparser.h"
 #include    "subjectcache.h"
 
 LOCAL UB test_subjectparser_testdata_01[] = {
@@ -67,13 +70,13 @@ LOCAL UB test_subjectparser_testdata_01[] = {
 	0x28, 0x35, 0x32, 0x33, 0x29
 };
 
-LOCAL TEST_RESULT test_sbjtparser_1()
+LOCAL UNITTEST_RESULT test_sbjtparser_1()
 {
 	W err;
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
 	sbjtparser_thread_t *thread = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	cache = sbjtcache_new();
 	sbjtcache_appenddata(cache, test_subjectparser_testdata_01, strlen(test_subjectparser_testdata_01));
@@ -105,22 +108,7 @@ LOCAL TEST_RESULT test_sbjtparser_1()
 	return result;
 }
 
-LOCAL VOID test_sbjtparser_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_sbjtparser_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_sbjtparser: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_sbjtparser_main()
-{
-	test_sbjtparser_printresult(test_sbjtparser_1, "test_sbjtparser_1");
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtparser_1);
 }

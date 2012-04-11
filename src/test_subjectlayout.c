@@ -1,7 +1,7 @@
 /*
  * test_subjectlayout.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -24,6 +24,10 @@
  *
  */
 
+#include    "test.h"
+
+#include    "subjectlayout.h"
+
 #include    <btron/btron.h>
 #include	<btron/dp.h>
 #include	<tcode.h>
@@ -31,9 +35,8 @@
 #include    <bstring.h>
 #include    <bstdlib.h>
 
-#include    "test.h"
+#include    <unittest_driver.h>
 
-#include    "subjectlayout.h"
 #include    "subjectlist.h"
 #include    "subjectparser.h"
 #include    "subjectcache.h"
@@ -95,7 +98,7 @@ LOCAL VOID test_sbjtlayout_util_free_BMP(BMP *bmp)
 	free(bmp);
 }
 
-LOCAL TEST_RESULT test_sbjtlayout_1()
+LOCAL UNITTEST_RESULT test_sbjtlayout_1()
 {
 	BMP *bmp;
 	GID gid;
@@ -108,15 +111,15 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
 	sbjtparser_thread_t *thread = NULL;
-	TEST_RESULT result = TEST_RESULT_PASS;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
 
 	bmp = test_sbjtlayout_util_alloc_BMP();
 	if (bmp == NULL) {
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 	gid = gopn_mem(NULL, bmp, NULL);
 	if (gid < 0) {
-		return TEST_RESULT_FAIL;
+		return UNITTEST_RESULT_FAIL;
 	}
 
 	cache = sbjtcache_new();
@@ -162,22 +165,7 @@ LOCAL TEST_RESULT test_sbjtlayout_1()
 	return result;
 }
 
-LOCAL VOID test_sbjtlayout_printresult(TEST_RESULT (*proc)(), B *test_name)
+EXPORT VOID test_sbjtlayout_main(unittest_driver_t *driver)
 {
-	TEST_RESULT result;
-
-	printf("test_sbjtlayout: %s\n", test_name);
-	printf("---------------------------------------------\n");
-	result = proc();
-	if (result == TEST_RESULT_PASS) {
-		printf("--pass---------------------------------------\n");
-	} else {
-		printf("--fail---------------------------------------\n");
-	}
-	printf("---------------------------------------------\n");
-}
-
-EXPORT VOID test_sbjtlayout_main()
-{
-	test_sbjtlayout_printresult(test_sbjtlayout_1, "test_sbjtlayout_1");
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtlayout_1);
 }
