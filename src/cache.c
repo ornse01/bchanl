@@ -1,7 +1,7 @@
 /*
  * cache.c
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -49,12 +49,13 @@ LOCAL chunkedcache_data_t* chunkedcache_data_new(UB *data, W len)
 	if (cache_data == NULL) {
 		return NULL;
 	}
+	QueInit(&cache_data->queue);
 	cache_data->data = malloc(sizeof(UB)*len);
 	if (cache_data->data == NULL) {
 		free(cache_data);
 		return NULL;
 	}
-	memcpy(cache_data->data, data, len);
+	memcpy(cache_data->data, data, sizeof(UB)*len);
 	cache_data->len = len;
 
 	return cache_data;
@@ -103,7 +104,9 @@ EXPORT VOID chunkedcache_cleardata(chunkedcache_t *cache)
 		cache_data = (chunkedcache_data_t*)cache->datalist.queue.next;
 		chunkedcache_data_delete(cache_data);
 	}
-	free(cache->datalist.data);
+	if (cache->datalist.data != NULL) {
+		free(cache->datalist.data);
+	}
 
 	cache->datalist.data = NULL;
 	cache->datalist.len = 0;
