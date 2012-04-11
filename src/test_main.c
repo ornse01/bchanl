@@ -35,8 +35,6 @@ EXPORT	W	MAIN(MESSAGE *msg)
 {
 	unittest_driver_t *driver;
 
-	malloctest(-2);
-
 	driver = unittest_driver_new();
 	if (driver == NULL) {
 		return 0;
