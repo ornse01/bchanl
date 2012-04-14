@@ -38,7 +38,7 @@ VPATH = $(S)
 HEADER := $(S) $(HEADER) ../src/bchanf/src
 
 # ソースファイル
-SRC =	main.c subjectcache.c subjectparser.c subjectlayout.c cache.c bbsmenucache.c bbsmenuparser.c bbsmenulayout.c bchanl_subject.c retriever.c subjectretriever.c tadlib.c bbsmenuretriever.c bbsmenufilter.c bchanl_hmi.c hmi_wscr.c bchanl_menus.c subjectlist.c
+SRC =	main.c subjectcache.c subjectparser.c subjectlayout.c cache.c bbsmenucache.c bbsmenuparser.c bbsmenulayout.c bchanl_subject.c retriever.c subjectretriever.c tadlib.c bbsmenuretriever.c bbsmenufilter.c bchanl_hmi.c bchanl_menus.c subjectlist.c
 
 # データボックスソースファイル
 DBSRC =
@@ -65,9 +65,12 @@ LOADLIBES += -limg
 INST = $(addprefix $(TARGET), .bz .map)
 NOINST = $(addprefix $(TARGET), .out .fsn .dbx)
 
-all: $(INST)
+all: codegen library $(INST)
 
-bchanf/libbchanf.a:
+codegen:
+	@$(MAKE) -f makefile_codegen -C ../src
+
+library:
 	@$(MAKE) -f Makefile.lib -C ./bchanf
 
 $(TARGET).out: $(OBJ) bchanf/libbchanf.a

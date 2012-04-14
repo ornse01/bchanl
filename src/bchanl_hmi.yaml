@@ -1,0 +1,171 @@
+#
+# bchanl_hmi.yaml
+#
+# Copyright (c) 2012 project bchan
+#
+# This software is provided 'as-is', without any express or implied
+# warranty. In no event will the authors be held liable for any damages
+# arising from the use of this software.
+#
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+#
+# 1. The origin of this software must not be misrepresented; you must not
+#    claim that you wrote the original software. If you use this software
+#    in a product, an acknowledgment in the product documentation would be
+#    appreciated but is not required.
+#
+# 2. Altered source versions must be plainly marked as such, and must not be
+#    misrepresented as being the original software.
+#
+# 3. This notice may not be removed or altered from any source
+#    distribution.
+#
+
+generator:
+  output_source: bchanl_hmi.c
+  output_header: bchanl_hmi.h
+  lisence_source: |
+    /*
+     * bchanl_hmi.c
+     *
+     * Copyright (c) 2012 project bchan
+     *
+     * This software is provided 'as-is', without any express or implied
+     * warranty. In no event will the authors be held liable for any damages
+     * arising from the use of this software.
+     *
+     * Permission is granted to anyone to use this software for any purpose,
+     * including commercial applications, and to alter it and redistribute it
+     * freely, subject to the following restrictions:
+     *
+     * 1. The origin of this software must not be misrepresented; you must not
+     *    claim that you wrote the original software. If you use this software
+     *    in a product, an acknowledgment in the product documentation would be
+     *    appreciated but is not required.
+     *
+     * 2. Altered source versions must be plainly marked as such, and must not be
+     *    misrepresented as being the original software.
+     *
+     * 3. This notice may not be removed or altered from any source
+     *    distribution.
+     *
+     */
+  lisence_header: |
+    /*
+     * bchanl_hmi.h
+     *
+     * Copyright (c) 2012 project bchan
+     *
+     * This software is provided 'as-is', without any express or implied
+     * warranty. In no event will the authors be held liable for any damages
+     * arising from the use of this software.
+     *
+     * Permission is granted to anyone to use this software for any purpose,
+     * including commercial applications, and to alter it and redistribute it
+     * freely, subject to the following restrictions:
+     *
+     * 1. The origin of this software must not be misrepresented; you must not
+     *    claim that you wrote the original software. If you use this software
+     *    in a product, an acknowledgment in the product documentation would be
+     *    appreciated but is not required.
+     *
+     * 2. Altered source versions must be plainly marked as such, and must not be
+     *    misrepresented as being the original software.
+     *
+     * 3. This notice may not be removed or altered from any source
+     *    distribution.
+     *
+     */
+  name: bchanlhmi
+
+windows:
+  - window_name: subjectwindow
+    attributes:
+      - scrollable
+      - resizable
+      - alwaysopen
+    title: 
+    title_max_length: 256
+    export_events:
+      - draw
+      - butdn
+      - close
+      - scroll
+      - paste
+      - mousemove
+
+  - window_name: bbsmenuwindow
+    attributes:
+      - scrollable
+      - resizable
+      - alwaysopen
+    title_max_length: 128
+    export_events:
+      - draw
+      - butdn
+      - close
+      - scroll
+      - mousemove
+
+  - window_name: subjectoptionwindow
+    attributes:
+      - opencheckable
+      - subwindow
+    parent: subjectwindow
+    title: スレ办枉肋年
+    title_max_length: 256
+    size:
+      h: 400
+      v: 200
+    parts:
+      - name: filter
+        type: textbox
+        databox:
+          specify: argument
+        rect:
+          left: 8
+          top: 38
+          right: 368
+          bottom: 64
+        length: 1000
+        attr:
+          chcol: -1
+          class: -1
+          attr: 0
+          csize:
+            h: 16
+            v: 16
+      - name: order
+        type: switchselector
+        databox:
+          specify: argument
+        rect:
+          left: 158
+          top: 108
+          right: 300
+          bottom: 134
+        fields:
+          - name: ascending
+            text: 竞界
+          - name: descending
+            text: 惯界
+      - name: orderby
+        type: switchselector
+        databox:
+          specify: argument
+        rect:
+          left: 8
+          top: 108
+          right: 150
+          bottom: 134
+        fields:
+          - name: number
+            text: 界
+          - name: res
+            text: レス
+          - name: since
+            text: Ｓｉｎｃｅ
+          - name: vigor
+            text: 廓い

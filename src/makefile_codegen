@@ -1,0 +1,4 @@
+all: bchanl_hmi2.c bchanl_hmi2.h
+
+bchanl_hmi2.c bchanl_hmi2.h: bchanl_hmi.yaml bchanf/src/tools/hmi_generator.rb
+	ruby bchanf/src/tools/hmi_generator.rb bchanl_hmi.yaml

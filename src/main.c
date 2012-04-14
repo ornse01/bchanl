@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -182,9 +182,8 @@ LOCAL VOID bchanl_subjectwindow_draw(bchanl_t *bchanl)
 	}
 }
 
-LOCAL VOID bchanl_subjectwindow_scroll(VP arg, W dh, W dv)
+LOCAL VOID bchanl_subjectwindow_scroll(bchanl_t *bchanl, W dh, W dv)
 {
-	bchanl_t *bchanl = (bchanl_t*)arg;
 	sbjtdraw_t *draw;
 	if (bchanl->currentsubject == NULL) {
 		return;
@@ -385,9 +384,8 @@ LOCAL VOID bchanl_bbsmenuwindow_draw(bchanl_t *bchanl)
 	} while (bbsmenuwindow_endredisp(bchanl->bbsmenuwindow) > 0);
 }
 
-LOCAL VOID bchanl_bbsmenuwindow_scroll(VP arg, W dh, W dv)
+LOCAL VOID bchanl_bbsmenuwindow_scroll(bchanl_t *bchanl, W dh, W dv)
 {
-	bchanl_t *bchanl = (bchanl_t*)arg;
 	bbsmndraw_scrollviewrect(bchanl->bbsmenu.draw, dh, dv);
 	bbsmenuwindow_scrollworkarea(bchanl->bbsmenuwindow, -dh, -dv);
 	bchanl_bbsmenuwindow_draw(bchanl);
@@ -413,28 +411,28 @@ LOCAL VOID bchanl_bbsmenuwindow_close(bchanl_t *bchanl)
 	bchanl_killme(bchanl);
 }
 
-LOCAL VOID bchanl_updatesubjectorder(bchanl_t *bchanl, W order, W orderby, TC *filterword, W filterword_len)
+LOCAL VOID bchanl_updatesubjectorder(bchanl_t *bchanl, SUBJECTOPTIONWINDOW_ORDERVALUE_T order, SUBJECTOPTIONWINDOW_ORDERBYVALUE_T orderby, TC *filterword, W filterword_len)
 {
 	Bool descending;
 	W sbjt_orderby;
 
-	if (order == SUBJECTOPTIONWINDOW_ORDER_DESCENDING) {
+	if (order == SUBJECTOPTIONWINDOW_ORDERVALUE_DESCENDING) {
 		descending = True;
 	} else {
 		descending = False;
 	}
 	switch (orderby) {
-	case SUBJECTOPTIONWINDOW_ORDERBY_NUMBER:
+	case SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER:
 	default:
 		sbjt_orderby = BCHANL_SUBJECT_SORTBY_NUMBER;
 		break;
-	case SUBJECTOPTIONWINDOW_ORDERBY_RES:
+	case SUBJECTOPTIONWINDOW_ORDERBYVALUE_RES:
 		sbjt_orderby = BCHANL_SUBJECT_SORTBY_RES;
 		break;
-	case SUBJECTOPTIONWINDOW_ORDERBY_SINCE:
+	case SUBJECTOPTIONWINDOW_ORDERBYVALUE_SINCE:
 		sbjt_orderby = BCHANL_SUBJECT_SORTBY_SINCE;
 		break;
-	case SUBJECTOPTIONWINDOW_ORDERBY_VIGOR:
+	case SUBJECTOPTIONWINDOW_ORDERBYVALUE_VIGOR:
 		sbjt_orderby = BCHANL_SUBJECT_SORTBY_VIGOR;
 		break;
 	}
@@ -446,30 +444,32 @@ LOCAL VOID bchanl_updatesubjectorder(bchanl_t *bchanl, W order, W orderby, TC *f
 
 LOCAL VOID bchanl_changesubjectorder(bchanl_t *bchanl, W neworder)
 {
-	W orderby, len;
+	SUBJECTOPTIONWINDOW_ORDERBYVALUE_T orderby;
+	W len;
 	TC buf[512];
 
 	if (bchanl->currentsubject == NULL) {
 		return;
 	}
 
-	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
-	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
+	subjectoptionwindow_getorderbyvalue(bchanl->subjectoptionwindow, &orderby);
+	len = subjectoptionwindow_getfiltertext(bchanl->subjectoptionwindow, buf, 512);
 
 	bchanl_updatesubjectorder(bchanl, neworder, orderby, buf, len);
 }
 
 LOCAL VOID bchanl_changesubjectorderby(bchanl_t *bchanl, W neworderby)
 {
-	W order, len;
+	SUBJECTOPTIONWINDOW_ORDERBYVALUE_T order;
+	W len;
 	TC buf[512];
 
 	if (bchanl->currentsubject == NULL) {
 		return;
 	}
 
-	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
-	len = subjectoptionwindow_gettext(bchanl->subjectoptionwindow, buf, 512);
+	subjectoptionwindow_getordervalue(bchanl->subjectoptionwindow, &order);
+	len = subjectoptionwindow_getfiltertext(bchanl->subjectoptionwindow, buf, 512);
 
 	bchanl_updatesubjectorder(bchanl, order, neworderby, buf, len);
 }
@@ -478,7 +478,8 @@ LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr
 {
 	sbjtlayout_t *layout;
 	sbjtdraw_t *draw;
-	W order, orderby;
+	SUBJECTOPTIONWINDOW_ORDERVALUE_T order;
+	SUBJECTOPTIONWINDOW_ORDERBYVALUE_T orderby;
 	RECT w_work;
 	W l, t, r, b;
 
@@ -486,8 +487,8 @@ LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr
 		return;
 	}
 
-	order = subjectoptionwindow_getorder(bchanl->subjectoptionwindow);
-	orderby = subjectoptionwindow_getorderby(bchanl->subjectoptionwindow);
+	subjectoptionwindow_getordervalue(bchanl->subjectoptionwindow, &order);
+	subjectoptionwindow_getorderbyvalue(bchanl->subjectoptionwindow, &orderby);
 
 	bchanl_updatesubjectorder(bchanl, order, orderby, newstr, newstr_len);
 
@@ -524,9 +525,9 @@ LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject
 	pdsp_msg(NULL);
 	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
 
-	subjectoptionwindow_settext(bchanl->subjectoptionwindow, NULL, 0);
-	err = subjectoptionwindow_setorder(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDER_ASCENDING);
-	subjectoptionwindow_setorderby(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBY_NUMBER);
+	subjectoptionwindow_setfiltertext(bchanl->subjectoptionwindow, NULL, 0);
+	err = subjectoptionwindow_setordervalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING);
+	subjectoptionwindow_setorderbyvalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER);
 
 	bchanl_subject_relayout(subject);
 
@@ -835,7 +836,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		goto error_bchanlhmi;
 	}
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_SUBJECT, (void**)&title0);
-	subjectwindow = bchanlhmi_newsubjectwindow(hmi, &r0, title0, NULL, bchanl_subjectwindow_scroll, bchanl);
+	subjectwindow = bchanlhmi_newsubjectwindow(hmi, &r0, 0, title0, NULL);
 	if (subjectwindow == NULL) {
 		DP_ER("bchanlhmi_newsubjectwindow error", 0);
 		goto error_subjectwindow;
@@ -846,13 +847,13 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		DP_ER("bchanl_subjecthash_new error", 0);
 		goto error_subjecthash;
 	}
-	subjectoptionwindow = bchanlhmi_newsubjectoptionwindow(hmi, &p0, BCHANL_DBX_TB_SBJTOPT_FLT, BCHANL_DBX_WS_SBJTOPT_ODR, BCHANL_DBX_WS_SBJTOPT_ODRBY);
+	subjectoptionwindow = bchanlhmi_newsubjectoptionwindow(hmi, &p0, subjectwindow, NULL, NULL, BCHANL_DBX_TB_SBJTOPT_FLT, BCHANL_DBX_WS_SBJTOPT_ODR, BCHANL_DBX_WS_SBJTOPT_ODRBY);
 	if (subjectoptionwindow == NULL) {
 		DP_ER("bchanlhmi_newsubjectoptionwindow", 0);
 		goto error_subjectoptionwindow;
 	}
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_WINDOWTITLE_BBSMENU, (void**)&title1);
-	bbsmenuwindow = bchanlhmi_newbbsmenuwindow(hmi, &r1, title1, NULL, bchanl_bbsmenuwindow_scroll, bchanl);
+	bbsmenuwindow = bchanlhmi_newbbsmenuwindow(hmi, &r1, 0, title1, NULL);
 	if (bbsmenuwindow == NULL) {
 		DP_ER("bchanlhmi_newbbsmenuwindow error", 0);
 		goto error_bbsmenuwindow;
@@ -999,6 +1000,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = -16;
 		}
 		subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
+		bchanl_subjectwindow_scroll(bchanl, 0, scr);
 		break;
 	case KC_CC_D:
 		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
@@ -1011,6 +1013,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
+			bchanl_subjectwindow_scroll(bchanl, 0, scr);
 		}
 		break;
 	case KC_CC_R:
@@ -1024,6 +1027,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
+			bchanl_subjectwindow_scroll(bchanl, scr, 0);
 		}
 		break;
 	case KC_CC_L:
@@ -1034,6 +1038,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = -16;
 		}
 		subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
+		bchanl_subjectwindow_scroll(bchanl, scr, 0);
 		break;
 	case KC_PG_U:
 		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
@@ -1043,6 +1048,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = - (b - t);
 		}
 		subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
+		bchanl_subjectwindow_scroll(bchanl, 0, scr);
 		break;
 	case KC_PG_D:
 		sbjtdraw_getviewrect(draw, &l, &t, &r, &b);
@@ -1055,6 +1061,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			subjectwindow_scrollbyvalue(bchanl->subjectwindow, 0, scr);
+			bchanl_subjectwindow_scroll(bchanl, 0, scr);
 		}
 		break;
 	case KC_PG_R:
@@ -1068,6 +1075,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
+			bchanl_subjectwindow_scroll(bchanl, scr, 0);
 		}
 		break;
 	case KC_PG_L:
@@ -1078,6 +1086,7 @@ LOCAL VOID bchanl_subjectwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = - (r - l);
 		}
 		subjectwindow_scrollbyvalue(bchanl->subjectwindow, scr, 0);
+		bchanl_subjectwindow_scroll(bchanl, scr, 0);
 		break;
 	case TK_E: /* temporary */
 		if (stat & ES_CMD) {
@@ -1102,6 +1111,7 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = -16;
 		}
 		bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
+		bchanl_bbsmenuwindow_scroll(bchanl, 0, scr);
 		break;
 	case KC_CC_D:
 		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
@@ -1113,6 +1123,7 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
+			bchanl_bbsmenuwindow_scroll(bchanl, 0, scr);
 		}
 		break;
 	case KC_CC_R:
@@ -1126,6 +1137,7 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 			scr = - (b - t);
 		}
 		bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
+		bchanl_bbsmenuwindow_scroll(bchanl, 0, scr);
 		break;
 	case KC_PG_D:
 		bbsmndraw_getviewrect(draw, &l, &t, &r, &b);
@@ -1137,6 +1149,7 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 		}
 		if (scr > 0) {
 			bbsmenuwindow_scrollbyvalue(bchanl->bbsmenuwindow, 0, scr);
+			bchanl_bbsmenuwindow_scroll(bchanl, 0, scr);
 		}
 		break;
 	case KC_PG_R:
@@ -1243,36 +1256,6 @@ LOCAL VOID bchanl_handletimeout(bchanl_t *bchanl, W code)
 	}
 }
 
-
-LOCAL VOID bchanl_event_subjectoptiontextbox(bchanl_t *bchanl)
-{
-	subjectoptionwindow_t *subjectoption;
-	W ret, len;
-	TC key, *str;
-
-	subjectoption = bchanl->subjectoptionwindow;
-
-	subjectoptionwindow_starttextboxaction(subjectoption);
-
-	for (;;) {
-		ret = subjectoptionwindow_gettextboxaction(subjectoption, &key, &str, &len);
-		if (ret < 0) {
-			break;
-		}
-		if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_FINISH) {
-			break;
-		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MENU) {
-		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_KEYMENU) {
-		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_MOVE) {
-		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_COPY) {
-		} else if (ret == SUBJECTOPTIONWINDOW_GETTEXTBOXACTION_APPEND) {
-			bchanl_changesubjectfilterword(bchanl, str, len);
-		}
-	}
-
-	subjectoptionwindow_endtextboxaction(subjectoption);
-}
-
 LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 {
 	bchanlhmievent_t *evt;
@@ -1303,60 +1286,61 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	case BCHANLHMIEVENT_TYPE_COMMON_TIMEOUT:
 		bchanl_handletimeout(bchanl, evt->data.common_timeout.code);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_DRAW:
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_DRAW:
 		bchanl_subjectwindow_draw(bchanl);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_RESIZE:
-		bchanl_subjectwindow_resize(bchanl, evt->data.subject_resize.work_sz);
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_RESIZE:
+		bchanl_subjectwindow_resize(bchanl, evt->data.subjectwindow_resize.work_sz);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_CLOSE:
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_CLOSE:
 		bchanl_subjectwindow_close(bchanl);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_BUTDN:
-		bchanl_subjectwindow_butdn(bchanl, evt->data.subject_butdn.type, evt->data.subject_butdn.pos);
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_BUTDN:
+		bchanl_subjectwindow_butdn(bchanl, evt->data.subjectwindow_butdn.type, evt->data.subjectwindow_butdn.pos);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_PASTE:
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_PASTE:
 		subjectwindow_responsepasterequest(bchanl->subjectwindow, /* NACK */ 1, NULL);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_SWITCH:
-		if (evt->data.subject_switch.needdraw == True) {
-			bchanl_subjectwindow_draw(bchanl);
-		}
-		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECT_MOUSEMOVE:
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_MOUSEMOVE:
 		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
 		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_DRAW:
+	case BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_SCROLL:
+		bchanl_subjectwindow_scroll(bchanl, evt->data.subjectwindow_scroll.dh, evt->data.subjectwindow_scroll.dv);
+		break;
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_DRAW:
 		bchanl_bbsmenuwindow_draw(bchanl);
 		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_RESIZE:
-		bchanl_bbsmenuwindow_resize(bchanl, evt->data.bbsmenu_resize.work_sz);
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_RESIZE:
+		bchanl_bbsmenuwindow_resize(bchanl, evt->data.bbsmenuwindow_resize.work_sz);
 		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_CLOSE:
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_CLOSE:
 		bchanl_bbsmenuwindow_close(bchanl);
 		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_BUTDN:
-		bchanl_bbsmenuwindow_butdn(bchanl, evt->data.bbsmenu_butdn.type, evt->data.bbsmenu_butdn.pos);
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_BUTDN:
+		bchanl_bbsmenuwindow_butdn(bchanl, evt->data.bbsmenuwindow_butdn.type, evt->data.bbsmenuwindow_butdn.pos);
 		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_PASTE:
-		bbsmenuwindow_responsepasterequest(bchanl->bbsmenuwindow, /* NACK */ 1, NULL);
-		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_SWITCH:
-		if (evt->data.bbsmenu_switch.needdraw == True) {
-			bchanl_bbsmenuwindow_draw(bchanl);
-		}
-		break;
-	case BCHANLHMIEVENT_TYPE_BBSMENU_MOUSEMOVE:
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_MOUSEMOVE:
 		gset_ptr(bchanl->hmistate.ptr, NULL, -1, -1);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDER:
-		bchanl_changesubjectorder(bchanl, evt->data.subjectoption_changeorder.order);
+	case BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_SCROLL:
+		bchanl_bbsmenuwindow_scroll(bchanl, evt->data.bbsmenuwindow_scroll.dh, evt->data.bbsmenuwindow_scroll.dv);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_CHANGEORDERBY:
-		bchanl_changesubjectorderby(bchanl, evt->data.subjectoption_changeorderby.orderby);
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_DETERMINE:
+		bchanl_changesubjectfilterword(bchanl, evt->data.subjectoptionwindow_filter_determine.value, evt->data.subjectoptionwindow_filter_determine.len);
 		break;
-	case BCHANLHMIEVENT_TYPE_SUBJECTOPTION_TEXTBOX:
-		bchanl_event_subjectoptiontextbox(bchanl);
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_COPY:
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MOVE:
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_KEYMENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDER_CHANGE:
+		bchanl_changesubjectorder(bchanl, evt->data.subjectoptionwindow_order_change.value);
+		break;
+	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDERBY_CHANGE:
+		bchanl_changesubjectorderby(bchanl, evt->data.subjectoptionwindow_order_change.value);
 		break;
 	case BCHANLHMIEVENT_TYPE_NONE:
 	}
