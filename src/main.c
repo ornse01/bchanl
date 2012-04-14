@@ -1346,6 +1346,59 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	}
 }
 
+LOCAL TC filename_dbg_databox[] = (TC[]){TK_b, TK_c, TK_h, TK_a, TK_n, TK_l, TK_PROD, TK_d, TK_b, TK_x, TNULL};
+LOCAL TC filename_dbg_storage[] = (TC[]){TK_c, TK_o, TK_m, TK_m, TK_o, TK_n, TK_s, TK_t, TK_o, TK_r, TK_a, TK_g, TK_e, TK_2, TNULL};
+LOCAL TC filename_storage[] = (TC[]){TK_c, TK_o, TK_m, TK_m, TK_o, TK_n, TK_s, TK_t, TK_o, TK_r, TK_a, TK_g, TK_e, TNULL};
+
+LOCAL W main_CLI_args(VID *vid, LINK *storage)
+{
+	W err;
+	LINK dbx;
+
+	*vid = -1;
+	err = get_lnk(filename_dbg_databox, &dbx, F_NORM);
+	if (err < 0) {
+		DP_ER("get_lnk:test databox error", err);
+		return err;
+	}
+	err = dopn_dat(&dbx);
+	if (err < 0) {
+		DP_ER("dopn_dat error", err);
+		return err;
+	}
+	err = get_lnk(filename_dbg_storage, storage, F_NORM);
+	if (err < 0) {
+		DP_ER("get_lnk;commonstorage error", err);
+		return err;
+	}
+
+	return 0;
+}
+
+LOCAL W main_EXECREC_args(M_EXECREQ *msg, VID *vid, LINK *storage)
+{
+	W err;
+	LINK lnk;
+
+	err = dopn_dat(&msg->self);
+	if (err < 0) {
+		DP_ER("dopn_dat", err);
+		return err;
+	}
+
+	lnk = msg->self;
+	err = get_lnk(filename_storage, &lnk, F_BASED);
+	if (err < 0) {
+		DP_ER("get_lnk;commonstorage error", err);
+		return err;
+	}
+	*storage = lnk;
+
+	*vid = msg->vid;
+
+	return 0;
+}
+
 typedef struct _arg {
 	W ac;
 	TC **argv;
@@ -1402,8 +1455,8 @@ EXPORT	W	MAIN(MESSAGE *msg)
 {
 	W err;
 	VID vid = -1;
+	LINK storage;
 	CLI_arg arg;
-	LINK dbx;
 	bchanl_t bchanl;
 
 	err = dopn_dat(NULL);
@@ -1415,14 +1468,8 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	switch (msg->msg_type) {
 	case 0: /* CLI */
 		arg = MESSAGEtoargv(msg);
-		err = get_lnk((TC[]){TK_b, TK_c, TK_h, TK_a, TK_n, TK_l, TK_PROD, TK_d, TK_b, TK_x,TNULL}, &dbx, F_NORM);
+		err = main_CLI_args(&vid, &storage);
 		if (err < 0) {
-			DP_ER("get_lnk:databox error", err);
-			ext_prc(0);
-		}
-		err = dopn_dat(&dbx);
-		if (err < 0) {
-			DP_ER("dopn_dat error", err);
 			ext_prc(0);
 		}
 		break;
@@ -1438,12 +1485,10 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		if ((((M_EXECREQ*)msg)->mode & 2) == 0) {
 			ext_prc(0);
 		}
-		err = dopn_dat(&((M_EXECREQ*)msg)->self);
+		err = main_EXECREC_args((M_EXECREQ*)msg, &vid, &storage);
 		if (err < 0) {
-			DP_ER("dopn_dat error", err);
 			ext_prc(0);
 		}
-		vid = ((M_EXECREQ*)msg)->vid;
 		break;
 	default:
 		ext_prc(0);
