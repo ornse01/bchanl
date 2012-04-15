@@ -1,7 +1,7 @@
 /*
  * bchanl_menus.h
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -44,6 +44,7 @@ IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionen
 #define BCHANL_MAINMENU_SELECT_REDISPLAY 2
 #define BCHANL_MAINMENU_SELECT_BBSMENUFETCH 3
 #define BCHANL_MAINMENU_SELECT_SUBJECTOPTION 4
+#define BCHANL_MAINMENU_SELECT_REGISTEREXTBBS 5
 IMPORT W bchanl_mainmenu_popup(bchanl_mainmenu_t *mainmenu, PNT pos);
 IMPORT W bchanl_mainmenu_keyselect(bchanl_mainmenu_t *mainmenu, TC keycode);
 

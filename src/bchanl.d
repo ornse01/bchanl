@@ -1,7 +1,7 @@
 ----
 --  bchanl.d
 --
--- Copyright (c) 2009-2011 project bchan
+-- Copyright (c) 2009-2012 project bchan
 --
 -- This software is provided 'as-is', without any express or implied
 -- warranty. In no event will the authors be held liable for any damages
@@ -112,7 +112,8 @@
 
 	{# TEXT_MLIST2 0 0}	-- data number
 	MC_STR "操作"
-	MC_STR "板一覧再取得\0"
+	MC_STR "板一覧再取得"
+	MC_STR "外部板の追加\0"
 
 	{# TEXT_WTIT_BBSMENU 0 0}	-- data number
 	"２ちゃんねる板一覧\0"

@@ -86,6 +86,9 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 		case 1: /* [板一覧再取得] */
 			ret = BCHANL_MAINMENU_SELECT_BBSMENUFETCH;
 			break;
+		case 2: /* [外部板の追加] */
+			ret = BCHANL_MAINMENU_SELECT_REGISTEREXTBBS;
+			break;
 		default:
 			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
 			break;
