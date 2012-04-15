@@ -1,7 +1,7 @@
 /*
  * test_main.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -48,6 +48,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_bbsmnparser_main(driver);
 	test_bbsmnlayout_main(driver);
 	test_bbsmnfilter_main(driver);
+	test_extbbslist_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);

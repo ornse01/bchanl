@@ -1,7 +1,7 @@
 /*
  * test.h
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -53,5 +53,8 @@ IMPORT VOID test_bbsmnlayout_main(unittest_driver_t *driver);
 
 /* test_bbsmenufilter.c */
 IMPORT VOID test_bbsmnfilter_main(unittest_driver_t *driver);
+
+/* test_extbbslist.c */
+IMPORT VOID test_extbbslist_main(unittest_driver_t *driver);
 
 #endif
