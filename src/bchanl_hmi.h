@@ -106,6 +106,22 @@ typedef enum SUBJECTOPTIONWINDOW_ORDERBYVALUE_T_ SUBJECTOPTIONWINDOW_ORDERBYVALU
 IMPORT W subjectoptionwindow_setorderbyvalue(subjectoptionwindow_t *window, SUBJECTOPTIONWINDOW_ORDERBYVALUE_T value);
 IMPORT W subjectoptionwindow_getorderbyvalue(subjectoptionwindow_t *window, SUBJECTOPTIONWINDOW_ORDERBYVALUE_T *value);
 
+typedef struct registerexternalwindow_t_ registerexternalwindow_t;
+
+IMPORT W registerexternalwindow_requestredisp(registerexternalwindow_t *window);
+IMPORT GID registerexternalwindow_getGID(registerexternalwindow_t *window);
+IMPORT WID registerexternalwindow_getWID(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_settitle(registerexternalwindow_t *window, TC *title);
+IMPORT Bool registerexternalwindow_isactive(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_open(registerexternalwindow_t *window);
+IMPORT VOID registerexternalwindow_close(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_setboradnametext(registerexternalwindow_t *window, TC *str, W len);
+IMPORT W registerexternalwindow_getboradnametext(registerexternalwindow_t *window, TC *str, W len);
+IMPORT W registerexternalwindow_endboradnameaction(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_seturltext(registerexternalwindow_t *window, TC *str, W len);
+IMPORT W registerexternalwindow_geturltext(registerexternalwindow_t *window, TC *str, W len);
+IMPORT W registerexternalwindow_endurlaction(registerexternalwindow_t *window);
+
 enum {
 	BCHANLHMIEVENT_TYPE_NONE,
 	BCHANLHMIEVENT_TYPE_COMMON_MOUSEMOVE,
@@ -132,6 +148,18 @@ enum {
 	BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_KEYMENU,
 	BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDER_CHANGE,
 	BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDERBY_CHANGE,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_DETERMINE,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_COPY,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MOVE,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MENU,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_KEYMENU,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_DETERMINE,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_COPY,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MOVE,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MENU,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_DETERMINE_PUSH,
+	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_CANCEL_PUSH,
 };
 
 struct bchanlhmi_eventdata_mousemove_t_ {
@@ -262,6 +290,62 @@ struct subjectoptionwindow_eventdata_orderby_change_t_ {
 };
 typedef struct subjectoptionwindow_eventdata_orderby_change_t_ subjectoptionwindow_eventdata_orderby_change_t;
 
+struct registerexternalwindow_eventdata_boradname_determine_t_ {
+	TC *value;
+	W len;
+};
+typedef struct registerexternalwindow_eventdata_boradname_determine_t_ registerexternalwindow_eventdata_boradname_determine_t;
+
+struct registerexternalwindow_eventdata_boradname_copy_t_ {
+	WID rel_wid;
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_boradname_copy_t_ registerexternalwindow_eventdata_boradname_copy_t;
+
+struct registerexternalwindow_eventdata_boradname_move_t_ {
+	WID rel_wid;
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_boradname_move_t_ registerexternalwindow_eventdata_boradname_move_t;
+
+struct registerexternalwindow_eventdata_boradname_menu_t_ {
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_boradname_menu_t_ registerexternalwindow_eventdata_boradname_menu_t;
+
+struct registerexternalwindow_eventdata_boradname_keymenu_t_ {
+	TC keycode;
+};
+typedef struct registerexternalwindow_eventdata_boradname_keymenu_t_ registerexternalwindow_eventdata_boradname_keymenu_t;
+
+struct registerexternalwindow_eventdata_url_determine_t_ {
+	TC *value;
+	W len;
+};
+typedef struct registerexternalwindow_eventdata_url_determine_t_ registerexternalwindow_eventdata_url_determine_t;
+
+struct registerexternalwindow_eventdata_url_copy_t_ {
+	WID rel_wid;
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_url_copy_t_ registerexternalwindow_eventdata_url_copy_t;
+
+struct registerexternalwindow_eventdata_url_move_t_ {
+	WID rel_wid;
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_url_move_t_ registerexternalwindow_eventdata_url_move_t;
+
+struct registerexternalwindow_eventdata_url_menu_t_ {
+	PNT pos;
+};
+typedef struct registerexternalwindow_eventdata_url_menu_t_ registerexternalwindow_eventdata_url_menu_t;
+
+struct registerexternalwindow_eventdata_url_keymenu_t_ {
+	TC keycode;
+};
+typedef struct registerexternalwindow_eventdata_url_keymenu_t_ registerexternalwindow_eventdata_url_keymenu_t;
+
 struct bchanlhmievent_t_ {
 	W type;
 	union  {
@@ -289,6 +373,16 @@ struct bchanlhmievent_t_ {
 		subjectoptionwindow_eventdata_filter_keymenu_t subjectoptionwindow_filter_keymenu;
 		subjectoptionwindow_eventdata_order_change_t subjectoptionwindow_order_change;
 		subjectoptionwindow_eventdata_orderby_change_t subjectoptionwindow_orderby_change;
+		registerexternalwindow_eventdata_boradname_determine_t registerexternalwindow_boradname_determine;
+		registerexternalwindow_eventdata_boradname_copy_t registerexternalwindow_boradname_copy;
+		registerexternalwindow_eventdata_boradname_move_t registerexternalwindow_boradname_move;
+		registerexternalwindow_eventdata_boradname_menu_t registerexternalwindow_boradname_menu;
+		registerexternalwindow_eventdata_boradname_keymenu_t registerexternalwindow_boradname_keymenu;
+		registerexternalwindow_eventdata_url_determine_t registerexternalwindow_url_determine;
+		registerexternalwindow_eventdata_url_copy_t registerexternalwindow_url_copy;
+		registerexternalwindow_eventdata_url_move_t registerexternalwindow_url_move;
+		registerexternalwindow_eventdata_url_menu_t registerexternalwindow_url_menu;
+		registerexternalwindow_eventdata_url_keymenu_t registerexternalwindow_url_keymenu;
 	} data;
 };
 typedef struct bchanlhmievent_t_ bchanlhmievent_t;
@@ -301,8 +395,10 @@ IMPORT W bchanlhmi_getevent(bchanlhmi_t *hmi, bchanlhmievent_t **evt);
 IMPORT subjectwindow_t* bchanlhmi_newsubjectwindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat);
 IMPORT bbsmenuwindow_t* bchanlhmi_newbbsmenuwindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat);
 IMPORT subjectoptionwindow_t* bchanlhmi_newsubjectoptionwindow(bchanlhmi_t *hmi, PNT *p, subjectwindow_t *parent, TC *title, PAT *bgpat, W dnum_filter, W dnum_order, W dnum_orderby);
+IMPORT registerexternalwindow_t* bchanlhmi_newregisterexternalwindow(bchanlhmi_t *hmi, PNT *p, WID parent, TC *title, PAT *bgpat);
 IMPORT VOID bchanlhmi_deletesubjectwindow(bchanlhmi_t *hmi, subjectwindow_t *window);
 IMPORT VOID bchanlhmi_deletebbsmenuwindow(bchanlhmi_t *hmi, bbsmenuwindow_t *window);
 IMPORT VOID bchanlhmi_deletesubjectoptionwindow(bchanlhmi_t *hmi, subjectoptionwindow_t *window);
+IMPORT VOID bchanlhmi_deleteregisterexternalwindow(bchanlhmi_t *hmi, registerexternalwindow_t *window);
 
 #endif

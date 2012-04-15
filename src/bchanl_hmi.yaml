@@ -169,3 +169,58 @@ windows:
             text: £Ó£é£î£ã£å
           - name: vigor
             text: Àª¤¤
+
+  - window_name: registerexternalwindow
+    attributes:
+    title: ³°ÉôÈÄ¤ÎÄÉ²Ã
+    title_max_length: 256
+    size:
+      h: 400
+      v: 200
+    parts:
+      - name: boradname
+        type: textbox
+        rect:
+          left: 8
+          top: 8
+          right: 368
+          bottom: 34
+        length: 1000
+        attr:
+          chcol: -1
+          class: -1
+          attr: 0
+          csize:
+            h: 16
+            v: 16
+      - name: url
+        type: textbox
+        rect:
+          left: 8
+          top: 38
+          right: 368
+          bottom: 64
+        length: 1000
+        attr:
+          chcol: -1
+          class: -1
+          attr: 0
+          csize:
+            h: 16
+            v: 16
+      - name: determine
+        type: textmomentallyswitch
+        rect:
+          left: 158
+          top: 108
+          right: 300
+          bottom: 134
+        text: ·èÄê
+      - name: cancel
+        type: textmomentallyswitch
+        rect:
+          left: 8
+          top: 108
+          right: 150
+          bottom: 134
+        text: ¼è¤ê¾Ã¤·
