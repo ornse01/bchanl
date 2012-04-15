@@ -50,6 +50,7 @@
 #include    "bbsmenuparser.h"
 #include	"bbsmenufilter.h"
 #include    "bbsmenulayout.h"
+#include    "extbbslist.h"
 
 #include    "bchanl_subject.h"
 #include    "bchanl_hmi.h"
@@ -78,6 +79,9 @@
 #define BCHANL_DBX_WS_SBJTOPT_ODRBY	32
 
 #define BCHANL_MENU_WINDOW 3
+
+#define BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE 30
+#define BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE 1
 
 typedef struct bchanl_hmistate_t_ bchanl_hmistate_t;
 struct bchanl_hmistate_t_ {
@@ -145,6 +149,7 @@ struct bchanl_t_ {
 	bchanl_hmistate_t hmistate;
 
 	sbjtretriever_t *retriever;
+	extbbslist_t *extbbslist;
 
 	bchanl_subjecthash_t *subjecthash;
 	bchanl_bbsmenu_t bbsmenu;
@@ -154,6 +159,7 @@ struct bchanl_t_ {
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
+	registerexternalwindow_t *registerexternalwindow;
 };
 typedef struct bchanl_t_ bchanl_t;
 
@@ -716,6 +722,38 @@ LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *wi
 	bbsmenuwindow_requestredisp(window);
 }
 
+LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
+{
+	TC title[128];
+	TC url[256];
+	W title_len, url_len, url_asc_len;
+	UB *url_asc;
+
+	title_len = registerexternalwindow_getboradnametext(bchanl->registerexternalwindow, title, 128);
+	if (title_len < 0) {
+		DP_ER("registerexternalwindow_getboradnametext error", title_len);
+		return;
+	}
+	title[title_len] = TNULL;
+	url_len = registerexternalwindow_geturltext(bchanl->registerexternalwindow, url, 256);
+	if (url_len < 0) {
+		DP_ER("registerexternalwindow_geturltext error", url_len);
+		return;
+	}
+	url[url_len] = TNULL;
+
+	url_asc_len = tcstosjs(NULL, url);
+	url_asc = malloc(sizeof(UB)*(url_asc_len+1));
+	if (url_asc == NULL) {
+		DP_ER("malloc", 0);
+		return;
+	}
+	tcstosjs(url_asc, url);
+	url_asc[url_asc_len] = '\0';
+
+	extbbslist_appenditem(bchanl->extbbslist, title, title_len, url_asc, url_asc_len);
+}
+
 #define BCHANL_MESSAGE_RETRIEVER_RELAYOUT 1
 #define BCHANL_MESSAGE_RETRIEVER_ERROR -1
 
@@ -808,7 +846,7 @@ LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 	return 0;
 }
 
-LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
+LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 {
 	static	RECT	r0 = {{400, 100, 700+7, 200+30}};
 	static	RECT	r1 = {{100, 100, 300+7, 300+30}};
@@ -821,9 +859,11 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	sbjtretriever_t *retriever;
 	bchanlhmi_t *hmi;
 	bchanl_subjecthash_t *subjecthash;
+	extbbslist_t *extbbslist;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
+	registerexternalwindow_t *registerexternalwindow;
 
 	retriever = sbjtretriever_new();
 	if (retriever == NULL) {
@@ -859,6 +899,11 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 		goto error_bbsmenuwindow;
 	}
 	gid = bbsmenuwindow_getGID(bbsmenuwindow);
+	registerexternalwindow = bchanlhmi_newregisterexternalwindow(hmi, &p0, 0, NULL, NULL);
+	if (registerexternalwindow == NULL) {
+		DP_ER("bchanlhmi_newregisterexternalwindow error", 0);
+		goto error_registerexternalwindow;
+	}
 	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash);
 	if (err < 0) {
 		DP_ER("bchanl_bbsmenu_initialize error", err);
@@ -868,6 +913,11 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	if (err < 0) {
 		DP_ER("bchanl_mainmenu_initialize %d", err);
 		goto error_mainmenu;
+	}
+	extbbslist = extbbslist_new(storage, BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE, BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE);
+	if (extbbslist == NULL) {
+		DP_ER("extbbslist_new", 0);
+		goto error_extbbslist;
 	}
 
 	bchanl_hmistate_initialize(&bchanl->hmistate);
@@ -883,6 +933,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 
 	bchanl->retriever = retriever;
 	bchanl->subjecthash = subjecthash;
+	bchanl->extbbslist = extbbslist;
 
 	bchanl->currentsubject = NULL;
 
@@ -893,12 +944,17 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype)
 	bchanl->subjectwindow = subjectwindow;
 	bchanl->bbsmenuwindow = bbsmenuwindow;
 	bchanl->subjectoptionwindow = subjectoptionwindow;
+	bchanl->registerexternalwindow = registerexternalwindow;
 
 	return 0;
 
+error_extbbslist:
+	bchanl_mainmenu_finalize(&(bchanl->mainmenu));
 error_mainmenu:
 	//bchanl_bbsmenu_finalize(&(bchanl->bbsmenu));
 error_bbsmenu:
+	bchanlhmi_deleteregisterexternalwindow(hmi, registerexternalwindow);
+error_registerexternalwindow:
 	bchanlhmi_deletebbsmenuwindow(hmi, bbsmenuwindow);
 error_bbsmenuwindow:
 	bchanlhmi_deletesubjectoptionwindow(hmi, subjectoptionwindow);
@@ -922,7 +978,9 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	if (bchanl->exectype == EXECREQ) {
 		oend_prc(bchanl->vid, NULL, 0);
 	}
+	extbbslist_delete(bchanl->extbbslist);
 	bchanl_mainmenu_finalize(&bchanl->mainmenu);
+	bchanlhmi_deleteregisterexternalwindow(bchanl->hmi, bchanl->registerexternalwindow);
 	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);
 	bchanlhmi_deletesubjectoptionwindow(bchanl->hmi, bchanl->subjectoptionwindow);
 	bchanl_subjecthash_delete(bchanl->subjecthash);
@@ -1215,6 +1273,11 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 			subjectoptionwindow_close(bchanl->subjectoptionwindow);
 		}
 		break;
+	case BCHANL_MAINMENU_SELECT_REGISTEREXTBBS: /* [外部板の追加] */
+		isopen = registerexternalwindow_isopen(bchanl->registerexternalwindow);
+		if (isopen == False) {
+			registerexternalwindow_open(bchanl->registerexternalwindow);
+		}
 	}
 	return;
 }
@@ -1341,6 +1404,33 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDERBY_CHANGE:
 		bchanl_changesubjectorderby(bchanl, evt->data.subjectoptionwindow_order_change.value);
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_DETERMINE:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_COPY:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MOVE:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_KEYMENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_DETERMINE:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_COPY:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MOVE:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU:
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_DETERMINE_PUSH:
+		registerexternalwindow_close(bchanl->registerexternalwindow);
+		bchanl_registerexternalbbs(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_CANCEL_PUSH:
+		registerexternalwindow_close(bchanl->registerexternalwindow);
 		break;
 	case BCHANLHMIEVENT_TYPE_NONE:
 	}
@@ -1495,7 +1585,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		break;
 	}
 
-	err = bchanl_initialize(&bchanl, vid, msg->msg_type);
+	err = bchanl_initialize(&bchanl, vid, msg->msg_type, &storage);
 	if (err < 0) {
 		DP_ER("bchanl_initialize error", err);
 		ext_prc(0);
