@@ -172,6 +172,7 @@ windows:
 
   - window_name: registerexternalwindow
     attributes:
+      - opencheckable
     title: 外部板の追加
     title_max_length: 256
     size:
@@ -206,7 +207,7 @@ windows:
           class: -1
           attr: 0
           csize:
-            h: 16
+            h: 8
             v: 16
       - name: determine
         type: textmomentallyswitch

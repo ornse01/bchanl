@@ -108,6 +108,7 @@ IMPORT W subjectoptionwindow_getorderbyvalue(subjectoptionwindow_t *window, SUBJ
 
 typedef struct registerexternalwindow_t_ registerexternalwindow_t;
 
+IMPORT Bool registerexternalwindow_isopen(registerexternalwindow_t *window);
 IMPORT W registerexternalwindow_requestredisp(registerexternalwindow_t *window);
 IMPORT GID registerexternalwindow_getGID(registerexternalwindow_t *window);
 IMPORT WID registerexternalwindow_getWID(registerexternalwindow_t *window);

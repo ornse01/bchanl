@@ -1012,6 +1012,14 @@ LOCAL VOID registerexternalwindow_actionurl(registerexternalwindow_t *window, WE
 	}
 }
 
+EXPORT Bool registerexternalwindow_isopen(registerexternalwindow_t *window)
+{
+	if (window->wid < 0) {
+		return False;
+	}
+	return True;
+}
+
 LOCAL VOID registerexternalwindow_draw(registerexternalwindow_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
@@ -1901,7 +1909,7 @@ EXPORT registerexternalwindow_t* registerexternalwindow_new(PNT *p, WID parent, 
 	*(COLOR*)(window->url.buf + 1) = -1;
 	window->url.buf[3] = -1;
 	window->url.buf[4] = 0;
-	window->url.buf[5] = 16;
+	window->url.buf[5] = 8;
 	window->url.buf[6] = 16;
 	window->url.buf[7] = TNULL;
 	window->url.nextaction = False;
