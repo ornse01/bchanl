@@ -77,6 +77,7 @@
 #define BCHANL_DBX_TB_SBJTOPT_FLT 30
 #define BCHANL_DBX_WS_SBJTOPT_ODR 31
 #define BCHANL_DBX_WS_SBJTOPT_ODRBY	32
+#define BCHANL_DBX_TEXT_CATE_EXTBBS 33
 
 #define BCHANL_MENU_WINDOW 3
 
@@ -136,6 +137,8 @@ struct bchanl_bbsmenu_t_ {
 	bbsmndraw_t *draw;
 
 	bchanl_subjecthash_t *subjecthash;
+	extbbslist_t *extbbslist;
+	TC *category_extbbs;
 };
 
 struct bchanl_t_ {
@@ -149,7 +152,6 @@ struct bchanl_t_ {
 	bchanl_hmistate_t hmistate;
 
 	sbjtretriever_t *retriever;
-	extbbslist_t *extbbslist;
 
 	bchanl_subjecthash_t *subjecthash;
 	bchanl_bbsmenu_t bbsmenu;
@@ -594,7 +596,7 @@ LOCAL VOID bchanl_bbsmenuwindow_butdn(bchanl_t *bchanl, W dck, PNT evpos)
 	}
 }
 
-LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subjecthash_t *subjecthash)
+LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subjecthash_t *subjecthash, LINK *storage)
 {
 	bbsmnretriever_t *retriever;
 	bbsmncache_t *cache;
@@ -602,6 +604,8 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bbsmnfilter_t *filter;
 	bbsmnlayout_t *layout;
 	bbsmndraw_t *draw;
+	extbbslist_t *extbbslist;
+	TC *category_extbbs;
 
 	cache = bbsmncache_new();
 	if (cache == NULL) {
@@ -627,6 +631,12 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	if (draw == NULL) {
 		goto error_draw;
 	}
+	extbbslist = extbbslist_new(storage, BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE, BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE);
+	if (extbbslist == NULL) {
+		DP_ER("extbbslist_new", 0);
+		goto error_extbbslist;
+	}
+	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_CATE_EXTBBS, (void**)&category_extbbs);
 
 	bchanl->gid = gid;
 	bchanl->retriever = retriever;
@@ -636,9 +646,13 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bchanl->layout = layout;
 	bchanl->draw = draw;
 	bchanl->subjecthash = subjecthash;
+	bchanl->extbbslist = extbbslist;
+	bchanl->category_extbbs = category_extbbs;
 
 	return 0;
 
+error_extbbslist:
+	bbsmndraw_delete(draw);
 error_draw:
 	bbsmnlayout_delete(layout);
 error_layout:
@@ -664,17 +678,32 @@ LOCAL W bchanl_bbsmenu_appenditemtohash(bchanl_bbsmenu_t *bchanl, bbsmnparser_it
 	return err;
 }
 
-LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *window)
+LOCAL VOID bchanl_bbsmenu_registerexternalbbs(bchanl_bbsmenu_t *bchanl, TC *title, W title_len, TC *url, W url_len)
 {
-	W err, l, t, r, b, ret;
+	W url_asc_len;
+	UB *url_asc;
+
+	url_asc_len = tcstosjs(NULL, url);
+	url_asc = malloc(sizeof(UB)*(url_asc_len+1));
+	if (url_asc == NULL) {
+		DP_ER("malloc", 0);
+		return;
+	}
+	tcstosjs(url_asc, url);
+	url_asc[url_asc_len] = '\0';
+
+	extbbslist_appenditem(bchanl->extbbslist, title, title_len, url_asc, url_asc_len);
+
+	free(url_asc);
+}
+
+LOCAL VOID bchanl_bbsmenu_relayoutcache(bchanl_bbsmenu_t *bchanl)
+{
+	W err, ret;
 	bbsmnparser_t *parser = bchanl->parser;
 	bbsmnparser_item_t *item;
 	bbsmnfilter_t *filter = bchanl->filter;
 	bbsmnlayout_t *layout = bchanl->layout;
-
-	bbsmnlayout_clear(layout);
-	bbsmnfilter_clear(filter);
-	bbsmnparser_clear(parser);
 
 	for (;;) {
 		err = bbsmnparser_getnextitem(parser, &item);
@@ -715,6 +744,72 @@ LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *wi
 		}
 */
 	}
+}
+
+LOCAL VOID bchanl_bbsmenu_relayoutexternal(bchanl_bbsmenu_t *bchanl)
+{
+	W err, ret, category_len, title_len, url_len;
+	Bool cont;
+	TC *category, *title;
+	UB *url;
+	extbbslist_readcontext_t *ctx;
+	bbsmnparser_t *parser = bchanl->parser;
+	bbsmnparser_item_t *item;
+	bbsmnlayout_t *layout = bchanl->layout;
+	extbbslist_t *list = bchanl->extbbslist;
+
+	ret = extbbslist_number(bchanl->extbbslist);
+	if (ret <= 0) {
+		return;
+	}
+
+	category = bchanl->category_extbbs;
+	category_len = tc_strlen(category);
+	item = bbsmnparser_newcategoryitem(parser, category, category_len);
+	if (item == NULL) {
+		return;
+	}
+	err = bbsmnlayout_appenditem(layout, item);
+	if (err < 0) {
+		return;
+	}
+
+	ctx = extbbslist_startread(list);
+	if (ctx == NULL) {
+		return;
+	}
+	for (;;) {
+		cont = extbbslist_readcontext_getnext(ctx, &title, &title_len, &url, &url_len);
+		if (cont == False) {
+			break;
+		}
+
+		item = bbsmnparser_newboarditem(parser, title, title_len, url, url_len);
+		if (item == NULL) {
+			break;
+		}
+		err = bchanl_bbsmenu_appenditemtohash(bchanl, item);
+		if (err < 0) {
+			break;
+		}
+		err = bbsmnlayout_appenditem(layout, item);
+		if (err < 0) {
+			break;
+		}
+	}
+	extbbslist_endread(list, ctx);
+}
+
+LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *window)
+{
+	W l, t, r, b;
+
+	bbsmnlayout_clear(bchanl->layout);
+	bbsmnfilter_clear(bchanl->filter);
+	bbsmnparser_clear(bchanl->parser);
+
+	bchanl_bbsmenu_relayoutcache(bchanl);
+	bchanl_bbsmenu_relayoutexternal(bchanl);
 
 	bbsmnlayout_getdrawrect(bchanl->layout, &l, &t, &r, &b);
 	bbsmenuwindow_setdrawrect(window, l, t, r, b);
@@ -726,8 +821,7 @@ LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
 {
 	TC title[128];
 	TC url[256];
-	W title_len, url_len, url_asc_len;
-	UB *url_asc;
+	W title_len, url_len;
 
 	title_len = registerexternalwindow_getboradnametext(bchanl->registerexternalwindow, title, 128);
 	if (title_len < 0) {
@@ -742,16 +836,9 @@ LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
 	}
 	url[url_len] = TNULL;
 
-	url_asc_len = tcstosjs(NULL, url);
-	url_asc = malloc(sizeof(UB)*(url_asc_len+1));
-	if (url_asc == NULL) {
-		DP_ER("malloc", 0);
-		return;
-	}
-	tcstosjs(url_asc, url);
-	url_asc[url_asc_len] = '\0';
+	bchanl_bbsmenu_registerexternalbbs(&bchanl->bbsmenu, title, title_len, url, url_len);
 
-	extbbslist_appenditem(bchanl->extbbslist, title, title_len, url_asc, url_asc_len);
+	bchanl_bbsmenu_relayout(&bchanl->bbsmenu, bchanl->bbsmenuwindow);
 }
 
 #define BCHANL_MESSAGE_RETRIEVER_RELAYOUT 1
@@ -859,7 +946,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	sbjtretriever_t *retriever;
 	bchanlhmi_t *hmi;
 	bchanl_subjecthash_t *subjecthash;
-	extbbslist_t *extbbslist;
 	subjectwindow_t *subjectwindow;
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
@@ -904,7 +990,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		DP_ER("bchanlhmi_newregisterexternalwindow error", 0);
 		goto error_registerexternalwindow;
 	}
-	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash);
+	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash, storage);
 	if (err < 0) {
 		DP_ER("bchanl_bbsmenu_initialize error", err);
 		goto error_bbsmenu;
@@ -913,11 +999,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	if (err < 0) {
 		DP_ER("bchanl_mainmenu_initialize %d", err);
 		goto error_mainmenu;
-	}
-	extbbslist = extbbslist_new(storage, BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE, BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE);
-	if (extbbslist == NULL) {
-		DP_ER("extbbslist_new", 0);
-		goto error_extbbslist;
 	}
 
 	bchanl_hmistate_initialize(&bchanl->hmistate);
@@ -933,7 +1014,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 
 	bchanl->retriever = retriever;
 	bchanl->subjecthash = subjecthash;
-	bchanl->extbbslist = extbbslist;
 
 	bchanl->currentsubject = NULL;
 
@@ -948,8 +1028,6 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 
 	return 0;
 
-error_extbbslist:
-	bchanl_mainmenu_finalize(&(bchanl->mainmenu));
 error_mainmenu:
 	//bchanl_bbsmenu_finalize(&(bchanl->bbsmenu));
 error_bbsmenu:
@@ -978,7 +1056,6 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	if (bchanl->exectype == EXECREQ) {
 		oend_prc(bchanl->vid, NULL, 0);
 	}
-	extbbslist_delete(bchanl->extbbslist);
 	bchanl_mainmenu_finalize(&bchanl->mainmenu);
 	bchanlhmi_deleteregisterexternalwindow(bchanl->hmi, bchanl->registerexternalwindow);
 	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);

@@ -43,6 +43,7 @@
 .TB_SBJTOPT_FLT	=	30
 .WS_SBJTOPT_ODR	=	31
 .WS_SBJTOPT_ODRBY	=	32
+.TEXT_CATE_EXTBBS	= 33
 
 --- for subject option window layout values.
 
@@ -129,6 +130,9 @@
 
 	{# TEXT_MSG_ERRRETR 0 0}	-- data number
 	"取得に失敗しました\0"
+
+	{# TEXT_CATE_EXTBBS 0 0}	-- data number
+	"外部板\0"
 
 ---------
 -- data type = MENU_DATA
