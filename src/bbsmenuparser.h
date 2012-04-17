@@ -1,7 +1,7 @@
 /*
  * bbsmenuparser.h
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -49,5 +49,7 @@ IMPORT bbsmnparser_t* bbsmnparser_new(bbsmncache_t *cache);
 IMPORT VOID bbsmnparser_delete(bbsmnparser_t *parser);
 IMPORT W bbsmnparser_getnextitem(bbsmnparser_t *parser, bbsmnparser_item_t **item);
 IMPORT VOID bbsmnparser_clear(bbsmnparser_t *parser);
+IMPORT bbsmnparser_item_t* bbsmnparser_newcategoryitem(bbsmnparser_t *parser, TC *category, W category_len);
+IMPORT bbsmnparser_item_t* bbsmnparser_newboarditem(bbsmnparser_t *parser, TC *title, W title_len, UB *url, W url_len);
 
 #endif

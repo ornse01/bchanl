@@ -415,6 +415,57 @@ EXPORT VOID bbsmnparser_clear(bbsmnparser_t *parser)
 	bbsmnparser_item_clear(parser->itembuffer);
 }
 
+EXPORT bbsmnparser_item_t* bbsmnparser_newcategoryitem(bbsmnparser_t *parser, TC *category, W category_len)
+{
+	bbsmnparser_item_t *item;
+
+	item = bbsmnparser_item_new();
+	if (item == NULL) {
+		return NULL;
+	}
+	item->category = malloc(sizeof(TC)*(category_len+1));
+	if (item->category == NULL) {
+		bbsmnparser_item_delete(item);
+		return NULL;
+	}
+	memcpy(item->category, category, sizeof(TC)*category_len);
+	item->category[category_len] = TNULL;
+	item->category_len = category_len;
+
+	return item;
+}
+
+EXPORT bbsmnparser_item_t* bbsmnparser_newboarditem(bbsmnparser_t *parser, TC *title, W title_len, UB *url, W url_len)
+{
+	bbsmnparser_item_t *item;
+
+	item = bbsmnparser_item_new();
+	if (item == NULL) {
+		return NULL;
+	}
+
+	free(item->url);
+	item->url = malloc(sizeof(UB)*(url_len+1));
+	if (item->url == NULL) {
+		bbsmnparser_item_delete(item);
+		return NULL;
+	}
+	memcpy(item->url, url, sizeof(UB)*url_len);
+	item->url[url_len] = '\0';
+	item->url_len = url_len;
+
+	item->title = malloc(sizeof(TC)*(title_len+1));
+	if (item->title == NULL) {
+		bbsmnparser_item_delete(item);
+		return NULL;
+	}
+	memcpy(item->title, title, sizeof(TC)*title_len);
+	item->title[title_len] = TNULL;
+	item->title_len = title_len;
+
+	return item;
+}
+
 EXPORT bbsmnparser_t* bbsmnparser_new(bbsmncache_t *cache)
 {
 	bbsmnparser_t *parser;
