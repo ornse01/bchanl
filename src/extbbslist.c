@@ -243,6 +243,7 @@ EXPORT W extbbslist_appenditem(extbbslist_t *list, TC *title, W title_len, UB *u
 
 	senti = extbbslist_sentinelnode(list);
 	extbbslist_item_QueInsert(item, senti);
+	list->num++;
 
 	return 0;
 }
@@ -256,11 +257,12 @@ EXPORT W extbbslist_deleteitem(extbbslist_t *list, TC *title, W title_len)
 	}
 
 	item = extbbslist_searchitem(list, title, title_len);
-	if (item != NULL) {
+	if (item == NULL) {
 		return -1; /* TODO */
 	}
 
 	extbbslist_item_delete(item);
+	list->num--;
 
 	return 0; /* TODO */
 }

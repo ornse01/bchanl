@@ -168,7 +168,102 @@ LOCAL UNITTEST_RESULT test_extbbslist_1()
 	return result;
 }
 
+LOCAL UNITTEST_RESULT test_extbbslist_2()
+{
+	extbbslist_t *list;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+	TC *title;
+	UB *url;
+	W err, title_len, url_len, num;
+
+	list = extbbslist_new(NULL, 0, 0);
+
+	num = extbbslist_number(list);
+	if (num != 0) {
+		printf("extbbslist_number 000\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	title = test_extbbslist_testtitle001;
+	title_len = tc_strlen(title);
+	url = test_extbbslist_testurl001;
+	url_len = strlen(url);
+	err = extbbslist_appenditem(list, title, title_len, url, url_len);
+	if (err < 0) {
+		printf("extbbslist_appenditem 001\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	num = extbbslist_number(list);
+	if (num != 1) {
+		printf("extbbslist_number 001\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	title = test_extbbslist_testtitle002;
+	title_len = tc_strlen(title);
+	url = test_extbbslist_testurl002;
+	url_len = strlen(url);
+	err = extbbslist_appenditem(list, title, title_len, url, url_len);
+	if (err < 0) {
+		printf("extbbslist_appenditem 002\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	num = extbbslist_number(list);
+	if (num != 2) {
+		printf("extbbslist_number 002\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	title = test_extbbslist_testtitle003;
+	title_len = tc_strlen(title);
+	url = test_extbbslist_testurl003;
+	url_len = strlen(url);
+	err = extbbslist_appenditem(list, title, title_len, url, url_len);
+	if (err < 0) {
+		printf("extbbslist_appenditem 003\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	num = extbbslist_number(list);
+	if (num != 3) {
+		printf("extbbslist_number 003\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	title = test_extbbslist_testtitle004;
+	title_len = tc_strlen(title);
+	url = test_extbbslist_testurl004;
+	url_len = strlen(url);
+	err = extbbslist_appenditem(list, title, title_len, url, url_len);
+	if (err < 0) {
+		printf("extbbslist_appenditem 004\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	num = extbbslist_number(list);
+	if (num != 4) {
+		printf("extbbslist_number 004\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	title = test_extbbslist_testtitle002;
+	title_len = tc_strlen(title);
+	err = extbbslist_deleteitem(list, title, title_len);
+	if (err < 0) {
+		printf("extbbslist_deleteitem 002\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+	num = extbbslist_number(list);
+	if (num != 3) {
+		printf("extbbslist_number 002\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	extbbslist_delete(list);
+
+	return result;
+}
+
 EXPORT VOID test_extbbslist_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_1);
+	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_2);
 }
