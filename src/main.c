@@ -1402,6 +1402,7 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 {
 	Bool isopen;
+	RECT work;
 
 	switch(sel) {
 	case BCHANL_MAINMENU_SELECT_CLOSE: /* [½ªÎ»] */
@@ -1435,6 +1436,9 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 				break;
 			}
 			externalbbswindow_open(bchanl->externalbbswindow);
+			externalbbswindow_getworkrect(bchanl->externalbbswindow, &work);
+			extbbslist_editcontext_setviewrect(bchanl->bbsmenu.editctx, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
+			externalbbswindow_setworkrect(bchanl->externalbbswindow, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
 		}
 	}
 	return;
