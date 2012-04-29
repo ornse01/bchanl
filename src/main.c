@@ -138,6 +138,7 @@ struct bchanl_bbsmenu_t_ {
 
 	bchanl_subjecthash_t *subjecthash;
 	extbbslist_t *extbbslist;
+	extbbslist_editcontext_t *editctx;
 	TC *category_extbbs;
 };
 
@@ -162,6 +163,7 @@ struct bchanl_t_ {
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
 	registerexternalwindow_t *registerexternalwindow;
+	externalbbswindow_t *externalbbswindow;
 };
 typedef struct bchanl_t_ bchanl_t;
 
@@ -647,6 +649,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bchanl->draw = draw;
 	bchanl->subjecthash = subjecthash;
 	bchanl->extbbslist = extbbslist;
+	bchanl->editctx = NULL;
 	bchanl->category_extbbs = category_extbbs;
 
 	return 0;
@@ -841,6 +844,64 @@ LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
 	bchanl_bbsmenu_relayout(&bchanl->bbsmenu, bchanl->bbsmenuwindow);
 }
 
+LOCAL VOID bchanl_externalbbswindow_draw(bchanl_t *bchanl)
+{
+	RECT r;
+
+	do {
+		if (externalbbswindow_startredisp(bchanl->externalbbswindow, &r) == 0) {
+			break;
+		}
+		externalbbswindow_eraseworkarea(bchanl->externalbbswindow, &r);
+		extbbslist_editcontext_draw(bchanl->bbsmenu.editctx, externalbbswindow_getGID(bchanl->externalbbswindow), &r);
+	} while (externalbbswindow_endredisp(bchanl->externalbbswindow) > 0);
+}
+
+LOCAL VOID bchanl_externalbbswindow_resize(bchanl_t *bchanl, SIZE newsize)
+{
+	W l,t,r,b;
+
+	extbbslist_editcontext_getviewrect(bchanl->bbsmenu.editctx, &l, &t, &r, &b);
+
+	r = l + newsize.h;
+	b = t + newsize.v;
+
+	extbbslist_editcontext_setviewrect(bchanl->bbsmenu.editctx, l, t, r, b);
+	externalbbswindow_setworkrect(bchanl->externalbbswindow, l, t, r, b);
+}
+
+LOCAL VOID bchanl_externalbbswindow_close(bchanl_t *bchanl)
+{
+	extbbslist_endedit(bchanl->bbsmenu.extbbslist, bchanl->bbsmenu.editctx, False);
+	bchanl->bbsmenu.editctx = NULL;
+	externalbbswindow_close(bchanl->externalbbswindow);
+}
+
+LOCAL VOID bchanl_externalbbswindow_butdn(bchanl_t *bchanl, W type, PNT pos)
+{
+	Bool found;
+	W sel;
+
+	if (type == W_CLICK) {
+		found = extbbslist_editcontext_finditem(bchanl->bbsmenu.editctx, pos, &sel);
+		if (found != False) {
+			extbbslist_editcontext_setselect(bchanl->bbsmenu.editctx, sel);
+		}
+		externalbbswindow_requestredisp(bchanl->externalbbswindow);
+	}
+}
+
+LOCAL VOID bchanl_externalbbswindow_paste(bchanl_t *bchanl)
+{
+	externalbbswindow_responsepasterequest(bchanl->externalbbswindow, /* NACK */ 1, NULL);
+}
+
+LOCAL VOID bchanl_externalbbswindow_scroll(bchanl_t *bchanl, W dh, W dv)
+{
+	extbbslist_editcontext_scrollviewrect(bchanl->bbsmenu.editctx, dh, dv);
+	externalbbswindow_scrollworkarea(bchanl->externalbbswindow, -dh, -dv);
+}
+
 #define BCHANL_MESSAGE_RETRIEVER_RELAYOUT 1
 #define BCHANL_MESSAGE_RETRIEVER_ERROR -1
 
@@ -937,6 +998,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 {
 	static	RECT	r0 = {{400, 100, 700+7, 200+30}};
 	static	RECT	r1 = {{100, 100, 300+7, 300+30}};
+	static	RECT	r2 = {{400, 400, 700+7, 600+30}};
 	TC *title0 = NULL, *title1 = NULL;
 	W err;
 	WID wid;
@@ -950,6 +1012,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
 	registerexternalwindow_t *registerexternalwindow;
+	externalbbswindow_t *externalbbswindow;
 
 	retriever = sbjtretriever_new();
 	if (retriever == NULL) {
@@ -990,6 +1053,11 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		DP_ER("bchanlhmi_newregisterexternalwindow error", 0);
 		goto error_registerexternalwindow;
 	}
+	externalbbswindow = bchanlhmi_newexternalbbswindow(hmi, &r2, 0, NULL, NULL);
+	if (externalbbswindow == NULL) {
+		DP_ER("bchanlhmi_newexternalbbswindow", 0);
+		goto error_externalbbswindow;
+	}
 	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash, storage);
 	if (err < 0) {
 		DP_ER("bchanl_bbsmenu_initialize error", err);
@@ -1025,12 +1093,15 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	bchanl->bbsmenuwindow = bbsmenuwindow;
 	bchanl->subjectoptionwindow = subjectoptionwindow;
 	bchanl->registerexternalwindow = registerexternalwindow;
+	bchanl->externalbbswindow = externalbbswindow;
 
 	return 0;
 
 error_mainmenu:
 	//bchanl_bbsmenu_finalize(&(bchanl->bbsmenu));
 error_bbsmenu:
+	bchanlhmi_deleteexternalbbswindow(hmi, externalbbswindow);
+error_externalbbswindow:
 	bchanlhmi_deleteregisterexternalwindow(hmi, registerexternalwindow);
 error_registerexternalwindow:
 	bchanlhmi_deletebbsmenuwindow(hmi, bbsmenuwindow);
@@ -1057,6 +1128,7 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 		oend_prc(bchanl->vid, NULL, 0);
 	}
 	bchanl_mainmenu_finalize(&bchanl->mainmenu);
+	bchanlhmi_deleteexternalbbswindow(bchanl->hmi, bchanl->externalbbswindow);
 	bchanlhmi_deleteregisterexternalwindow(bchanl->hmi, bchanl->registerexternalwindow);
 	bchanlhmi_deletebbsmenuwindow(bchanl->hmi, bchanl->bbsmenuwindow);
 	bchanlhmi_deletesubjectoptionwindow(bchanl->hmi, bchanl->subjectoptionwindow);
@@ -1355,6 +1427,15 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 		if (isopen == False) {
 			registerexternalwindow_open(bchanl->registerexternalwindow);
 		}
+		isopen = externalbbswindow_isopen(bchanl->externalbbswindow);
+		if (isopen == False) {
+
+			bchanl->bbsmenu.editctx = extbbslist_startedit(bchanl->bbsmenu.extbbslist);
+			if (bchanl->bbsmenu.editctx == NULL) {
+				break;
+			}
+			externalbbswindow_open(bchanl->externalbbswindow);
+		}
 	}
 	return;
 }
@@ -1508,6 +1589,24 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_CANCEL_PUSH:
 		registerexternalwindow_close(bchanl->registerexternalwindow);
+		break;
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW:
+		bchanl_externalbbswindow_draw(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_RESIZE:
+		break;
+		bchanl_externalbbswindow_resize(bchanl, evt->data.externalbbswindow_resize.work_sz);
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE:
+		bchanl_externalbbswindow_close(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_BUTDN:
+		bchanl_externalbbswindow_butdn(bchanl, evt->data.externalbbswindow_butdn.type, evt->data.externalbbswindow_butdn.pos);
+		break;
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_PASTE:
+		bchanl_externalbbswindow_paste(bchanl);
+		break;
+	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL:
+		bchanl_externalbbswindow_scroll(bchanl, evt->data.externalbbswindow_scroll.dh, evt->data.externalbbswindow_scroll.dv);
 		break;
 	case BCHANLHMIEVENT_TYPE_NONE:
 	}
