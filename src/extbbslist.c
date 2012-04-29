@@ -447,6 +447,11 @@ LOCAL W extbbslist_editcontext_drawcolseparater(extbbslist_editcontext_t *ctx, G
 	p2.x = p1.x;
 	gdra_lin(target, p1, p2, 1, lnpat, G_STORE);
 
+	p1.y = p2.y;
+	p1.x = ctx->view_l;
+	p2.x = ctx->view_r;
+	gdra_lin(target, p1, p2, 1, lnpat, G_STORE);
+
 	return 0;
 }
 
