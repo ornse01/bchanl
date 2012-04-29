@@ -225,3 +225,17 @@ windows:
           right: 150
           bottom: 134
         text: 取り消し
+
+  - window_name: externalbbswindow
+    attributes:
+      - scrollable
+      - resizable
+      - opencheckable
+    title: 外部板
+    title_max_length: 256
+    export_events:
+      - draw
+      - butdn
+      - close
+      - scroll
+      - paste

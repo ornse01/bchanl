@@ -131,6 +131,18 @@ struct registerexternalwindow_t_ {
 	} cancel;
 };
 
+struct externalbbswindow_t_ {
+	UW flag;
+	WID wid;
+	GID gid;
+	WID parent;
+	RECT r;
+	PAT bgpat;
+	hmi_windowscroll_t wscr;
+	TC title[256+1];
+	WEVENT savedwev;
+};
+
 #define BCHANLHMI_FLAG_SWITCHBUTDN 0x00000001
 
 struct bchanlhmi_t_ {
@@ -141,6 +153,7 @@ struct bchanlhmi_t_ {
 	bbsmenuwindow_t *bbsmenuwindow;
 	subjectoptionwindow_t *subjectoptionwindow;
 	registerexternalwindow_t *registerexternalwindow;
+	externalbbswindow_t *externalbbswindow;
 };
 
 #define SUBJECTWINDOW_FLAG_DRAWREQUEST 0x00000001
@@ -1177,6 +1190,210 @@ EXPORT VOID registerexternalwindow_close(registerexternalwindow_t *window)
 	window->gid = -1;
 }
 
+#define EXTERNALBBSWINDOW_FLAG_DRAWREQUEST 0x00000001
+#define EXTERNALBBSWINDOW_FLAG_RSCROLLING 0x00000002
+#define EXTERNALBBSWINDOW_FLAG_BSCROLLING 0x00000004
+
+#define externalbbswindow_setflag(window, flagx) (window)->flag = (window)->flag | (flagx)
+#define externalbbswindow_clearflag(window, flagx) (window)->flag = (window)->flag & ~(flagx)
+#define externalbbswindow_issetflag(window, flagx) (((window)->flag & (flagx)) == 0 ? False : True)
+
+EXPORT VOID externalbbswindow_scrollbyvalue(externalbbswindow_t *window, W dh, W dv)
+{
+	hmi_windowscroll_scrollworkrect(&window->wscr, dh, dv);
+}
+
+EXPORT W externalbbswindow_setdrawrect(externalbbswindow_t *window, W l, W t, W r, W b)
+{
+	return hmi_windowscroll_setdrawrect(&window->wscr, l, t, r, b);
+}
+
+EXPORT W externalbbswindow_setworkrect(externalbbswindow_t *window, W l, W t, W r, W b)
+{
+	return hmi_windowscroll_setworkrect(&window->wscr, l, t, r, b);
+}
+
+EXPORT W externalbbswindow_scrollworkarea(externalbbswindow_t *window, W dh, W dv)
+{
+	W err;
+	err = wscr_wnd(window->wid, NULL, dh, dv, W_MOVE|W_RDSET);
+	if (err < 0) {
+		return err;
+	}
+	if ((err & W_RDSET) != 0) {
+		externalbbswindow_setflag(window, EXTERNALBBSWINDOW_FLAG_DRAWREQUEST);
+	}
+	return 0;
+}
+
+EXPORT W externalbbswindow_getworkrect(externalbbswindow_t *window, RECT *r)
+{
+	return wget_wrk(window->wid, r);
+}
+
+EXPORT Bool externalbbswindow_isopen(externalbbswindow_t *window)
+{
+	if (window->wid < 0) {
+		return False;
+	}
+	return True;
+}
+
+EXPORT VOID externalbbswindow_responsepasterequest(externalbbswindow_t *window, W nak, PNT *pos)
+{
+	if (pos != NULL) {
+		window->savedwev.r.r.p.rightbot.x = pos->x;
+		window->savedwev.r.r.p.rightbot.y = pos->y;
+	}
+	wrsp_evt(&window->savedwev, nak);
+}
+
+EXPORT W externalbbswindow_startredisp(externalbbswindow_t *window, RECT *r)
+{
+	return wsta_dsp(window->wid, r, NULL);
+}
+
+EXPORT W externalbbswindow_endredisp(externalbbswindow_t *window)
+{
+	return wend_dsp(window->wid);
+}
+
+EXPORT W externalbbswindow_eraseworkarea(externalbbswindow_t *window, RECT *r)
+{
+	return wera_wnd(window->wid, r);
+}
+
+EXPORT W externalbbswindow_requestredisp(externalbbswindow_t *window)
+{
+	return wreq_dsp(window->wid);
+}
+
+EXPORT GID externalbbswindow_startdrag(externalbbswindow_t *window)
+{
+	return wsta_drg(window->wid, 0);
+}
+
+EXPORT W externalbbswindow_getdrag(externalbbswindow_t *window, PNT *pos, WID *wid, PNT *pos_butup)
+{
+	W etype;
+
+	etype = wget_drg(pos, &window->savedwev);
+	*wid = window->savedwev.s.wid;
+	if (etype == EV_BUTUP) {
+		*pos_butup = window->savedwev.s.pos;
+	}
+
+	return etype;
+}
+
+EXPORT VOID externalbbswindow_enddrag(externalbbswindow_t *window)
+{
+	wend_drg();
+}
+
+EXPORT GID externalbbswindow_getGID(externalbbswindow_t *window)
+{
+	return wget_gid(window->wid);
+}
+
+EXPORT WID externalbbswindow_getWID(externalbbswindow_t *window)
+{
+	return window->wid;
+}
+
+EXPORT W externalbbswindow_settitle(externalbbswindow_t *window, TC *title)
+{
+	tc_strncpy(window->title, title, 256);
+	window->title[256] = TNULL;
+	return wset_tit(window->wid, -1, window->title, 0);
+}
+
+EXPORT Bool externalbbswindow_isactive(externalbbswindow_t *window)
+{
+	WID wid;
+	wid = wget_act(NULL);
+	if (window->wid == wid) {
+		return True;
+	}
+	return False;
+}
+
+LOCAL VOID externalbbswindow_butdnwork(externalbbswindow_t *window, WEVENT *wev, bchanlhmievent_t *evt)
+{
+	evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_BUTDN;
+	evt->data.externalbbswindow_butdn.type = wchk_dck(wev->s.time);
+	evt->data.externalbbswindow_butdn.pos = wev->s.pos;
+	memcpy(&window->savedwev, wev, sizeof(WEVENT));
+}
+
+LOCAL VOID externalbbswindow_resize(externalbbswindow_t *window, SIZE *sz)
+{
+	RECT work;
+	Bool workchange = False;
+
+	wget_wrk(window->wid, &work);
+	if (work.c.left != 0) {
+		work.c.left = 0;
+		workchange = True;
+	}
+	if (work.c.top != 0) {
+		work.c.top = 0;
+		workchange = True;
+	}
+	wset_wrk(window->wid, &work);
+	gset_vis(window->gid, work);
+
+	if (workchange == True) {
+		wera_wnd(window->wid, NULL);
+		wreq_dsp(window->wid);
+	}
+
+	sz->v = work.c.bottom - work.c.top;
+	sz->h = work.c.right - work.c.left;
+}
+
+EXPORT W externalbbswindow_open(externalbbswindow_t *window)
+{
+	WID wid;
+
+	if (window->wid > 0) {
+		return 0;
+	}
+
+	wid = wopn_wnd(WA_STD|WA_SIZE|WA_HHDL|WA_VHDL|WA_BBAR|WA_RBAR, window->parent, &(window->r), NULL, 2, window->title, &window->bgpat, NULL);
+	if (wid < 0) {
+		DP_ER("wopn_wnd: subjectoption error", wid);
+		return wid;
+	}
+	window->wid = wid;
+	window->gid = wget_gid(wid);
+	hmi_windowscroll_settarget(&window->wscr, wid);
+
+
+	wreq_dsp(wid);
+
+	return 0;
+}
+
+EXPORT VOID externalbbswindow_close(externalbbswindow_t *window)
+{
+	WDSTAT stat;
+	W err;
+
+	if (window->wid < 0) {
+		return;
+	}
+
+	stat.attr = WA_STD;
+	err = wget_sts(window->wid, &stat, NULL);
+	if (err >= 0) {
+		window->r = stat.r;
+	}
+	wcls_wnd(window->wid, CLR);
+	window->wid = -1;
+	window->gid = -1;
+}
+
 LOCAL VOID bchanlhmi_setswitchbutdnflag(bchanlhmi_t *hmi)
 {
 	hmi->flag = hmi->flag | BCHANLHMI_FLAG_SWITCHBUTDN;
@@ -1227,6 +1444,14 @@ LOCAL Bool bchanlhmi_isregisterexternalwindowWID(bchanlhmi_t *hmi, WID wid)
 	return False;
 }
 
+LOCAL Bool bchanlhmi_isexternalbbswindowWID(bchanlhmi_t *hmi, WID wid)
+{
+	if (hmi->externalbbswindow->wid == wid) {
+		return True;
+	}
+	return False;
+}
+
 LOCAL VOID bchanlhmi_weventnull(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t *evt)
 {
 	cidl_par(wev->s.wid, &wev->s.pos);
@@ -1254,6 +1479,10 @@ LOCAL VOID bchanlhmi_weventnull(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t 
 		cidl_par(wev->s.wid, &wev->s.pos);
 		return;
 	}
+	if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+		gset_ptr(PS_SELECT, NULL, -1, -1);
+		return;
+	}
 	/*¥¦¥£¥ó¥É¥¦³°*/
 	hmi->evt.type = BCHANLHMIEVENT_TYPE_COMMON_MOUSEMOVE;
 	hmi->evt.data.common_mousemove.pos = wev->s.pos;
@@ -1279,11 +1508,20 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 			registerexternalwindow_redisp(hmi->registerexternalwindow);
 			break;
 		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->g.wid) == True) {
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW;
+			break;
+		}
 		break;
 	case	W_PASTE:	/*Å½¹þ¤ßÍ×µá*/
 		if (bchanlhmi_issubjectwindowWID(hmi, wev->g.wid) == True) {
 			evt->type = BCHANLHMIEVENT_TYPE_SUBJECTWINDOW_PASTE;
 			memcpy(&hmi->subjectwindow->savedwev, wev, sizeof(WEVENT));
+			break;
+		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->g.wid) == True) {
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_PASTE;
+			memcpy(&hmi->externalbbswindow->savedwev, wev, sizeof(WEVENT));
 			break;
 		}
 		wrsp_evt(wev, 1); /*NACK*/
@@ -1308,6 +1546,11 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 			registerexternalwindow_close(hmi->registerexternalwindow);
 			break;
 		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->g.wid) == True) {
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE;
+			evt->data.externalbbswindow_close.save = True;
+			break;
+		}
 		break;
 	case	W_FINISH:	/*ÇÑ´þ½ªÎ»*/
 		wrsp_evt(wev, 0);	/*ACK*/
@@ -1327,6 +1570,11 @@ LOCAL VOID bchanlhmi_weventrequest(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent
 		}
 		if (bchanlhmi_isregisterexternalwindowWID(hmi, wev->g.wid) == True) {
 			registerexternalwindow_close(hmi->registerexternalwindow);
+			break;
+		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->g.wid) == True) {
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE;
+			evt->data.externalbbswindow_close.save = False;
 			break;
 		}
 		break;
@@ -1360,6 +1608,11 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 				registerexternalwindow_close(hmi->registerexternalwindow);
 				return;
 			}
+			if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+				evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE;
+				evt->data.externalbbswindow_close.save = True; /* TODO: tmp value */
+				return;
+			}
 			return;
 		case	W_PRESS:
 			break;
@@ -1383,6 +1636,10 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			}
 			if (bchanlhmi_isregisterexternalwindowWID(hmi, wev->s.wid) == True) {
 				registerexternalwindow_redisp(hmi->registerexternalwindow);
+				return;
+			}
+			if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+				evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW;
 				return;
 			}
 		}
@@ -1420,6 +1677,15 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			}
 			return;
 		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_RESIZE;
+			externalbbswindow_resize(hmi->externalbbswindow, &evt->data.externalbbswindow_resize.work_sz);
+			hmi_windowscroll_updatebar(&hmi->externalbbswindow->wscr);
+			if (i > 0) {
+				externalbbswindow_setflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_DRAWREQUEST);
+			}
+			return;
+		}
 		return;
 	case	W_RBAR:
 		if (bchanlhmi_issubjectwindowWID(hmi, wev->s.wid) == True) {
@@ -1450,6 +1716,21 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			evt->type = BCHANLHMIEVENT_TYPE_BBSMENUWINDOW_SCROLL;
 			evt->data.bbsmenuwindow_scroll.dh = dh;
 			evt->data.bbsmenuwindow_scroll.dv = dv;
+			return;
+		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+			err = hmi_windowscroll_weventrbar(&hmi->externalbbswindow->wscr, wev, &dh, &dv);
+			if (err < 0) {
+				return;
+			}
+			if (err == 0) {
+				externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING);
+			} else {
+				externalbbswindow_setflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING);
+			}
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL;
+			evt->data.externalbbswindow_scroll.dh = dh;
+			evt->data.externalbbswindow_scroll.dv = dv;
 			return;
 		}
 		return;
@@ -1484,6 +1765,21 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 			evt->data.bbsmenuwindow_scroll.dv = dv;
 			return;
 		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+			err = hmi_windowscroll_weventbbar(&hmi->externalbbswindow->wscr, wev, &dh, &dv);
+			if (err < 0) {
+				return;
+			}
+			if (err == 0) {
+				externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING);
+			} else {
+				externalbbswindow_setflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING);
+			}
+			evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL;
+			evt->data.externalbbswindow_scroll.dh = dh;
+			evt->data.externalbbswindow_scroll.dv = dv;
+			return;
+		}
 		return;
 	case	W_WORK:
 		if (bchanlhmi_issubjectwindowWID(hmi, wev->s.wid) == True) {
@@ -1500,6 +1796,10 @@ LOCAL VOID bchanlhmi_weventbutdn(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmievent_t
 		}
 		if (bchanlhmi_isregisterexternalwindowWID(hmi, wev->s.wid) == True) {
 			registerexternalwindow_butdnwork(hmi->registerexternalwindow, wev, evt);
+			return;
+		}
+		if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+			externalbbswindow_butdnwork(hmi->externalbbswindow, wev, evt);
 			return;
 		}
 		return;
@@ -1529,6 +1829,9 @@ LOCAL VOID bchanlhmi_weventreswitch(bchanlhmi_t *hmi, WEVENT *wev, bchanlhmieven
 	if (bchanlhmi_isregisterexternalwindowWID(hmi, wev->s.wid) == True) {
 		registerexternalwindow_redisp(hmi->registerexternalwindow);
 		return;
+	}
+	if (bchanlhmi_isexternalbbswindowWID(hmi, wev->s.wid) == True) {
+		evt->type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW;
 	}
 }
 
@@ -1615,6 +1918,38 @@ LOCAL Bool bchanlhmi_checkflag(bchanlhmi_t *hmi, bchanlhmievent_t **evt)
 		hmi->evt.data.bbsmenuwindow_scroll.dv = dv;
 		return True;
 	}
+	if (externalbbswindow_issetflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING) == True) {
+		err = hmi_windowscroll_weventrbar(&hmi->externalbbswindow->wscr, &hmi->wev, &dh, &dv);
+		if (err < 0) {
+			externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING);
+			return False;
+		}
+		if (err == 0) {
+			externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING);
+		} else {
+			externalbbswindow_setflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_RSCROLLING);
+		}
+		hmi->evt.type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL;
+		hmi->evt.data.externalbbswindow_scroll.dh = dh;
+		hmi->evt.data.externalbbswindow_scroll.dv = dv;
+		return True;
+	}
+	if (externalbbswindow_issetflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING) == True) {
+		err = hmi_windowscroll_weventbbar(&hmi->externalbbswindow->wscr, &hmi->wev, &dh, &dv);
+		if (err < 0) {
+			externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING);
+			return False;
+		}
+		if (err == 0) {
+			externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING);
+		} else {
+			externalbbswindow_setflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_BSCROLLING);
+		}
+		hmi->evt.type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL;
+		hmi->evt.data.externalbbswindow_scroll.dh = dh;
+		hmi->evt.data.externalbbswindow_scroll.dv = dv;
+		return True;
+	}
 	if (subjectoptionwindow_issetflag(hmi->subjectoptionwindow, SUBJECTOPTIONWINDOW_FLAG_PARTS_OTHEREVENT) == True) {
 		subjectoptionwindow_clearflag(hmi->subjectoptionwindow, SUBJECTOPTIONWINDOW_FLAG_PARTS_OTHEREVENT);
 		subjectoptionwindow_setflag(hmi->subjectoptionwindow, SUBJECTOPTIONWINDOW_FLAG_PARTS_NEXTACTION);
@@ -1682,6 +2017,11 @@ EXPORT W bchanlhmi_getevent(bchanlhmi_t *hmi, bchanlhmievent_t **evt)
 	if (registerexternalwindow_issetflag(hmi->registerexternalwindow, REGISTEREXTERNALWINDOW_FLAG_DRAWREQUEST) == True) {
 		registerexternalwindow_redisp(hmi->registerexternalwindow);
 		registerexternalwindow_clearflag(hmi->registerexternalwindow, REGISTEREXTERNALWINDOW_FLAG_DRAWREQUEST);
+		return 0;
+	}
+	if (externalbbswindow_issetflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_DRAWREQUEST) == True) {
+		hmi->evt.type = BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW;
+		externalbbswindow_clearflag(hmi->externalbbswindow, EXTERNALBBSWINDOW_FLAG_DRAWREQUEST);
 		return 0;
 	}
 
@@ -1929,6 +2269,47 @@ LOCAL VOID registerexternalwindow_delete(registerexternalwindow_t *window)
 	free(window);
 }
 
+EXPORT externalbbswindow_t* externalbbswindow_new(RECT *r, WID parent, TC *title, PAT *bgpat)
+{
+	externalbbswindow_t *window;
+	W err;
+
+	window = (externalbbswindow_t*)malloc(sizeof(externalbbswindow_t));
+	if (window == NULL) {
+		return NULL;
+	}
+	window->flag = 0;
+	window->wid = -1;
+	window->gid = -1;
+	window->parent = parent;
+	window->r = *r;
+	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
+	if (err < 0) {
+		free(window);
+		return NULL;
+	}
+	tc_strset(window->title, TNULL, 256+1);
+	if (title != 0) {
+		tc_strncpy(window->title, title, 256);
+	} else {
+		window->title[0] = 0x3330;
+		window->title[1] = 0x4974;
+		window->title[2] = 0x4844;
+	}
+
+
+	return window;
+}
+
+LOCAL VOID externalbbswindow_delete(externalbbswindow_t *window)
+{
+	if (window->wid > 0) {
+		wcls_wnd(window->wid, CLR);
+	}
+	hmi_windowscroll_finalize(&window->wscr);
+	free(window);
+}
+
 EXPORT subjectwindow_t* bchanlhmi_newsubjectwindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat)
 {
 	if (hmi->subjectwindow != NULL) {
@@ -1992,6 +2373,21 @@ EXPORT VOID bchanlhmi_deleteregisterexternalwindow(bchanlhmi_t *hmi, registerext
 	hmi->registerexternalwindow = NULL;
 }
 
+EXPORT externalbbswindow_t* bchanlhmi_newexternalbbswindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat)
+{
+	if (hmi->externalbbswindow != NULL) {
+		return NULL;
+	}
+	hmi->externalbbswindow = externalbbswindow_new(r, parent, title, bgpat);
+	return hmi->externalbbswindow;
+}
+
+EXPORT VOID bchanlhmi_deleteexternalbbswindow(bchanlhmi_t *hmi, externalbbswindow_t *window)
+{
+	externalbbswindow_delete(hmi->externalbbswindow);
+	hmi->externalbbswindow = NULL;
+}
+
 
 EXPORT bchanlhmi_t* bchanlhmi_new()
 {
@@ -2006,6 +2402,7 @@ EXPORT bchanlhmi_t* bchanlhmi_new()
 	hmi->bbsmenuwindow = NULL;
 	hmi->subjectoptionwindow = NULL;
 	hmi->registerexternalwindow = NULL;
+	hmi->externalbbswindow = NULL;
 
 	return hmi;
 }
@@ -2023,6 +2420,9 @@ EXPORT VOID bchanlhmi_delete(bchanlhmi_t *hmi)
 	}
 	if (hmi->registerexternalwindow != NULL) {
 		registerexternalwindow_delete(hmi->registerexternalwindow);
+	}
+	if (hmi->externalbbswindow != NULL) {
+		externalbbswindow_delete(hmi->externalbbswindow);
 	}
 	free(hmi);
 }

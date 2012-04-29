@@ -123,6 +123,30 @@ IMPORT W registerexternalwindow_seturltext(registerexternalwindow_t *window, TC 
 IMPORT W registerexternalwindow_geturltext(registerexternalwindow_t *window, TC *str, W len);
 IMPORT W registerexternalwindow_endurlaction(registerexternalwindow_t *window);
 
+typedef struct externalbbswindow_t_ externalbbswindow_t;
+typedef VOID (*externalbbswindow_scrollcalback)(VP arg, W dh, W dv);
+
+IMPORT VOID externalbbswindow_scrollbyvalue(externalbbswindow_t *window, W dh, W dv);
+IMPORT W externalbbswindow_setdrawrect(externalbbswindow_t *window, W l, W t, W r, W b);
+IMPORT W externalbbswindow_setworkrect(externalbbswindow_t *window, W l, W t, W r, W b);
+IMPORT W externalbbswindow_scrollworkarea(externalbbswindow_t *window, W dh, W dv);
+IMPORT W externalbbswindow_getworkrect(externalbbswindow_t *window, RECT *r);
+IMPORT Bool externalbbswindow_isopen(externalbbswindow_t *window);
+IMPORT VOID externalbbswindow_responsepasterequest(externalbbswindow_t *window, W nak, PNT *pos);
+IMPORT W externalbbswindow_startredisp(externalbbswindow_t *window, RECT *r);
+IMPORT W externalbbswindow_endredisp(externalbbswindow_t *window);
+IMPORT W externalbbswindow_eraseworkarea(externalbbswindow_t *window, RECT *r);
+IMPORT W externalbbswindow_requestredisp(externalbbswindow_t *window);
+IMPORT GID externalbbswindow_startdrag(externalbbswindow_t *window);
+IMPORT W externalbbswindow_getdrag(externalbbswindow_t *window, PNT *pos, WID *wid, PNT *pos_butup);
+IMPORT VOID externalbbswindow_enddrag(externalbbswindow_t *window);
+IMPORT GID externalbbswindow_getGID(externalbbswindow_t *window);
+IMPORT WID externalbbswindow_getWID(externalbbswindow_t *window);
+IMPORT W externalbbswindow_settitle(externalbbswindow_t *window, TC *title);
+IMPORT Bool externalbbswindow_isactive(externalbbswindow_t *window);
+IMPORT W externalbbswindow_open(externalbbswindow_t *window);
+IMPORT VOID externalbbswindow_close(externalbbswindow_t *window);
+
 enum {
 	BCHANLHMIEVENT_TYPE_NONE,
 	BCHANLHMIEVENT_TYPE_COMMON_MOUSEMOVE,
@@ -161,6 +185,12 @@ enum {
 	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU,
 	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_DETERMINE_PUSH,
 	BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_CANCEL_PUSH,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_DRAW,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_RESIZE,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_BUTDN,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_PASTE,
+	BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_SCROLL,
 };
 
 struct bchanlhmi_eventdata_mousemove_t_ {
@@ -347,6 +377,36 @@ struct registerexternalwindow_eventdata_url_keymenu_t_ {
 };
 typedef struct registerexternalwindow_eventdata_url_keymenu_t_ registerexternalwindow_eventdata_url_keymenu_t;
 
+struct externalbbswindow_eventdata_draw_t_ {
+};
+typedef struct externalbbswindow_eventdata_draw_t_ externalbbswindow_eventdata_draw_t;
+
+struct externalbbswindow_eventdata_resize_t_ {
+	SIZE work_sz;
+};
+typedef struct externalbbswindow_eventdata_resize_t_ externalbbswindow_eventdata_resize_t;
+
+struct externalbbswindow_eventdata_close_t_ {
+	Bool save;
+};
+typedef struct externalbbswindow_eventdata_close_t_ externalbbswindow_eventdata_close_t;
+
+struct externalbbswindow_eventdata_butdn_t_ {
+	W type;
+	PNT pos;
+};
+typedef struct externalbbswindow_eventdata_butdn_t_ externalbbswindow_eventdata_butdn_t;
+
+struct externalbbswindow_eventdata_paste_t_ {
+};
+typedef struct externalbbswindow_eventdata_paste_t_ externalbbswindow_eventdata_paste_t;
+
+struct externalbbswindow_eventdata_scroll_t_ {
+	W dh;
+	W dv;
+};
+typedef struct externalbbswindow_eventdata_scroll_t_ externalbbswindow_eventdata_scroll_t;
+
 struct bchanlhmievent_t_ {
 	W type;
 	union  {
@@ -384,6 +444,12 @@ struct bchanlhmievent_t_ {
 		registerexternalwindow_eventdata_url_move_t registerexternalwindow_url_move;
 		registerexternalwindow_eventdata_url_menu_t registerexternalwindow_url_menu;
 		registerexternalwindow_eventdata_url_keymenu_t registerexternalwindow_url_keymenu;
+		externalbbswindow_eventdata_draw_t externalbbswindow_draw;
+		externalbbswindow_eventdata_resize_t externalbbswindow_resize;
+		externalbbswindow_eventdata_close_t externalbbswindow_close;
+		externalbbswindow_eventdata_butdn_t externalbbswindow_butdn;
+		externalbbswindow_eventdata_paste_t externalbbswindow_paste;
+		externalbbswindow_eventdata_scroll_t externalbbswindow_scroll;
 	} data;
 };
 typedef struct bchanlhmievent_t_ bchanlhmievent_t;
@@ -397,9 +463,11 @@ IMPORT subjectwindow_t* bchanlhmi_newsubjectwindow(bchanlhmi_t *hmi, RECT *r, WI
 IMPORT bbsmenuwindow_t* bchanlhmi_newbbsmenuwindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat);
 IMPORT subjectoptionwindow_t* bchanlhmi_newsubjectoptionwindow(bchanlhmi_t *hmi, PNT *p, subjectwindow_t *parent, TC *title, PAT *bgpat, W dnum_filter, W dnum_order, W dnum_orderby);
 IMPORT registerexternalwindow_t* bchanlhmi_newregisterexternalwindow(bchanlhmi_t *hmi, PNT *p, WID parent, TC *title, PAT *bgpat);
+IMPORT externalbbswindow_t* bchanlhmi_newexternalbbswindow(bchanlhmi_t *hmi, RECT *r, WID parent, TC *title, PAT *bgpat);
 IMPORT VOID bchanlhmi_deletesubjectwindow(bchanlhmi_t *hmi, subjectwindow_t *window);
 IMPORT VOID bchanlhmi_deletebbsmenuwindow(bchanlhmi_t *hmi, bbsmenuwindow_t *window);
 IMPORT VOID bchanlhmi_deletesubjectoptionwindow(bchanlhmi_t *hmi, subjectoptionwindow_t *window);
 IMPORT VOID bchanlhmi_deleteregisterexternalwindow(bchanlhmi_t *hmi, registerexternalwindow_t *window);
+IMPORT VOID bchanlhmi_deleteexternalbbswindow(bchanlhmi_t *hmi, externalbbswindow_t *window);
 
 #endif
