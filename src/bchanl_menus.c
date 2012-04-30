@@ -1,7 +1,7 @@
 /*
  * bchanl_menus.c
  *
- * Copyright (c) 2011 project bchan
+ * Copyright (c) 2011-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -40,7 +40,7 @@
 # define DP_ER(msg, err) /**/
 #endif
 
-#define BCHANL_MAINMENU_ITEMNUM_WINDOW 3
+#define BCHANL_MAINMENU_ITEMNUM_WINDOW 4
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
 EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable)

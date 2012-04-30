@@ -44,6 +44,7 @@
 .WS_SBJTOPT_ODR	=	31
 .WS_SBJTOPT_ODRBY	=	32
 .TEXT_CATE_EXTBBS	= 33
+.TEXT_MLIST3	=	34
 
 --- for subject option window layout values.
 
@@ -113,8 +114,16 @@
 
 	{# TEXT_MLIST2 0 0}	-- data number
 	MC_STR "操作"
-	MC_STR "板一覧再取得"
-	MC_STR "外部板の追加\0"
+	MC_STR "板一覧再取得\0"
+
+	{# TEXT_MLIST3 0 0}	-- data number
+	MC_STR "外部板"
+	MC_IND "外部板管理"
+	MC_LINE
+	MC_STR "板追加"
+	MC_STR "一つ上げる"
+	MC_STR "一つ下げる"
+	MC_STR "削除\0"
 
 	{# TEXT_WTIT_BBSMENU 0 0}	-- data number
 	"２ちゃんねる板一覧\0"
@@ -142,6 +151,7 @@
 	0L 0L 0L TEXT_MLIST0:L 0L	-- mlist0
 	0L 0L 0L TEXT_MLIST1:L 0L	-- mlist1
 	0L 0L 0L TEXT_MLIST2:L 0L	-- mlist2
+	0L 0L 0L TEXT_MLIST3:L 0L	-- mlist2
 	0L 0L 0L 0L 0L	-- [ウィンドウ]
 	0L 0L 0L 0L 0L	-- [小物]
 
