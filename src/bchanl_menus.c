@@ -43,13 +43,39 @@
 #define BCHANL_MAINMENU_ITEMNUM_WINDOW 4
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
-EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable)
+EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected)
 {
 	/* [表示] -> [スレ一覧設定] */
 	if (subectjoptionenable == False) {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_NOSEL);
 	} else {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_SEL);
+	}
+
+	/* [外部板] -> [外部板管理] */
+	if (extbbsmanageropen == False) {
+		mchg_atr(mainmenu->mnid, (3 << 8)|1, M_NOSEL);
+	} else {
+		mchg_atr(mainmenu->mnid, (3 << 8)|1, M_SEL);
+	}
+
+	/* [外部板] -> [板追加] */
+	if (extbbsmanageropen != False) {
+		mchg_atr(mainmenu->mnid, (3 << 8)|3, M_ACT);
+	} else {
+		mchg_atr(mainmenu->mnid, (3 << 8)|3, M_INACT);
+	}
+	/* [外部板] -> [一つ上げる] */
+	/* [外部板] -> [一つ下げる] */
+	/* [外部板] -> [削除] */
+	if (extbbsselected == False) {
+		mchg_atr(mainmenu->mnid, (3 << 8)|4, M_INACT);
+		mchg_atr(mainmenu->mnid, (3 << 8)|5, M_INACT);
+		mchg_atr(mainmenu->mnid, (3 << 8)|6, M_INACT);
+	} else {
+		mchg_atr(mainmenu->mnid, (3 << 8)|4, M_ACT);
+		mchg_atr(mainmenu->mnid, (3 << 8)|5, M_ACT);
+		mchg_atr(mainmenu->mnid, (3 << 8)|6, M_ACT);
 	}
 
 	wget_dmn(&(mainmenu->mnitem[BCHANL_MAINMENU_ITEMNUM_WINDOW].ptr));
@@ -69,7 +95,7 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 		ret = BCHANL_MAINMENU_SELECT_CLOSE;
 		break;
 	case 1: /* [表示] */
-		switch(i & 0xff) {
+		switch (i & 0xff) {
 		case 1: /* [再表示] */
 			ret = BCHANL_MAINMENU_SELECT_REDISPLAY;
 			break;
@@ -82,12 +108,31 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 		}
 		break;
 	case 2:	/* [操作] */
-		switch(i & 0xff) {
+		switch (i & 0xff) {
 		case 1: /* [板一覧再取得] */
 			ret = BCHANL_MAINMENU_SELECT_BBSMENUFETCH;
 			break;
-		case 2: /* [外部板の追加] */
-			ret = BCHANL_MAINMENU_SELECT_REGISTEREXTBBS;
+		default:
+			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
+			break;
+		}
+		break;
+	case 3:	/* [外部板] */
+		switch (i & 0xff) {
+		case 1: /* [外部板管理] */
+			ret = BCHANL_MAINMENU_SELECT_EXTBBS_MANAGER;
+			break;
+		case 3: /* [板追加] */
+			ret = BCHANL_MAINMENU_SELECT_EXTBBS_REGISTER;
+			break;
+		case 4: /* [一つ上げる] */
+			ret = BCHANL_MAINMENU_SELECT_EXTBBS_UP;
+			break;
+		case 5: /* [一つ下げる] */
+			ret = BCHANL_MAINMENU_SELECT_EXTBBS_DOWN;
+			break;
+		case 6: /* [削除] */
+			ret = BCHANL_MAINMENU_SELECT_EXTBBS_DELETE;
 			break;
 		default:
 			ret = BCHANL_MAINMENU_SELECT_NOSELECT;

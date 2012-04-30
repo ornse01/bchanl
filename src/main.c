@@ -1392,11 +1392,12 @@ LOCAL VOID bchanl_keydwn(bchanl_t *bchanl, UH keytop, TC ch, UW stat)
 
 LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 {
-	Bool isopen;
+	Bool isopen, isopen_extbbs;
 
 	isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
+	isopen_extbbs = externalbbswindow_isopen(bchanl->externalbbswindow);
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, False);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
@@ -1423,11 +1424,7 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 			subjectoptionwindow_close(bchanl->subjectoptionwindow);
 		}
 		break;
-	case BCHANL_MAINMENU_SELECT_REGISTEREXTBBS: /* [外部板の追加] */
-		isopen = registerexternalwindow_isopen(bchanl->registerexternalwindow);
-		if (isopen == False) {
-			registerexternalwindow_open(bchanl->registerexternalwindow);
-		}
+	case BCHANL_MAINMENU_SELECT_EXTBBS_MANAGER: /* [外部板の追加] */
 		isopen = externalbbswindow_isopen(bchanl->externalbbswindow);
 		if (isopen == False) {
 
@@ -1440,6 +1437,19 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 			extbbslist_editcontext_setviewrect(bchanl->bbsmenu.editctx, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
 			externalbbswindow_setworkrect(bchanl->externalbbswindow, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
 		}
+		break;
+	case BCHANL_MAINMENU_SELECT_EXTBBS_REGISTER:
+		isopen = registerexternalwindow_isopen(bchanl->registerexternalwindow);
+		if (isopen == False) {
+			registerexternalwindow_open(bchanl->registerexternalwindow);
+		}
+		break;
+	case BCHANL_MAINMENU_SELECT_EXTBBS_UP:
+		break;
+	case BCHANL_MAINMENU_SELECT_EXTBBS_DOWN:
+		break;
+	case BCHANL_MAINMENU_SELECT_EXTBBS_DELETE:
+		break;
 	}
 	return;
 }
