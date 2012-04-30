@@ -555,7 +555,7 @@ IMPORT W extbbslist_editcontext_swapitem(extbbslist_editcontext_t *ctx, W i0, W 
 	if (i0 == i1) {
 		return 0;
 	}
-	if (i1 > i0) {
+	if (i0 > i1) {
 		buf = i1;
 		i1 = i0;
 		i0 = buf;
@@ -571,6 +571,12 @@ IMPORT W extbbslist_editcontext_swapitem(extbbslist_editcontext_t *ctx, W i0, W 
 		return -1;
 	}
 	item1_next = extbbslist_item_nextnode(item1);
+
+	if (ctx->selected.index == i0) {
+		ctx->selected.index = i1;
+	} else if (ctx->selected.index == i1) {
+		ctx->selected.index = i0;
+	}
 
 	if (i0 + 1 == i1) {
 		extbbslist_item_QueRemove(item1);
@@ -594,13 +600,15 @@ IMPORT W extbbslist_editcontext_deleteitem(extbbslist_editcontext_t *ctx, W i)
 	if (item == NULL) {
 		return -1; /* TODO */
 	}
+	extbbslist_item_delete(item);
 	ctx->num--;
 	if (ctx->selected.index == i) {
 		ctx->selected.item = NULL;
 		ctx->selected.index = -1;
 	}
-	ctx->selected.item = item;
-	ctx->selected.index = i;
+	if (ctx->selected.index > i) {
+		ctx->selected.index--;
+	}
 	return 0;
 }
 
@@ -742,6 +750,10 @@ EXPORT VOID extbbslist_endedit(extbbslist_t *list, extbbslist_editcontext_t *ctx
 
 			sentinel = extbbslist_sentinelnode(list);
 			extbbslist_item_QueInsert(sentinel, next);
+
+			list->num = ctx->num;
+		} else {
+			list->num = 0;
 		}
 	}
 
