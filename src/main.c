@@ -55,6 +55,7 @@
 #include    "bchanl_subject.h"
 #include    "bchanl_hmi.h"
 #include    "bchanl_menus.h"
+#include    "bchanl_panels.h"
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -861,10 +862,32 @@ LOCAL VOID bchanl_externalbbswindow_resize(bchanl_t *bchanl, SIZE newsize)
 
 LOCAL VOID bchanl_externalbbswindow_close(bchanl_t *bchanl)
 {
-	extbbslist_endedit(bchanl->bbsmenu.extbbslist, bchanl->bbsmenu.editctx, True);
+	Bool changed, save = False;
+	BCHAN_PANELS_SAVECONFIRM_RESULT confirm;
+
+	changed = extbbslist_editcontext_ischanged(bchanl->bbsmenu.editctx);
+	if (changed != False) {
+		confirm = bchan_panels_saveconfirm();
+		switch (confirm) {
+		case BCHAN_PANELS_SAVECONFIRM_RESULT_CANCEL:
+			return;
+		case BCHAN_PANELS_SAVECONFIRM_RESULT_OK_NOSAVE:
+			save = False;
+			break;
+		case BCHAN_PANELS_SAVECONFIRM_RESULT_OK_SAVE:
+			save = True;
+			break;
+		default:
+			break;
+		}
+	}
+
+	extbbslist_endedit(bchanl->bbsmenu.extbbslist, bchanl->bbsmenu.editctx, save);
 	bchanl->bbsmenu.editctx = NULL;
 	externalbbswindow_close(bchanl->externalbbswindow);
-	bchanl_bbsmenu_relayout(&bchanl->bbsmenu, bchanl->bbsmenuwindow);
+	if (save != False) {
+		bchanl_bbsmenu_relayout(&bchanl->bbsmenu, bchanl->bbsmenuwindow);
+	}
 }
 
 LOCAL VOID bchanl_externalbbswindow_butdn(bchanl_t *bchanl, W type, PNT pos)
