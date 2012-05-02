@@ -217,6 +217,7 @@ struct extbbslist_t_ {
 	LINK *lnk;
 	W rectype;
 	UH subtype;
+	Bool changed;
 };
 
 LOCAL extbbslist_item_t* extbbslist_sentinelnode(extbbslist_t *list)
@@ -297,6 +298,7 @@ EXPORT W extbbslist_appenditem(extbbslist_t *list, TC *title, W title_len, UB *u
 	senti = extbbslist_sentinelnode(list);
 	extbbslist_item_QueInsert(item, senti);
 	list->num++;
+	list->changed = True;
 
 	return 0;
 }
@@ -316,6 +318,7 @@ EXPORT W extbbslist_deleteitem(extbbslist_t *list, TC *title, W title_len)
 
 	extbbslist_item_delete(item);
 	list->num--;
+	list->changed = True;
 
 	return 0; /* TODO */
 }
@@ -333,6 +336,7 @@ LOCAL VOID extbbslist_clear(extbbslist_t *list)
 		item = (extbbslist_item_t*)list->sentinel.prev;
 		extbbslist_item_delete(item);
 	}
+	list->changed = True;
 }
 
 EXPORT W extbbslist_number(extbbslist_t *list)
@@ -356,6 +360,7 @@ struct extbbslist_editcontext_t_ {
 		extbbslist_item_t *item;
 		W index;
 	} selected;
+	Bool changed;
 };
 
 #define EXTBBSLIST_ENTRY_HEIGHT 20
@@ -409,6 +414,7 @@ EXPORT W extbbslist_editcontext_append(extbbslist_editcontext_t *ctx, CONST TC *
 	senti = extbbslist_editcontext_sentinelnode(ctx);
 	extbbslist_item_QueInsert(item, senti);
 	ctx->num++;
+	ctx->changed = True;
 
 	return 0;
 }
@@ -422,6 +428,8 @@ EXPORT W extbbslist_editcontext_update(extbbslist_editcontext_t *ctx, W i, CONST
 	if (item == NULL) {
 		return -1; /* TODO */
 	}
+
+	ctx->changed = True;
 
 	err = extbbslist_item_assigntitle(item, title, title_len);
 	if (err < 0) {
@@ -577,6 +585,7 @@ IMPORT W extbbslist_editcontext_swapitem(extbbslist_editcontext_t *ctx, W i0, W 
 	} else if (ctx->selected.index == i1) {
 		ctx->selected.index = i0;
 	}
+	ctx->changed = True;
 
 	if (i0 + 1 == i1) {
 		extbbslist_item_QueRemove(item1);
@@ -602,6 +611,7 @@ IMPORT W extbbslist_editcontext_deleteitem(extbbslist_editcontext_t *ctx, W i)
 	}
 	extbbslist_item_delete(item);
 	ctx->num--;
+	ctx->changed = True;
 	if (ctx->selected.index == i) {
 		ctx->selected.item = NULL;
 		ctx->selected.index = -1;
@@ -679,6 +689,7 @@ LOCAL extbbslist_editcontext_t* extbbslist_editcontext_new()
 	ctx->num = 0;
 	ctx->selected.item = NULL;
 	ctx->selected.index = -1;
+	ctx->changed = False;
 
 	return ctx;
 }
@@ -738,7 +749,7 @@ EXPORT VOID extbbslist_endedit(extbbslist_t *list, extbbslist_editcontext_t *ctx
 	extbbslist_item_t *sentinel, *next;
 	Bool empty;
 
-	if (update != False) {
+	if ((update != False)&&(ctx->changed != False)) {
 		extbbslist_clear(list);
 
 		sentinel = extbbslist_editcontext_sentinelnode(ctx);
@@ -755,6 +766,7 @@ EXPORT VOID extbbslist_endedit(extbbslist_t *list, extbbslist_editcontext_t *ctx
 		} else {
 			list->num = 0;
 		}
+		list->changed = True;
 	}
 
 	list->edit = NULL;
@@ -828,6 +840,7 @@ LOCAL VOID extbbslist_initialize(extbbslist_t *list, LINK *db_link, W rectype, U
 	list->lnk = db_link;
 	list->rectype = rectype;
 	list->subtype = subtype;
+	list->changed = False;
 }
 
 LOCAL VOID extbbslist_finalize(extbbslist_t *list)
