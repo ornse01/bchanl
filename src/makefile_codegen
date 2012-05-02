@@ -1,4 +1,7 @@
-all: bchanl_hmi.c bchanl_hmi.h
+all: bchanl_hmi.c bchanl_hmi.h bchanl_panels.c bchanl_panels.h
 
 bchanl_hmi.c bchanl_hmi.h: bchanl_hmi.yaml bchanf/src/tools/hmi_generator.rb
 	ruby bchanf/src/tools/hmi_generator.rb bchanl_hmi.yaml
+
+bchanl_panels.c bchanl_panels.h: bchanl_panels.yaml bchanf/src/tools/panel_generator.rb
+	ruby bchanf/src/tools/panel_generator.rb bchanl_panels.yaml
