@@ -56,6 +56,7 @@ IMPORT W extbbslist_editcontext_swapitem(extbbslist_editcontext_t *ctx, W i0, W 
 IMPORT W extbbslist_editcontext_deleteitem(extbbslist_editcontext_t *ctx, W i);
 IMPORT VOID extbbslist_editcontext_setselect(extbbslist_editcontext_t *ctx, W i);
 IMPORT W extbbslist_editcontext_getselect(extbbslist_editcontext_t *ctx);
+IMPORT Bool extbbslist_editcontext_ischanged(extbbslist_editcontext_t *ctx);
 IMPORT VOID extbbslist_editcontext_setviewrect(extbbslist_editcontext_t *ctx, W l, W t, W r, W b);
 IMPORT VOID extbbslist_editcontext_getviewrect(extbbslist_editcontext_t *ctx, W *l, W *t, W *r, W *b);
 IMPORT VOID extbbslist_editcontext_scrollviewrect(extbbslist_editcontext_t *ctx, W dh, W dv);

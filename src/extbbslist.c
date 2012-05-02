@@ -389,7 +389,7 @@ LOCAL extbbslist_item_t *extbbslist_editcontext_searchitembyindex(extbbslist_edi
 	return NULL;
 }
 
-EXPORT W extbbslist_editcontext_append(extbbslist_editcontext_t *ctx, CONST TC *title, W title_len, CONST TC *url, W url_len)
+LOCAL W extbbslist_editcontext_append_common(extbbslist_editcontext_t *ctx, CONST TC *title, W title_len, CONST TC *url, W url_len)
 {
 	extbbslist_item_t *item, *senti;
 	W err;
@@ -414,8 +414,19 @@ EXPORT W extbbslist_editcontext_append(extbbslist_editcontext_t *ctx, CONST TC *
 	senti = extbbslist_editcontext_sentinelnode(ctx);
 	extbbslist_item_QueInsert(item, senti);
 	ctx->num++;
-	ctx->changed = True;
 
+	return 0;
+}
+
+EXPORT W extbbslist_editcontext_append(extbbslist_editcontext_t *ctx, CONST TC *title, W title_len, CONST TC *url, W url_len)
+{
+	W err;
+
+	err = extbbslist_editcontext_append_common(ctx, title, title_len, url, url_len);
+	if (err < 0) {
+		return err;
+	}
+	ctx->changed = True;
 	return 0;
 }
 
@@ -636,9 +647,14 @@ IMPORT VOID extbbslist_editcontext_setselect(extbbslist_editcontext_t *ctx, W i)
 	ctx->selected.index = i;
 }
 
-IMPORT W extbbslist_editcontext_getselect(extbbslist_editcontext_t *ctx)
+EXPORT W extbbslist_editcontext_getselect(extbbslist_editcontext_t *ctx)
 {
 	return ctx->selected.index;
+}
+
+EXPORT Bool extbbslist_editcontext_ischanged(extbbslist_editcontext_t *ctx)
+{
+	return ctx->changed;
 }
 
 EXPORT VOID extbbslist_editcontext_setviewrect(extbbslist_editcontext_t *ctx, W l, W t, W r, W b)
@@ -731,7 +747,7 @@ EXPORT extbbslist_editcontext_t* extbbslist_startedit(extbbslist_t *list)
 	senti = extbbslist_sentinelnode(list);
 	item = extbbslist_item_nextnode(senti);
 	for (; item != senti;) {
-		err = extbbslist_editcontext_append(ctx, item->title, item->title_len, item->url.tc, item->url.tc_len);
+		err = extbbslist_editcontext_append_common(ctx, item->title, item->title_len, item->url.tc, item->url.tc_len);
 		if (err < 0) {
 			extbbslist_editcontext_delete(ctx);
 			return NULL;
