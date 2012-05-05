@@ -159,3 +159,246 @@ EXPORT BCHAN_PANELS_SAVECONFIRM_RESULT bchan_panels_saveconfirm()
 }
 
 
+EXPORT BCHAN_PANELS_URLERROR_SCHEME_RESULT bchan_panels_urlerror_scheme()
+{
+	PNL_ITEM pnl_item[3];
+	PNID pnid0;
+	PNT p0 = {0x8000,0x8000};
+	WEVENT wev0;
+	W stat,itemno;
+	BCHAN_PANELS_URLERROR_SCHEME_RESULT ret;
+	PANEL pnl = {
+		2,0x48,0,
+		{{0, 0, 280, 120}},
+		0,
+		3,
+		pnl_item
+	};
+
+	pnl_item[0].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[0].info = 0;
+	pnl_item[0].ir = (RECT){{24,24,24+144,24+16}};
+	pnl_item[0].desc = 0;
+	pnl_item[0].dnum = 0;
+	pnl_item[0].ptr = (H*)(TC[]){0x2355, 0x2352, 0x234c, 0x242c, 0x4954, 0x4035, 0x2447, 0x2439, 0x2123, TNULL};
+	pnl_item[1].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[1].info = 0;
+	pnl_item[1].ir = (RECT){{24,48,24+224,48+16}};
+	pnl_item[1].desc = 0;
+	pnl_item[1].dnum = 0;
+	pnl_item[1].ptr = (H*)(TC[]){0x2539, 0x252d, 0x213c, 0x2560, 0x2472, 0x3d24, 0x4035, 0x2437, 0x2446, 0x242f, 0x2440, 0x2435, 0x2424, 0x2123, TNULL};
+	pnl_item[2].itype = PARTS_ITEM;
+	pnl_item[2].info = 0;
+	pnl_item[2].ir = (RECT){{88,72,88+96,72+24}};
+	pnl_item[2].desc = 0;
+	pnl_item[2].dnum = 0;
+	pnl_item[2].ptr = (H*)&(SWSEL){MS_PARTS|P_DISP, (RECT){{0, 0, 96, 24}}, 0, (TC[]){MC_STR, 0x334e, 0x4727, TNULL}, {0, 0, -1, 0}};
+
+	pnid0 = pcre_pnl(&pnl, &p0);
+	if (pnid0 < 0) {
+		DP_ER("pcre_pnl error", pnid0);
+		return pnid0;
+	}
+
+	for (;;) {
+		ret = -1;
+		stat = pact_pnl(pnid0, &wev0.e, &itemno);
+		switch (stat) {
+		case	P_EVENT:
+			if (wev0.s.type == EV_DEVICE) {
+				oprc_dev(&wev0.e, NULL, 0);
+			}
+			continue;
+		default:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_SCHEME_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+		case	0x5001:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_SCHEME_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+			break;
+		}
+		if (ret != -1) {
+			break;
+		}
+	}
+
+	pdel_pnl(pnid0);
+
+	return ret;
+}
+
+
+EXPORT BCHAN_PANELS_URLERROR_HOST_RESULT bchan_panels_urlerror_host()
+{
+	PNL_ITEM pnl_item[3];
+	PNID pnid0;
+	PNT p0 = {0x8000,0x8000};
+	WEVENT wev0;
+	W stat,itemno;
+	BCHAN_PANELS_URLERROR_HOST_RESULT ret;
+	PANEL pnl = {
+		2,0x48,0,
+		{{0, 0, 264, 120}},
+		0,
+		3,
+		pnl_item
+	};
+
+	pnl_item[0].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[0].info = 0;
+	pnl_item[0].ir = (RECT){{24,24,24+144,24+16}};
+	pnl_item[0].desc = 0;
+	pnl_item[0].dnum = 0;
+	pnl_item[0].ptr = (H*)(TC[]){0x2355, 0x2352, 0x234c, 0x242c, 0x4954, 0x4035, 0x2447, 0x2439, 0x2123, TNULL};
+	pnl_item[1].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[1].info = 0;
+	pnl_item[1].ir = (RECT){{24,48,24+208,48+16}};
+	pnl_item[1].desc = 0;
+	pnl_item[1].dnum = 0;
+	pnl_item[1].ptr = (H*)(TC[]){0x255b, 0x2539, 0x2548, 0x2472, 0x3d24, 0x4035, 0x2437, 0x2446, 0x242f, 0x2440, 0x2435, 0x2424, 0x2123, TNULL};
+	pnl_item[2].itype = PARTS_ITEM;
+	pnl_item[2].info = 0;
+	pnl_item[2].ir = (RECT){{80,72,80+96,72+24}};
+	pnl_item[2].desc = 0;
+	pnl_item[2].dnum = 0;
+	pnl_item[2].ptr = (H*)&(SWSEL){MS_PARTS|P_DISP, (RECT){{0, 0, 96, 24}}, 0, (TC[]){MC_STR, 0x334e, 0x4727, TNULL}, {0, 0, -1, 0}};
+
+	pnid0 = pcre_pnl(&pnl, &p0);
+	if (pnid0 < 0) {
+		DP_ER("pcre_pnl error", pnid0);
+		return pnid0;
+	}
+
+	for (;;) {
+		ret = -1;
+		stat = pact_pnl(pnid0, &wev0.e, &itemno);
+		switch (stat) {
+		case	P_EVENT:
+			if (wev0.s.type == EV_DEVICE) {
+				oprc_dev(&wev0.e, NULL, 0);
+			}
+			continue;
+		default:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_HOST_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+		case	0x5001:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_HOST_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+			break;
+		}
+		if (ret != -1) {
+			break;
+		}
+	}
+
+	pdel_pnl(pnid0);
+
+	return ret;
+}
+
+
+EXPORT BCHAN_PANELS_URLERROR_PATH_RESULT bchan_panels_urlerror_path()
+{
+	PNL_ITEM pnl_item[3];
+	PNID pnid0;
+	PNT p0 = {0x8000,0x8000};
+	WEVENT wev0;
+	W stat,itemno;
+	BCHAN_PANELS_URLERROR_PATH_RESULT ret;
+	PANEL pnl = {
+		2,0x48,0,
+		{{0, 0, 248, 120}},
+		0,
+		3,
+		pnl_item
+	};
+
+	pnl_item[0].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[0].info = 0;
+	pnl_item[0].ir = (RECT){{24,24,24+144,24+16}};
+	pnl_item[0].desc = 0;
+	pnl_item[0].dnum = 0;
+	pnl_item[0].ptr = (H*)(TC[]){0x2355, 0x2352, 0x234c, 0x242c, 0x4954, 0x4035, 0x2447, 0x2439, 0x2123, TNULL};
+	pnl_item[1].itype = TEXT_ITEM|ATR_TEXT;
+	pnl_item[1].info = 0;
+	pnl_item[1].ir = (RECT){{24,48,24+192,48+16}};
+	pnl_item[1].desc = 0;
+	pnl_item[1].dnum = 0;
+	pnl_item[1].ptr = (H*)(TC[]){0x2551, 0x2539, 0x2472, 0x3d24, 0x4035, 0x2437, 0x2446, 0x242f, 0x2440, 0x2435, 0x2424, 0x2123, TNULL};
+	pnl_item[2].itype = PARTS_ITEM;
+	pnl_item[2].info = 0;
+	pnl_item[2].ir = (RECT){{72,72,72+96,72+24}};
+	pnl_item[2].desc = 0;
+	pnl_item[2].dnum = 0;
+	pnl_item[2].ptr = (H*)&(SWSEL){MS_PARTS|P_DISP, (RECT){{0, 0, 96, 24}}, 0, (TC[]){MC_STR, 0x334e, 0x4727, TNULL}, {0, 0, -1, 0}};
+
+	pnid0 = pcre_pnl(&pnl, &p0);
+	if (pnid0 < 0) {
+		DP_ER("pcre_pnl error", pnid0);
+		return pnid0;
+	}
+
+	for (;;) {
+		ret = -1;
+		stat = pact_pnl(pnid0, &wev0.e, &itemno);
+		switch (stat) {
+		case	P_EVENT:
+			if (wev0.s.type == EV_DEVICE) {
+				oprc_dev(&wev0.e, NULL, 0);
+			}
+			continue;
+		default:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_PATH_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+		case	0x5001:
+			if (itemno == (2 + 1)) {
+				ret = BCHAN_PANELS_URLERROR_PATH_RESULT_OK;
+				break;
+			}
+
+			if (itemno >= 0) {
+				continue;
+			}
+			break;
+		}
+		if (ret != -1) {
+			break;
+		}
+	}
+
+	pdel_pnl(pnid0);
+
+	return ret;
+}
+
+

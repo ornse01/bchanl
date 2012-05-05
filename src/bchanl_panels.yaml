@@ -113,3 +113,54 @@ panels:
           size:
             h: 96
             v: 24
+
+  - panel_name: bchan_panels_urlerror_scheme
+    lines:
+      - items:
+        - type: fixedtext
+          text: ＵＲＬが不正です。
+      - items:
+        - type: fixedtext
+          text: スキームを修正してください。
+      - layout: centering
+        items:
+        - type: button
+          text: 確認
+          name: ok
+          size:
+            h: 96
+            v: 24
+
+  - panel_name: bchan_panels_urlerror_host
+    lines:
+      - items:
+        - type: fixedtext
+          text: ＵＲＬが不正です。
+      - items:
+        - type: fixedtext
+          text: ホストを修正してください。
+      - layout: centering
+        items:
+        - type: button
+          text: 確認
+          name: ok
+          size:
+            h: 96
+            v: 24
+
+  - panel_name: bchan_panels_urlerror_path
+    lines:
+      - items:
+        - type: fixedtext
+          text: ＵＲＬが不正です。
+      - items:
+        - type: fixedtext
+          text: パスを修正してください。
+      - layout: centering
+        items:
+        - type: button
+          text: 確認
+          name: ok
+          size:
+            h: 96
+            v: 24
