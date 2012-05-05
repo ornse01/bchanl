@@ -51,6 +51,7 @@
 #include	"bbsmenufilter.h"
 #include    "bbsmenulayout.h"
 #include    "extbbslist.h"
+#include    "util.h"
 
 #include    "bchanl_subject.h"
 #include    "bchanl_hmi.h"
@@ -807,24 +808,44 @@ LOCAL VOID bchanl_bbsmenu_relayout(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t *wi
 	bbsmenuwindow_requestredisp(window);
 }
 
-LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
+LOCAL Bool bchanl_registerexternalbbs(bchanl_t *bchanl)
 {
 	TC title[128];
 	TC url[256];
 	W title_len, url_len;
+	TCURL_CHECK_VALID_BBSURL ret;
 
 	title_len = registerexternalwindow_getboradnametext(bchanl->registerexternalwindow, title, 128);
 	if (title_len < 0) {
 		DP_ER("registerexternalwindow_getboradnametext error", title_len);
-		return;
+		return True;
 	}
 	title[title_len] = TNULL;
-	url_len = registerexternalwindow_geturltext(bchanl->registerexternalwindow, url, 256);
+	url_len = registerexternalwindow_geturltext(bchanl->registerexternalwindow, url, 255);
 	if (url_len < 0) {
 		DP_ER("registerexternalwindow_geturltext error", url_len);
-		return;
+		return True;
 	}
 	url[url_len] = TNULL;
+
+	ret = tcurl_check_valid_bbsurl(url, url_len);
+	switch (ret) {
+	  case TCURL_CHECK_VALID_BBSURL_NO_LAST_SLSH:
+		url[url_len+1] = TK_SLSH;
+		url_len++;
+		/* intentional */
+	  case TCURL_CHECK_VALID_BBSURL_OK:
+		break;
+	  case TCURL_CHECK_VALID_BBSURL_INVALID_SCHEME:
+		bchan_panels_urlerror_scheme();
+		return False;
+	  case TCURL_CHECK_VALID_BBSURL_INVALID_HOST:
+		bchan_panels_urlerror_host();
+		return False;
+	  case TCURL_CHECK_VALID_BBSURL_INVALID_PATH:
+		bchan_panels_urlerror_path();
+		return False;
+	}
 
 	bchanl_bbsmenu_registerexternalbbs(&bchanl->bbsmenu, title, title_len, url, url_len);
 
@@ -832,6 +853,8 @@ LOCAL VOID bchanl_registerexternalbbs(bchanl_t *bchanl)
 	registerexternalwindow_seturltext(bchanl->registerexternalwindow, NULL, 0);
 
 	externalbbswindow_requestredisp(bchanl->externalbbswindow);
+
+	return True;
 }
 
 LOCAL VOID bchanl_externalbbswindow_draw(bchanl_t *bchanl)
@@ -1543,6 +1566,7 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 {
 	bchanlhmievent_t *evt;
 	W sel, err;
+	Bool close;
 
 	err = bchanlhmi_getevent(bchanl->hmi, &evt);
 	if (err < 0) {
@@ -1646,8 +1670,10 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU:
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_DETERMINE_PUSH:
-		bchanl_registerexternalbbs(bchanl);
-		registerexternalwindow_close(bchanl->registerexternalwindow);
+		close = bchanl_registerexternalbbs(bchanl);
+		if (close != False) {
+			registerexternalwindow_close(bchanl->registerexternalwindow);
+		}
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_CANCEL_PUSH:
 		registerexternalwindow_close(bchanl->registerexternalwindow);
