@@ -1440,7 +1440,7 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 		}
 	}
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, False, False);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)

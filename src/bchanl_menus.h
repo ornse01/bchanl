@@ -38,7 +38,7 @@ typedef struct bchanl_mainmenu_t_ bchanl_mainmenu_t;
 
 IMPORT W bchanl_mainmenu_initialize(bchanl_mainmenu_t *mainmenu, W dnum);
 IMPORT VOID bchanl_mainmenu_finalize(bchanl_mainmenu_t *mainmenu);
-IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected);
+IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray);
 #define BCHANL_MAINMENU_SELECT_NOSELECT 0
 #define BCHANL_MAINMENU_SELECT_CLOSE 1
 #define BCHANL_MAINMENU_SELECT_REDISPLAY 2
@@ -49,6 +49,11 @@ IMPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionen
 #define BCHANL_MAINMENU_SELECT_EXTBBS_UP 7
 #define BCHANL_MAINMENU_SELECT_EXTBBS_DOWN 8
 #define BCHANL_MAINMENU_SELECT_EXTBBS_DELETE 9
+#define BCHANL_MAINMENU_SELECT_EDIT_COPY_TO_TRAY 10
+#define BCHANL_MAINMENU_SELECT_EDIT_COPY_FROM_TRAY 11
+#define BCHANL_MAINMENU_SELECT_EDIT_MOVE_TO_TRAY 12
+#define BCHANL_MAINMENU_SELECT_EDIT_MOVE_FROM_TRAY 13
+#define BCHANL_MAINMENU_SELECT_EDIT_DELETE 14
 IMPORT W bchanl_mainmenu_popup(bchanl_mainmenu_t *mainmenu, PNT pos);
 IMPORT W bchanl_mainmenu_keyselect(bchanl_mainmenu_t *mainmenu, TC keycode);
 

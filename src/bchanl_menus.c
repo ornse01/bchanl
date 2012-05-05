@@ -43,13 +43,32 @@
 #define BCHANL_MAINMENU_ITEMNUM_WINDOW 5
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
-EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected)
+EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray)
 {
 	/* [表示] -> [スレ一覧設定] */
 	if (subectjoptionenable == False) {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_NOSEL);
 	} else {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_SEL);
+	}
+
+	/* [編集] -> [トレーから*] */
+	if (fromtray == False) {
+		mchg_atr(mainmenu->mnid, (2 << 8)|2, M_INACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|4, M_INACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_INACT);
+	} else {
+		mchg_atr(mainmenu->mnid, (2 << 8)|2, M_ACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|4, M_ACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_ACT);
+	}
+	/* [編集] -> [トレーへ*] */
+	if (totray == False) {
+		mchg_atr(mainmenu->mnid, (2 << 8)|1, M_INACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|3, M_INACT);
+	} else {
+		mchg_atr(mainmenu->mnid, (2 << 8)|1, M_ACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|3, M_ACT);
 	}
 
 	/* [外部板] -> [外部板管理] */
@@ -101,6 +120,28 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 			break;
 		case 2: /* [スレ一覧設定] */
 			ret = BCHANL_MAINMENU_SELECT_SUBJECTOPTION;
+			break;
+		default:
+			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
+			break;
+		}
+		break;
+	case 2: /* [編集] */
+		switch (i & 0xff) {
+		case 1: /* [トレーへ複写] */
+			ret = BCHANL_MAINMENU_SELECT_EDIT_COPY_TO_TRAY;
+			break;
+		case 2: /* [トレーから複写] */
+			ret = BCHANL_MAINMENU_SELECT_EDIT_COPY_FROM_TRAY;
+			break;
+		case 3: /* [トレーへ移動] */
+			ret = BCHANL_MAINMENU_SELECT_EDIT_MOVE_TO_TRAY;
+			break;
+		case 4: /* [トレーから移動] */
+			ret = BCHANL_MAINMENU_SELECT_EDIT_MOVE_FROM_TRAY;
+			break;
+		case 5: /* [削除] */
+			ret = BCHANL_MAINMENU_SELECT_EDIT_DELETE;
 			break;
 		default:
 			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
