@@ -38,7 +38,7 @@ VPATH = $(S)
 HEADER := $(S) $(HEADER) ../src/bchanf/src
 
 # ソースファイル
-SRC =	test_main.c unittest_driver.c subjectcache.c test_subjectcache.c subjectparser.c test_subjectparser.c subjectlayout.c test_subjectlayout.c cache.c bbsmenucache.c test_bbsmenucache.c bbsmenuparser.c test_bbsmenuparser.c bbsmenulayout.c test_bbsmenulayout.c tadlib.c bbsmenufilter.c test_bbsmenufilter.c subjectlist.c test_subjectlist.c extbbslist.c test_extbbslist.c
+SRC =	test_main.c unittest_driver.c subjectcache.c test_subjectcache.c subjectparser.c test_subjectparser.c subjectlayout.c test_subjectlayout.c cache.c bbsmenucache.c test_bbsmenucache.c bbsmenuparser.c test_bbsmenuparser.c bbsmenulayout.c test_bbsmenulayout.c tadlib.c bbsmenufilter.c test_bbsmenufilter.c subjectlist.c test_subjectlist.c extbbslist.c test_extbbslist.c util.c test_util.c
 
 # データボックスソースファイル
 DBSRC =

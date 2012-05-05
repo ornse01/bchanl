@@ -57,4 +57,7 @@ IMPORT VOID test_bbsmnfilter_main(unittest_driver_t *driver);
 /* test_extbbslist.c */
 IMPORT VOID test_extbbslist_main(unittest_driver_t *driver);
 
+/* test_util.c */
+IMPORT VOID test_util_main(unittest_driver_t *driver);
+
 #endif

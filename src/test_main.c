@@ -49,6 +49,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 	test_bbsmnlayout_main(driver);
 	test_bbsmnfilter_main(driver);
 	test_extbbslist_main(driver);
+	test_util_main(driver);
 
 	unittest_driver_runnning(driver);
 	unittest_driver_delete(driver);
