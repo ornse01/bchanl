@@ -566,6 +566,8 @@ LOCAL VOID subjectoptionwindow_actionfilter(subjectoptionwindow_t *window, WEVEN
 	}
 	switch (i & 7) {
 	case	P_BUT:
+		cchg_par(window->filter.id, P_INACT);
+		cchg_par(window->filter.id, P_ACT);
 		wugt_evt(wev);
 		break;
 	case	P_TAB:
@@ -894,6 +896,8 @@ LOCAL VOID registerexternalwindow_actionboradname(registerexternalwindow_t *wind
 	}
 	switch (i & 7) {
 	case	P_BUT:
+		cchg_par(window->boradname.id, P_INACT);
+		cchg_par(window->boradname.id, P_ACT);
 		wugt_evt(wev);
 		break;
 	case	P_TAB:
@@ -990,6 +994,8 @@ LOCAL VOID registerexternalwindow_actionurl(registerexternalwindow_t *window, WE
 	}
 	switch (i & 7) {
 	case	P_BUT:
+		cchg_par(window->url.id, P_INACT);
+		cchg_par(window->url.id, P_ACT);
 		wugt_evt(wev);
 		break;
 	case	P_TAB:
