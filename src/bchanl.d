@@ -45,6 +45,7 @@
 .WS_SBJTOPT_ODRBY	=	32
 .TEXT_CATE_EXTBBS	= 33
 .TEXT_MLIST3	=	34
+.TEXT_MLIST4	=	35
 
 --- for subject option window layout values.
 
@@ -113,10 +114,18 @@
 	MC_IND "スレ一覧設定\0"
 
 	{# TEXT_MLIST2 0 0}	-- data number
+	MC_STR "編集"
+	MC_STRKEY1 "Ｃトレーへ複写"
+	MC_STRKEY1 "Ｚトレーから複写"
+	MC_STRKEY1 "Ｖトレーへ移動"
+	MC_STRKEY1 "Ｘトレーから移動"
+	MC_STR "削除\0"
+
+	{# TEXT_MLIST3 0 0}	-- data number
 	MC_STR "操作"
 	MC_STR "板一覧再取得\0"
 
-	{# TEXT_MLIST3 0 0}	-- data number
+	{# TEXT_MLIST4 0 0}	-- data number
 	MC_STR "外部板"
 	MC_IND "外部板管理"
 	MC_LINE
@@ -151,7 +160,8 @@
 	0L 0L 0L TEXT_MLIST0:L 0L	-- mlist0
 	0L 0L 0L TEXT_MLIST1:L 0L	-- mlist1
 	0L 0L 0L TEXT_MLIST2:L 0L	-- mlist2
-	0L 0L 0L TEXT_MLIST3:L 0L	-- mlist2
+	0L 0L 0L TEXT_MLIST3:L 0L	-- mlist3
+	0L 0L 0L TEXT_MLIST4:L 0L	-- mlist4
 	0L 0L 0L 0L 0L	-- [ウィンドウ]
 	0L 0L 0L 0L 0L	-- [小物]
 

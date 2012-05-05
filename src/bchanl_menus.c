@@ -40,7 +40,7 @@
 # define DP_ER(msg, err) /**/
 #endif
 
-#define BCHANL_MAINMENU_ITEMNUM_WINDOW 4
+#define BCHANL_MAINMENU_ITEMNUM_WINDOW 5
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
 EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected)
@@ -54,28 +54,28 @@ EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionen
 
 	/* [外部板] -> [外部板管理] */
 	if (extbbsmanageropen == False) {
-		mchg_atr(mainmenu->mnid, (3 << 8)|1, M_NOSEL);
+		mchg_atr(mainmenu->mnid, (4 << 8)|1, M_NOSEL);
 	} else {
-		mchg_atr(mainmenu->mnid, (3 << 8)|1, M_SEL);
+		mchg_atr(mainmenu->mnid, (4 << 8)|1, M_SEL);
 	}
 
 	/* [外部板] -> [板追加] */
 	if (extbbsmanageropen != False) {
-		mchg_atr(mainmenu->mnid, (3 << 8)|3, M_ACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|3, M_ACT);
 	} else {
-		mchg_atr(mainmenu->mnid, (3 << 8)|3, M_INACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|3, M_INACT);
 	}
 	/* [外部板] -> [一つ上げる] */
 	/* [外部板] -> [一つ下げる] */
 	/* [外部板] -> [削除] */
 	if (extbbsselected == False) {
-		mchg_atr(mainmenu->mnid, (3 << 8)|4, M_INACT);
-		mchg_atr(mainmenu->mnid, (3 << 8)|5, M_INACT);
-		mchg_atr(mainmenu->mnid, (3 << 8)|6, M_INACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|4, M_INACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|5, M_INACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|6, M_INACT);
 	} else {
-		mchg_atr(mainmenu->mnid, (3 << 8)|4, M_ACT);
-		mchg_atr(mainmenu->mnid, (3 << 8)|5, M_ACT);
-		mchg_atr(mainmenu->mnid, (3 << 8)|6, M_ACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|4, M_ACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|5, M_ACT);
+		mchg_atr(mainmenu->mnid, (4 << 8)|6, M_ACT);
 	}
 
 	wget_dmn(&(mainmenu->mnitem[BCHANL_MAINMENU_ITEMNUM_WINDOW].ptr));
@@ -107,7 +107,7 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 			break;
 		}
 		break;
-	case 2:	/* [操作] */
+	case 3:	/* [操作] */
 		switch (i & 0xff) {
 		case 1: /* [板一覧再取得] */
 			ret = BCHANL_MAINMENU_SELECT_BBSMENUFETCH;
@@ -117,7 +117,7 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 			break;
 		}
 		break;
-	case 3:	/* [外部板] */
+	case 4:	/* [外部板] */
 		switch (i & 0xff) {
 		case 1: /* [外部板管理] */
 			ret = BCHANL_MAINMENU_SELECT_EXTBBS_MANAGER;
