@@ -56,19 +56,19 @@ EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionen
 	if (fromtray == False) {
 		mchg_atr(mainmenu->mnid, (2 << 8)|2, M_INACT);
 		mchg_atr(mainmenu->mnid, (2 << 8)|4, M_INACT);
-		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_INACT);
 	} else {
 		mchg_atr(mainmenu->mnid, (2 << 8)|2, M_ACT);
 		mchg_atr(mainmenu->mnid, (2 << 8)|4, M_ACT);
-		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_ACT);
 	}
 	/* [編集] -> [トレーへ*] */
 	if (totray == False) {
 		mchg_atr(mainmenu->mnid, (2 << 8)|1, M_INACT);
 		mchg_atr(mainmenu->mnid, (2 << 8)|3, M_INACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_INACT);
 	} else {
 		mchg_atr(mainmenu->mnid, (2 << 8)|1, M_ACT);
 		mchg_atr(mainmenu->mnid, (2 << 8)|3, M_ACT);
+		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_ACT);
 	}
 
 	/* [外部板] -> [外部板管理] */
