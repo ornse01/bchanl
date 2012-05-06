@@ -1426,10 +1426,18 @@ LOCAL VOID bchanl_keydwn(bchanl_t *bchanl, UH keytop, TC ch, UW stat)
 	}
 }
 
-LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
+enum BCHANL_TEXTBOX_MENU_TYPE_ {
+	BCHANL_TEXTBOX_MENU_TYPE_NONE,
+	BCHANL_TEXTBOX_MENU_TYPE_FILTER,
+	BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE,
+	BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL,
+};
+typedef enum BCHANL_TEXTBOX_MENU_TYPE_ BCHANL_TEXTBOX_MENU_TYPE;
+
+LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl, BCHANL_TEXTBOX_MENU_TYPE type)
 {
-	Bool isopen, isopen_extbbs, selected = False;
-	W index;
+	Bool isopen, isopen_extbbs, selected = False, fromtray, totray, trayempty;
+	W index, num;
 
 	isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
 	isopen_extbbs = externalbbswindow_isopen(bchanl->externalbbswindow);
@@ -1439,15 +1447,65 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl)
 			selected = True;
 		}
 	}
+	switch (type) {
+	case BCHANL_TEXTBOX_MENU_TYPE_NONE:
+	default:
+		fromtray = totray = False;
+		break;
+	case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+		trayempty = tray_isempty();
+		if (trayempty == False) {
+			fromtray = True;
+		} else {
+			fromtray = False;
+		}
+		num = subjectoptionwindow_cutfiltertext(bchanl->subjectoptionwindow, NULL, 0, False);
+		if (num > 0) {
+			totray = True;
+		} else {
+			totray = False;
+		}
+		break;
+	case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+		trayempty = tray_isempty();
+		if (trayempty == False) {
+			fromtray = True;
+		} else {
+			fromtray = False;
+		}
+		num = registerexternalwindow_cutboradnametext(bchanl->registerexternalwindow, NULL, 0, False);
+		if (num > 0) {
+			totray = True;
+		} else {
+			totray = False;
+		}
+		break;
+	case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+		trayempty = tray_isempty();
+		if (trayempty == False) {
+			fromtray = True;
+		} else {
+			fromtray = False;
+		}
+		num = registerexternalwindow_cuturltext(bchanl->registerexternalwindow, NULL, 0, False);
+		if (num > 0) {
+			totray = True;
+		} else {
+			totray = False;
+		}
+		break;
+	}
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, False, False);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray);
 }
 
-LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
+LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE type)
 {
 	Bool isopen;
 	RECT work;
-	W index;
+#define BCHANL_SELECTMENU_STRBUF_LENGTH 256
+	TC str[BCHANL_SELECTMENU_STRBUF_LENGTH];
+	W index, len = 0;
 
 	switch(sel) {
 	case BCHANL_MAINMENU_SELECT_CLOSE: /* [½ªÎ»] */
@@ -1521,28 +1579,112 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel)
 			externalbbswindow_requestredisp(bchanl->externalbbswindow);
 		}
 		break;
+	case BCHANL_MAINMENU_SELECT_EDIT_COPY_TO_TRAY:
+		switch (type) {
+		case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+			len = subjectoptionwindow_cutfiltertext(bchanl->subjectoptionwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, False);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+			len = registerexternalwindow_cutboradnametext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, False);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+			len = registerexternalwindow_cuturltext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, False);
+			break;
+		default:
+			break;
+		}
+		if (len > 0) {
+			tray_pushstring(str, len);
+		}
+		break;
+	case BCHANL_MAINMENU_SELECT_EDIT_COPY_FROM_TRAY:
+		len = tray_popstring(str, BCHANL_SELECTMENU_STRBUF_LENGTH);
+		switch (type) {
+		case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+			subjectoptionwindow_insertfiltertext(bchanl->subjectoptionwindow, str, len);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+			registerexternalwindow_insertboradnametext(bchanl->registerexternalwindow, str, len);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+			registerexternalwindow_inserturltext(bchanl->registerexternalwindow, str, len);
+			break;
+		default:
+			break;
+		}
+		break;
+	case BCHANL_MAINMENU_SELECT_EDIT_MOVE_TO_TRAY:
+		switch (type) {
+		case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+			len = subjectoptionwindow_cutfiltertext(bchanl->subjectoptionwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+			len = registerexternalwindow_cutboradnametext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+			len = registerexternalwindow_cuturltext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		default:
+			break;
+		}
+		if (len > 0) {
+			tray_pushstring(str, len);
+		}
+		break;
+	case BCHANL_MAINMENU_SELECT_EDIT_MOVE_FROM_TRAY:
+		len = tray_popstring(str, BCHANL_SELECTMENU_STRBUF_LENGTH);
+		switch (type) {
+		case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+			subjectoptionwindow_insertfiltertext(bchanl->subjectoptionwindow, str, len);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+			registerexternalwindow_insertboradnametext(bchanl->registerexternalwindow, str, len);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+			registerexternalwindow_inserturltext(bchanl->registerexternalwindow, str, len);
+			break;
+		default:
+			break;
+		}
+		tray_deletedata();
+		break;
+	case BCHANL_MAINMENU_SELECT_EDIT_DELETE:
+		switch (type) {
+		case BCHANL_TEXTBOX_MENU_TYPE_FILTER:
+			subjectoptionwindow_cutfiltertext(bchanl->subjectoptionwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE:
+			registerexternalwindow_cutboradnametext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		case BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL:
+			registerexternalwindow_cuturltext(bchanl->registerexternalwindow, str, BCHANL_SELECTMENU_STRBUF_LENGTH, True);
+			break;
+		default:
+			break;
+		}
+		break;
 	}
 	return;
 }
 
-LOCAL VOID bchanl_popupmenu(bchanl_t *bchanl, PNT pos)
+LOCAL VOID bchanl_popupmenu(bchanl_t *bchanl, PNT pos, BCHANL_TEXTBOX_MENU_TYPE type)
 {
 	W sel;
-	bchanl_setupmenu(bchanl);
+	bchanl_setupmenu(bchanl, type);
 	gset_ptr(PS_SELECT, NULL, -1, -1);
 	sel = bchanl_mainmenu_popup(&bchanl->mainmenu, pos);
 	if (sel > 0) {
-		bchanl_selectmenu(bchanl, sel);
+		bchanl_selectmenu(bchanl, sel, type);
 	}
 }
 
-LOCAL W bchanl_keyselect(bchanl_t *bchanl, TC keycode)
+LOCAL W bchanl_keyselect(bchanl_t *bchanl, TC keycode, BCHANL_TEXTBOX_MENU_TYPE type)
 {
 	W sel;
-	bchanl_setupmenu(bchanl);
+	bchanl_setupmenu(bchanl, type);
 	sel = bchanl_mainmenu_keyselect(&bchanl->mainmenu, keycode);
 	if (sel > 0) {
-		bchanl_selectmenu(bchanl, sel);
+		bchanl_selectmenu(bchanl, sel, type);
 	}
 	return 0;
 }
@@ -1578,17 +1720,17 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		break;
 	case BCHANLHMIEVENT_TYPE_COMMON_KEYDOWN:
 		if (evt->data.common_keydown.stat & ES_CMD) {	/*Ì¿Îá¥­¡¼*/
-			bchanl_setupmenu(bchanl);
-			sel = bchanl_keyselect(bchanl, evt->data.common_keydown.keycode);
+			bchanl_setupmenu(bchanl, BCHANL_TEXTBOX_MENU_TYPE_NONE);
+			sel = bchanl_keyselect(bchanl, evt->data.common_keydown.keycode, BCHANL_TEXTBOX_MENU_TYPE_NONE);
 			if (sel > 0) {
-				bchanl_selectmenu(bchanl, sel);
+				bchanl_selectmenu(bchanl, sel, BCHANL_TEXTBOX_MENU_TYPE_NONE);
 				break;
 			}
 		}
 		bchanl_keydwn(bchanl, evt->data.common_keydown.keytop, evt->data.common_keydown.keycode, evt->data.common_keydown.stat);
 		break;
 	case BCHANLHMIEVENT_TYPE_COMMON_MENU:
-		bchanl_popupmenu(bchanl, evt->data.common_menu.pos);
+		bchanl_popupmenu(bchanl, evt->data.common_menu.pos, BCHANL_TEXTBOX_MENU_TYPE_NONE);
 		break;
 	case BCHANLHMIEVENT_TYPE_COMMON_TIMEOUT:
 		bchanl_handletimeout(bchanl, evt->data.common_timeout.code);
@@ -1640,8 +1782,10 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MOVE:
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MENU:
+		bchanl_popupmenu(bchanl, evt->data.subjectoptionwindow_filter_menu.pos, BCHANL_TEXTBOX_MENU_TYPE_FILTER);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_KEYMENU:
+		bchanl_keyselect(bchanl, evt->data.subjectoptionwindow_filter_keymenu.keycode, BCHANL_TEXTBOX_MENU_TYPE_FILTER);
 		break;
 	case BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_ORDER_CHANGE:
 		bchanl_changesubjectorder(bchanl, evt->data.subjectoptionwindow_order_change.value);
@@ -1656,8 +1800,10 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MOVE:
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MENU:
+		bchanl_popupmenu(bchanl, evt->data.registerexternalwindow_boradname_menu.pos, BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE);
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_KEYMENU:
+		bchanl_keyselect(bchanl, evt->data.registerexternalwindow_boradname_keymenu.keycode, BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_TITLE);
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_DETERMINE:
 		break;
@@ -1666,8 +1812,10 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MOVE:
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MENU:
+		bchanl_popupmenu(bchanl, evt->data.registerexternalwindow_url_menu.pos, BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL);
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU:
+		bchanl_keyselect(bchanl, evt->data.registerexternalwindow_url_keymenu.keycode, BCHANL_TEXTBOX_MENU_TYPE_EXTBBS_URL);
 		break;
 	case BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_DETERMINE_PUSH:
 		close = bchanl_registerexternalbbs(bchanl);
