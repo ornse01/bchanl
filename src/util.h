@@ -39,4 +39,9 @@ enum TCURL_CHECK_VALID_BBSURL_ {
 typedef enum TCURL_CHECK_VALID_BBSURL_ TCURL_CHECK_VALID_BBSURL;
 IMPORT TCURL_CHECK_VALID_BBSURL tcurl_check_valid_bbsurl(CONST TC *url, W url_len);
 
+IMPORT W tray_pushstring(TC *str, W len);
+IMPORT W tray_popstring(TC *str, W len);
+IMPORT W tray_deletedata();
+IMPORT Bool tray_isempty();
+
 #endif
