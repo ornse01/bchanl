@@ -86,7 +86,8 @@ IMPORT W subjectoptionwindow_open(subjectoptionwindow_t *window);
 IMPORT VOID subjectoptionwindow_close(subjectoptionwindow_t *window);
 IMPORT W subjectoptionwindow_setfiltertext(subjectoptionwindow_t *window, TC *str, W len);
 IMPORT W subjectoptionwindow_getfiltertext(subjectoptionwindow_t *window, TC *str, W len);
-IMPORT W subjectoptionwindow_endfilteraction(subjectoptionwindow_t *window);
+IMPORT W subjectoptionwindow_cutfiltertext(subjectoptionwindow_t *window, TC *str, W len, Bool cut);
+IMPORT W subjectoptionwindow_insertfiltertext(subjectoptionwindow_t *window, TC *str, W len);
 enum SUBJECTOPTIONWINDOW_ORDERVALUE_T_ {
 	SUBJECTOPTIONWINDOW_ORDERVALUE_NOSEL = 0,
 	SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING,
@@ -118,10 +119,12 @@ IMPORT W registerexternalwindow_open(registerexternalwindow_t *window);
 IMPORT VOID registerexternalwindow_close(registerexternalwindow_t *window);
 IMPORT W registerexternalwindow_setboradnametext(registerexternalwindow_t *window, TC *str, W len);
 IMPORT W registerexternalwindow_getboradnametext(registerexternalwindow_t *window, TC *str, W len);
-IMPORT W registerexternalwindow_endboradnameaction(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_cutboradnametext(registerexternalwindow_t *window, TC *str, W len, Bool cut);
+IMPORT W registerexternalwindow_insertboradnametext(registerexternalwindow_t *window, TC *str, W len);
 IMPORT W registerexternalwindow_seturltext(registerexternalwindow_t *window, TC *str, W len);
 IMPORT W registerexternalwindow_geturltext(registerexternalwindow_t *window, TC *str, W len);
-IMPORT W registerexternalwindow_endurlaction(registerexternalwindow_t *window);
+IMPORT W registerexternalwindow_cuturltext(registerexternalwindow_t *window, TC *str, W len, Bool cut);
+IMPORT W registerexternalwindow_inserturltext(registerexternalwindow_t *window, TC *str, W len);
 
 typedef struct externalbbswindow_t_ externalbbswindow_t;
 typedef VOID (*externalbbswindow_scrollcalback)(VP arg, W dh, W dv);

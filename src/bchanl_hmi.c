@@ -546,6 +546,45 @@ EXPORT W subjectoptionwindow_getfiltertext(subjectoptionwindow_t *window, TC *st
 	return cp_len;
 }
 
+EXPORT W subjectoptionwindow_cutfiltertext(subjectoptionwindow_t *window, TC *str, W len, Bool cut)
+{
+	W err, len0;
+
+	len0 = ccut_txt(window->filter.id, len, str, cut == False ? 0 : 1);
+	if (len0 < 0) {
+		return len0;
+	}
+
+	if (cut != False) {
+		err = cget_val(window->filter.id, 1000, (W*)(window->filter.buf+7));
+		if (err < 0) {
+			return err;
+		}
+		window->filter.buf_written = err;
+		return len0;
+	}
+
+	return len0;
+}
+
+EXPORT W subjectoptionwindow_insertfiltertext(subjectoptionwindow_t *window, TC *str, W len)
+{
+	W err;
+
+	err = cins_txt(window->filter.id, (PNT){0x8000, 0x8000}, str);
+	if (err < 0) {
+		return err;
+	}
+
+	err = cget_val(window->filter.id, 1000, (W*)(window->filter.buf+7));
+	if (err < 0) {
+		return err;
+	}
+	window->filter.buf_written = err;
+
+	return err;
+}
+
 LOCAL VOID subjectoptionwindow_actionfilter(subjectoptionwindow_t *window, WEVENT *wev, bchanlhmievent_t *evt)
 {
 	W i, len;
@@ -553,8 +592,22 @@ LOCAL VOID subjectoptionwindow_actionfilter(subjectoptionwindow_t *window, WEVEN
 	i = cact_par(window->filter.id, wev);
 	if (i & 0x2000) {
 		window->filter.nextaction = True;
-		subjectoptionwindow_setflag(window, SUBJECTOPTIONWINDOW_FLAG_PARTS_OTHEREVENT);
-		wugt_evt(wev);
+		switch (i) {
+		case	P_MENU:
+			if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
+				evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_KEYMENU;
+				evt->data.subjectoptionwindow_filter_keymenu.keycode = wev->e.data.key.code;
+			} else {
+				evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MENU;
+				evt->data.subjectoptionwindow_filter_menu.pos = wev->s.pos;
+			}
+			subjectoptionwindow_setflag(window, SUBJECTOPTIONWINDOW_FLAG_PARTS_NEXTACTION);
+			break;
+		default:
+			wugt_evt(wev);
+			subjectoptionwindow_setflag(window, SUBJECTOPTIONWINDOW_FLAG_PARTS_OTHEREVENT);
+			break;
+		}
 		return;
 	}
 	window->filter.nextaction = False;
@@ -587,18 +640,6 @@ LOCAL VOID subjectoptionwindow_actionfilter(subjectoptionwindow_t *window, WEVEN
 		evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_COPY;
 		evt->data.subjectoptionwindow_filter_copy.rel_wid = wev->s.wid;
 		evt->data.subjectoptionwindow_filter_copy.pos = wev->s.pos;
-		break;
-	case	P_MENU:
-		if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
-			evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_KEYMENU;
-			evt->data.subjectoptionwindow_filter_keymenu.keycode = wev->e.data.key.code;
-		} else {
-			evt->type = BCHANLHMIEVENT_TYPE_SUBJECTOPTIONWINDOW_PARTS_FILTER_MENU;
-			evt->data.subjectoptionwindow_filter_menu.pos = wev->s.pos;
-		}
-		window->filter.nextaction = True;
-		subjectoptionwindow_setflag(window, SUBJECTOPTIONWINDOW_FLAG_PARTS_NEXTACTION);
-		wugt_evt(wev);
 		break;
 	}
 }
@@ -876,6 +917,45 @@ EXPORT W registerexternalwindow_getboradnametext(registerexternalwindow_t *windo
 	return cp_len;
 }
 
+EXPORT W registerexternalwindow_cutboradnametext(registerexternalwindow_t *window, TC *str, W len, Bool cut)
+{
+	W err, len0;
+
+	len0 = ccut_txt(window->boradname.id, len, str, cut == False ? 0 : 1);
+	if (len0 < 0) {
+		return len0;
+	}
+
+	if (cut != False) {
+		err = cget_val(window->boradname.id, 1000, (W*)(window->boradname.buf+7));
+		if (err < 0) {
+			return err;
+		}
+		window->boradname.buf_written = err;
+		return len0;
+	}
+
+	return len0;
+}
+
+EXPORT W registerexternalwindow_insertboradnametext(registerexternalwindow_t *window, TC *str, W len)
+{
+	W err;
+
+	err = cins_txt(window->boradname.id, (PNT){0x8000, 0x8000}, str);
+	if (err < 0) {
+		return err;
+	}
+
+	err = cget_val(window->boradname.id, 1000, (W*)(window->boradname.buf+7));
+	if (err < 0) {
+		return err;
+	}
+	window->boradname.buf_written = err;
+
+	return err;
+}
+
 LOCAL VOID registerexternalwindow_actionboradname(registerexternalwindow_t *window, WEVENT *wev, bchanlhmievent_t *evt)
 {
 	W i, len;
@@ -883,8 +963,22 @@ LOCAL VOID registerexternalwindow_actionboradname(registerexternalwindow_t *wind
 	i = cact_par(window->boradname.id, wev);
 	if (i & 0x2000) {
 		window->boradname.nextaction = True;
-		registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_OTHEREVENT);
-		wugt_evt(wev);
+		switch (i) {
+		case	P_MENU:
+			if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
+				evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_KEYMENU;
+				evt->data.registerexternalwindow_boradname_keymenu.keycode = wev->e.data.key.code;
+			} else {
+				evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MENU;
+				evt->data.registerexternalwindow_boradname_menu.pos = wev->s.pos;
+			}
+			registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_NEXTACTION);
+			break;
+		default:
+			wugt_evt(wev);
+			registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_OTHEREVENT);
+			break;
+		}
 		return;
 	}
 	window->boradname.nextaction = False;
@@ -917,18 +1011,6 @@ LOCAL VOID registerexternalwindow_actionboradname(registerexternalwindow_t *wind
 		evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_COPY;
 		evt->data.registerexternalwindow_boradname_copy.rel_wid = wev->s.wid;
 		evt->data.registerexternalwindow_boradname_copy.pos = wev->s.pos;
-		break;
-	case	P_MENU:
-		if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
-			evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_KEYMENU;
-			evt->data.registerexternalwindow_boradname_keymenu.keycode = wev->e.data.key.code;
-		} else {
-			evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_BORADNAME_MENU;
-			evt->data.registerexternalwindow_boradname_menu.pos = wev->s.pos;
-		}
-		window->boradname.nextaction = True;
-		registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_NEXTACTION);
-		wugt_evt(wev);
 		break;
 	}
 }
@@ -974,6 +1056,45 @@ EXPORT W registerexternalwindow_geturltext(registerexternalwindow_t *window, TC 
 	return cp_len;
 }
 
+EXPORT W registerexternalwindow_cuturltext(registerexternalwindow_t *window, TC *str, W len, Bool cut)
+{
+	W err, len0;
+
+	len0 = ccut_txt(window->url.id, len, str, cut == False ? 0 : 1);
+	if (len0 < 0) {
+		return len0;
+	}
+
+	if (cut != False) {
+		err = cget_val(window->url.id, 1000, (W*)(window->url.buf+7));
+		if (err < 0) {
+			return err;
+		}
+		window->url.buf_written = err;
+		return len0;
+	}
+
+	return len0;
+}
+
+EXPORT W registerexternalwindow_inserturltext(registerexternalwindow_t *window, TC *str, W len)
+{
+	W err;
+
+	err = cins_txt(window->url.id, (PNT){0x8000, 0x8000}, str);
+	if (err < 0) {
+		return err;
+	}
+
+	err = cget_val(window->url.id, 1000, (W*)(window->url.buf+7));
+	if (err < 0) {
+		return err;
+	}
+	window->url.buf_written = err;
+
+	return err;
+}
+
 LOCAL VOID registerexternalwindow_actionurl(registerexternalwindow_t *window, WEVENT *wev, bchanlhmievent_t *evt)
 {
 	W i, len;
@@ -981,8 +1102,22 @@ LOCAL VOID registerexternalwindow_actionurl(registerexternalwindow_t *window, WE
 	i = cact_par(window->url.id, wev);
 	if (i & 0x2000) {
 		window->url.nextaction = True;
-		registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_OTHEREVENT);
-		wugt_evt(wev);
+		switch (i) {
+		case	P_MENU:
+			if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
+				evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU;
+				evt->data.registerexternalwindow_url_keymenu.keycode = wev->e.data.key.code;
+			} else {
+				evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MENU;
+				evt->data.registerexternalwindow_url_menu.pos = wev->s.pos;
+			}
+			registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_NEXTACTION);
+			break;
+		default:
+			wugt_evt(wev);
+			registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_OTHEREVENT);
+			break;
+		}
 		return;
 	}
 	window->url.nextaction = False;
@@ -1015,18 +1150,6 @@ LOCAL VOID registerexternalwindow_actionurl(registerexternalwindow_t *window, WE
 		evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_COPY;
 		evt->data.registerexternalwindow_url_copy.rel_wid = wev->s.wid;
 		evt->data.registerexternalwindow_url_copy.pos = wev->s.pos;
-		break;
-	case	P_MENU:
-		if ((wev->s.type == EV_KEYDWN)&&(wev->s.stat & ES_CMD)) {
-			evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_KEYMENU;
-			evt->data.registerexternalwindow_url_keymenu.keycode = wev->e.data.key.code;
-		} else {
-			evt->type = BCHANLHMIEVENT_TYPE_REGISTEREXTERNALWINDOW_PARTS_URL_MENU;
-			evt->data.registerexternalwindow_url_menu.pos = wev->s.pos;
-		}
-		window->url.nextaction = True;
-		registerexternalwindow_setflag(window, REGISTEREXTERNALWINDOW_FLAG_PARTS_NEXTACTION);
-		wugt_evt(wev);
 		break;
 	}
 }
