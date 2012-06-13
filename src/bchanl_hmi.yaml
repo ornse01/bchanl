@@ -117,15 +117,15 @@ windows:
     title: スレ一覧設定
     title_max_length: 256
     size:
-      h: 400
-      v: 200
+      h: 384
+      v: 160
     parts:
       - name: filter
         type: textbox
         databox:
           specify: argument
         rect:
-          left: 8
+          left: 90
           top: 38
           right: 368
           bottom: 64
@@ -169,6 +169,22 @@ windows:
             text: Ｓｉｎｃｅ
           - name: vigor
             text: 勢い
+      - name: filtertext
+        type: fixedtext
+        rect:
+          left: 8
+          top: 10
+          right: 88
+          bottom: 26
+        text: フィルタ：
+      - name: ordertext
+        type: fixedtext
+        rect:
+          left: 8
+          top: 42
+          right: 88
+          bottom: 58
+        text: 並べ順：
 
   - window_name: registerexternalwindow
     attributes:
@@ -176,13 +192,13 @@ windows:
     title: 外部板の追加
     title_max_length: 256
     size:
-      h: 400
-      v: 200
+      h: 384
+      v: 138
     parts:
       - name: boradname
         type: textbox
         rect:
-          left: 8
+          left: 80
           top: 8
           right: 368
           bottom: 34
@@ -197,7 +213,7 @@ windows:
       - name: url
         type: textbox
         rect:
-          left: 8
+          left: 80
           top: 38
           right: 368
           bottom: 64
@@ -212,19 +228,35 @@ windows:
       - name: determine
         type: textmomentallyswitch
         rect:
-          left: 158
-          top: 108
-          right: 300
-          bottom: 134
-        text: 決定
+          left: 226
+          top: 72
+          right: 368
+          bottom: 98
+        text: 追加
       - name: cancel
         type: textmomentallyswitch
         rect:
           left: 8
-          top: 108
+          top: 72
           right: 150
-          bottom: 134
+          bottom: 98
         text: 取り消し
+      - name: boardnametext
+        type: fixedtext
+        rect:
+          left: 8
+          top: 10
+          right: 320
+          bottom: 26
+        text: 板名：
+      - name: urltext
+        type: fixedtext
+        rect:
+          left: 8
+          top: 42
+          right: 320
+          bottom: 58
+        text: ＵＲＬ：
 
   - window_name: externalbbswindow
     attributes:

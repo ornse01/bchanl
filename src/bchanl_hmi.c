@@ -735,6 +735,8 @@ EXPORT Bool subjectoptionwindow_isopen(subjectoptionwindow_t *window)
 LOCAL VOID subjectoptionwindow_draw(subjectoptionwindow_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
+	gdra_stp(window->gid, 8, 26, (TC[]){0x2555, 0x2523, 0x256b, 0x253f, 0x2127, TNULL}, 5, G_STORE);
+	gdra_stp(window->gid, 8, 58, (TC[]){0x4a42, 0x2459, 0x3d67, 0x2127, TNULL}, 4, G_STORE);
 }
 
 LOCAL VOID subjectoptionwindow_redisp(subjectoptionwindow_t *window)
@@ -1165,6 +1167,8 @@ EXPORT Bool registerexternalwindow_isopen(registerexternalwindow_t *window)
 LOCAL VOID registerexternalwindow_draw(registerexternalwindow_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
+	gdra_stp(window->gid, 8, 26, (TC[]){0x4844, 0x4c3e, 0x2127, TNULL}, 3, G_STORE);
+	gdra_stp(window->gid, 8, 58, (TC[]){0x2355, 0x2352, 0x234c, 0x2127, TNULL}, 4, G_STORE);
 }
 
 LOCAL VOID registerexternalwindow_redisp(registerexternalwindow_t *window)
@@ -1265,22 +1269,22 @@ EXPORT W registerexternalwindow_open(registerexternalwindow_t *window)
 	window->wid = wid;
 	window->gid = wget_gid(wid);
 
-	r = (RECT){{8, 8, 368, 34}};
+	r = (RECT){{80, 8, 368, 34}};
 	window->boradname.id = ccre_tbx(wid, TB_PARTS|P_DISP, &r, 1000, window->boradname.buf, NULL);
 	if (window->boradname.id < 0) {
 		DP_ER("ccre_xxx boradname error:", window->boradname.id);
 	}
-	r = (RECT){{8, 38, 368, 64}};
+	r = (RECT){{80, 38, 368, 64}};
 	window->url.id = ccre_tbx(wid, TB_PARTS|P_DISP, &r, 1000, window->url.buf, NULL);
 	if (window->url.id < 0) {
 		DP_ER("ccre_xxx url error:", window->url.id);
 	}
-	r = (RECT){{158, 108, 300, 134}};
-	window->determine.id = ccre_msw(wid, MS_PARTS|P_DISP, &r, (TC[]){MC_STR, 0x3768, 0x446a, TNULL}, NULL);
+	r = (RECT){{226, 72, 368, 98}};
+	window->determine.id = ccre_msw(wid, MS_PARTS|P_DISP, &r, (TC[]){MC_STR, 0x4449, 0x3243, TNULL}, NULL);
 	if (window->determine.id < 0) {
 		DP_ER("ccre_xxx determine error:", window->determine.id);
 	}
-	r = (RECT){{8, 108, 150, 134}};
+	r = (RECT){{8, 72, 150, 98}};
 	window->cancel.id = ccre_msw(wid, MS_PARTS|P_DISP, &r, (TC[]){MC_STR, 0x3c68, 0x246a, 0x3e43, 0x2437, TNULL}, NULL);
 	if (window->cancel.id < 0) {
 		DP_ER("ccre_xxx cancel error:", window->cancel.id);
@@ -2292,8 +2296,8 @@ EXPORT subjectoptionwindow_t* subjectoptionwindow_new(PNT *p, subjectwindow_t *p
 	window->parent = parent;
 	window->r.c.left = p->x;
 	window->r.c.top = p->y;
-	window->r.c.right = p->x + 400;
-	window->r.c.bottom = p->y + 200;
+	window->r.c.right = p->x + 384;
+	window->r.c.bottom = p->y + 160;
 	tc_strset(window->title, TNULL, 256+1);
 	if (title != 0) {
 		tc_strncpy(window->title, title, 256);
@@ -2349,8 +2353,8 @@ EXPORT registerexternalwindow_t* registerexternalwindow_new(PNT *p, WID parent, 
 	window->parent = parent;
 	window->r.c.left = p->x;
 	window->r.c.top = p->y;
-	window->r.c.right = p->x + 400;
-	window->r.c.bottom = p->y + 200;
+	window->r.c.right = p->x + 384;
+	window->r.c.bottom = p->y + 138;
 	tc_strset(window->title, TNULL, 256+1);
 	if (title != 0) {
 		tc_strncpy(window->title, title, 256);
