@@ -29,11 +29,18 @@
 #include	<bstdio.h>
 #include	<bstring.h>
 #include	<tstring.h>
+#include	<tcode.h>
 #include	<errcode.h>
 #include	<btron/btron.h>
+#include	<btron/dp.h>
 #include	<bsys/queue.h>
+#include	<tad.h>
+#include	<mtstring.h>
 
 #include    "extbbslist.h"
+
+#include    <tad/taditerator.h>
+#include    <tad/tadtsvparser.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -346,10 +353,345 @@ EXPORT W extbbslist_number(extbbslist_t *list)
 
 EXPORT W extbbslist_writefile(extbbslist_t *list)
 {
+	W fd, err;
+	UB bin[4+24];
+	TADSEG *base = (TADSEG*)bin;
+	INFOSEG *infoseg = (INFOSEG*)(bin + 4);
+	TEXTSEG *textseg = (TEXTSEG*)(bin + 4);
+	extbbslist_item_t *senti, *item;
+	TC tab[] = {0xFE21, TK_TAB};
+	TC nl[] = {0xFE21, TK_NL};
+
+	if (list->lnk == NULL) {
+		return -1; /* TODO */
+	}
+
+	if (list->changed == False) {
+		return 0;
+	}
+
+	fd = opn_fil(list->lnk, F_UPDATE, NULL);
+	if (fd < 0) {
+		DP_ER("opn_fil", fd);
+		return fd;
+	}
+
+	err = fnd_rec(fd, F_TOPEND, 1 << list->rectype, list->subtype, NULL);
+	if (err == ER_REC) {
+		err = ins_rec(fd, NULL, 0, list->rectype, list->subtype, 0);
+		if (err < 0) {
+			DP_ER("ins_rec", err);
+			cls_fil(fd);
+			return err;
+		}
+		err = see_rec(fd, -1, 0, NULL);
+		if (err < 0) {
+			DP_ER("see_rec", err);
+			cls_fil(fd);
+			return err;
+		}
+	} else if (err < 0) {
+		DP_ER("fnd_rec", err);
+		cls_fil(fd);
+		return err;
+	}
+	err = trc_rec(fd, 0);
+	if (err < 0) {
+		DP_ER("trc_rec", err);
+		cls_fil(fd);
+		return err;
+	}
+
+	base->id = 0xFFE0;
+	base->len = 6;
+	infoseg->subid = 0;
+	infoseg->sublen = 2;
+	infoseg->data[0] = 0x0122;
+	err = wri_rec(fd, -1, bin, 4+6, NULL, NULL, 0);
+	if (err < 0) {
+		DP_ER("wri_rec:infoseg error", err);
+		cls_fil(fd);
+		return fd;
+	}
+	base->id = 0xFFE1;
+	base->len = 24;
+	textseg->view = (RECT){{0, 0, 0, 0}};
+	textseg->draw = (RECT){{0, 0, 0, 0}};
+	textseg->h_unit = -120;
+	textseg->v_unit = -120;
+	textseg->lang = 0x21;
+	textseg->bgpat = 0;
+	err = wri_rec(fd, -1, bin, 4+24, NULL, NULL, 0);
+	if (err < 0) {
+		DP_ER("wri_rec:textseg error", err);
+		cls_fil(fd);
+		return fd;
+	}
+
+	senti = extbbslist_sentinelnode(list);
+	item = extbbslist_item_nextnode(senti);
+	for (;;) {
+		if (item == senti) {
+			break;
+		}
+
+		err = wri_rec(fd, -1, (UB*)item->title, item->title_len*sizeof(TC), NULL, NULL, 0);
+		if (err < 0) {
+			DP_ER("wri_rec:textseg error", err);
+			cls_fil(fd);
+			return fd;
+		}
+		err = wri_rec(fd, -1, (UB*)tab, 2*sizeof(TC), NULL, NULL, 0);
+		if (err < 0) {
+			DP_ER("wri_rec:textseg error", err);
+			cls_fil(fd);
+			return fd;
+		}
+		err = wri_rec(fd, -1, (UB*)item->url.tc, item->url.tc_len*sizeof(TC), NULL, NULL, 0);
+		if (err < 0) {
+			DP_ER("wri_rec:textseg error", err);
+			cls_fil(fd);
+			return fd;
+		}
+		err = wri_rec(fd, -1, (UB*)nl, 2*sizeof(TC), NULL, NULL, 0);
+		if (err < 0) {
+			DP_ER("wri_rec:textseg error", err);
+			cls_fil(fd);
+			return fd;
+		}
+
+		item = extbbslist_item_nextnode(item);
+	}
+
+	base->id = 0xFFE2;
+	base->len = 0;
+	err = wri_rec(fd, -1, bin, 4, NULL, NULL, 0);
+	if (err < 0) {
+		DP_ER("wri_rec:textend error", err);
+		cls_fil(fd);
+		return fd;
+	}
+
+	cls_fil(fd);
+
+	return err;
+}
+
+struct extbbslist_parsetsv_ctx_t_ {
+	extbbslist_t *list;
+	W n_field;
+	struct {
+		TC *str;
+		W len;
+	} title;
+	struct {
+		TC *str;
+		W len;
+	} url;
+};
+typedef struct extbbslist_parsetsv_ctx_t_ extbbslist_parsetsv_ctx_t;
+
+LOCAL W extbbslist_parsetsv_ctx_input(extbbslist_parsetsv_ctx_t *ctx, TADSTACK_RESULT psr_result, taditerator_result *seg_result)
+{
+	TC *p;
+	extbbslist_item_t *item, *senti;
+	UB *str_ac;
+	W len;
+
+	if (psr_result == TADTSVPARSER_RESULT_FORMAT_ERROR) {
+		return 0;
+	}
+	if (psr_result == TADTSVPARSER_RESULT_IGNORE_SEGMENT) {
+		return 0;
+	}
+
+	if (psr_result == TADTSVPARSER_RESULT_FIELD) {
+		if (seg_result == NULL) {
+			DP(("seg_result == NULL\n"));
+			return -1; /* TODO */
+		}
+		if (seg_result->type != TADITERATOR_RESULTTYPE_CHARCTOR) {
+			return 0;
+		}
+
+		if (ctx->n_field == 0) {
+			ctx->title.len++;
+			p = (TC*)realloc(ctx->title.str, (ctx->title.len+1)*sizeof(TC));
+			if (p == NULL) {
+				DP_ER("realloc:title", -1);
+				return -1; /* TODO */
+			}
+			ctx->title.str = p;
+			ctx->title.str[ctx->title.len - 1] = seg_result->segment;
+			ctx->title.str[ctx->title.len] = TNULL;
+		} else if (ctx->n_field == 1) {
+			ctx->url.len++;
+			p = (TC*)realloc(ctx->url.str, (ctx->url.len+1)*sizeof(TC));
+			if (p == NULL) {
+				DP_ER("realloc:url", -1);
+				return -1; /* TODO */
+			}
+			ctx->url.str = p;
+			ctx->url.str[ctx->url.len - 1] = seg_result->segment;
+			ctx->url.str[ctx->url.len] = TNULL;
+		}
+	} else if (psr_result == TADTSVPARSER_RESULT_FIELD_END) {
+		ctx->n_field++;
+	} else if (psr_result == TADTSVPARSER_RESULT_RECORD_END) {
+		if (ctx->n_field < 1) {
+			free(ctx->url.str);
+			ctx->url.str = NULL;
+			ctx->url.len = 0;
+			free(ctx->title.str);
+			ctx->title.str = NULL;
+			ctx->title.len = 0;
+			ctx->n_field = 0;
+			return 0;
+		}
+		ctx->n_field = 0;
+
+		ctx->title.len = mtc_unique(ctx->title.str, ctx->title.str, ctx->title.len);
+		ctx->url.len = mtc_unique(ctx->url.str, ctx->url.str, ctx->url.len);
+
+		item = extbbslist_item_new();
+		if (item == NULL) {
+			DP_ER("extbbslist_item_new", -1);
+			return -1; /* TODO */
+		}
+
+		len = tcstosjs(NULL, ctx->url.str);
+		str_ac = malloc(sizeof(UB)*(len+1));
+		if (str_ac == NULL) {
+			DP_ER("malloc", -1);
+			return -1; /* TODO */
+		}
+		tcstosjs(str_ac, ctx->url.str);
+		str_ac[len] = '\0';
+
+		extbbslist_item_replacetitle(item, ctx->title.str, ctx->title.len);
+		ctx->title.str = NULL;
+		ctx->title.len = 0;
+
+		extbbslist_item_replaceTCurl(item, ctx->url.str, ctx->url.len);
+		ctx->url.str = NULL;
+		ctx->url.len = 0;
+
+		extbbslist_item_replaceascurl(item, str_ac, len);
+
+		senti = extbbslist_sentinelnode(ctx->list);
+		extbbslist_item_QueInsert(item, senti);
+		ctx->list->num++;
+	}
+
+	return 0;
+}
+
+LOCAL VOID extbbslist_parsetsv_ctx_initialize(extbbslist_parsetsv_ctx_t *ctx, extbbslist_t *list)
+{
+	ctx->list = list;
+	ctx->n_field = 0;
+	ctx->title.str = NULL;
+	ctx->title.len = 0;
+	ctx->url.str = NULL;
+	ctx->url.len = 0;
+}
+
+LOCAL VOID extbbslist_parsetsv_ctx_finalize(extbbslist_parsetsv_ctx_t *ctx)
+{
+	if (ctx->title.str != NULL) {
+		free(ctx->title.str);
+	}
+	if (ctx->url.str != NULL) {
+		free(ctx->url.str);
+	}
+}
+
+LOCAL W extbbslist_parserecord(extbbslist_t *list, UB *rec, W len)
+{
+	tadtsvparser_t parser;
+	taditerator_t iter;
+	taditerator_result result;
+	TADSTACK_RESULT psr_result;
+	W err = 0;
+	extbbslist_parsetsv_ctx_t ctx;
+	
+	tadtsvparser_initialize(&parser);
+	taditerator_initialize(&iter, (TC*)rec, len/sizeof(TC));
+	extbbslist_parsetsv_ctx_initialize(&ctx, list);
+
+	for (;;) {
+		taditerator_next2(&iter, &result);
+		if (result.type == TADITERATOR_RESULTTYPE_END) {
+			break;
+		}
+
+		if (result.type == TADITERATOR_RESULTTYPE_CHARCTOR) {
+			psr_result = tadtsvparser_inputcharactor(&parser, result.segment);
+		} else if (result.type == TADITERATOR_RESULTTYPE_SEGMENT) {
+			psr_result = tadtsvparser_inputvsegment(&parser, result.segment, result.data, result.segsize);
+		} else {
+			psr_result = TADTSVPARSER_RESULT_IGNORE_SEGMENT;
+		}
+
+		err = extbbslist_parsetsv_ctx_input(&ctx, psr_result, &result);
+		if (err < 0) {
+			DP_ER("extbbslist_parsetsv_ctx_input", err);
+			break;
+		}
+	}
+	psr_result = tadtsvparser_inputendofdata(&parser);
+	err = extbbslist_parsetsv_ctx_input(&ctx, psr_result, NULL);
+
+	extbbslist_parsetsv_ctx_finalize(&ctx);
+	taditerator_finalize(&iter);
+	tadtsvparser_finalize(&parser);
+
+	return err;
 }
 
 EXPORT W extbbslist_readfile(extbbslist_t *list)
 {
+	UB *rec;
+	W fd, err, rec_len;
+
+	fd = opn_fil(list->lnk, F_UPDATE, NULL);
+	if (fd < 0) {
+		DP_ER("opn_fil", fd);
+		return fd;
+	}
+
+	err = fnd_rec(fd, F_TOPEND, 1 << list->rectype, list->subtype, NULL);
+	if (err < 0) {
+		cls_fil(fd);
+		if (err == ER_REC) {
+			return 0;
+		}
+		return err;
+	}
+
+	err = rea_rec(fd, 0, NULL, 0, &rec_len, NULL);
+	if (err < 0) {
+		cls_fil(fd);
+		return err;
+	}
+	rec = (UB*)malloc(rec_len);
+	if (rec == NULL) {
+		cls_fil(fd);
+		return err;
+	}
+	err = rea_rec(fd, 0, rec, rec_len, NULL, NULL);
+	if (err < 0) {
+		free(rec);
+		cls_fil(fd);
+		return err;
+	}
+
+	err = extbbslist_parserecord(list, rec, rec_len);
+
+	free(rec);
+	cls_fil(fd);
+
+	return err;
 }
 
 struct extbbslist_editcontext_t_ {

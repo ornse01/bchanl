@@ -108,9 +108,12 @@ LOCAL W test_extbbslist_checkexpected(extbbslist_t *list, testextbbslist_expecte
 		if (cont == False) {
 			printf("extbbslist_readcontext_getnext return value %d\n", i);
 			ret = -1;
+			break;
 		}
 		if (tc_strncmp(title, expected[i].title, title_len) != 0) {
 			printf("extbbslist_readcontext_getnext title %d\n", i);
+			printf("                                     expected = %S\n", expected[i].title);
+			printf("                                     result = %S\n", title);
 			ret = -1;
 		}
 		if (strncmp(url, expected[i].url, url_len) != 0) {
@@ -1391,6 +1394,152 @@ LOCAL UNITTEST_RESULT test_extbbslist_20()
 	return test_extbbslist_swap_selected_common(input, input_len, 0, 0, 4, 0);
 }
 
+LOCAL W test_util_gen_file(LINK *lnk)
+{
+	LINK lnk0;
+	W fd, err;
+	TC name[] = {TK_t, TNULL};
+
+	err = get_lnk(NULL, &lnk0, F_NORM);
+	if (err < 0) {
+		return err;
+	}
+	err = cre_fil(&lnk0, name, NULL, 0, F_FLOAT);
+	if (err < 0) {
+		return err;
+	}
+	fd = err;
+
+	*lnk = lnk0;
+
+	return fd;
+}
+
+#define TEST_EXTBBSLIST_RECTYPE 30
+#define TEST_EXTBBSLIST_RECSUBTYPE 1
+
+LOCAL UNITTEST_RESULT test_extbbslist_21()
+{
+	extbbslist_t *list;
+	extbbslist_editcontext_t *editctx;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+	W err, fd;
+	LINK test_lnk;
+	testextbbslist_input_t input[] = {
+		{
+			test_extbbslist_testtitle001,
+			tc_strlen(test_extbbslist_testtitle001),
+			test_extbbslist_testTCurl005,
+			tc_strlen(test_extbbslist_testTCurl005),
+		},
+		{
+			test_extbbslist_testtitle002,
+			tc_strlen(test_extbbslist_testtitle002),
+			test_extbbslist_testTCurl006,
+			tc_strlen(test_extbbslist_testTCurl006),
+		},
+		{
+			test_extbbslist_testtitle003,
+			tc_strlen(test_extbbslist_testtitle003),
+			test_extbbslist_testTCurl007,
+			tc_strlen(test_extbbslist_testTCurl007),
+		},
+		{
+			test_extbbslist_testtitle004,
+			tc_strlen(test_extbbslist_testtitle004),
+			test_extbbslist_testTCurl008,
+			tc_strlen(test_extbbslist_testTCurl008),
+		},
+	};
+	W input_len = sizeof(input)/sizeof(testextbbslist_input_t);
+	testextbbslist_expected_t expected[] = {
+		{
+			test_extbbslist_testtitle001,
+			tc_strlen(test_extbbslist_testtitle001),
+			test_extbbslist_testurl005,
+			strlen(test_extbbslist_testurl005)
+		},
+		{
+			test_extbbslist_testtitle002,
+			tc_strlen(test_extbbslist_testtitle002),
+			test_extbbslist_testurl006,
+			strlen(test_extbbslist_testurl006)
+		},
+		{
+			test_extbbslist_testtitle003,
+			tc_strlen(test_extbbslist_testtitle003),
+			test_extbbslist_testurl007,
+			strlen(test_extbbslist_testurl007)
+		},
+		{
+			test_extbbslist_testtitle004,
+			tc_strlen(test_extbbslist_testtitle004),
+			test_extbbslist_testurl008,
+			strlen(test_extbbslist_testurl008)
+		},
+	};
+	W expected_len = sizeof(expected)/sizeof(testextbbslist_expected_t);
+
+	fd = test_util_gen_file(&test_lnk);
+	if (fd < 0) {
+		return UNITTEST_RESULT_FAIL;
+	}
+	cls_fil(fd);
+
+	/* writing start */
+	list = extbbslist_new(&test_lnk, TEST_EXTBBSLIST_RECTYPE, TEST_EXTBBSLIST_RECSUBTYPE);
+	if (list == NULL) {
+		del_fil(NULL, &test_lnk, 0);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	editctx = extbbslist_startedit(list);
+	if (editctx == NULL) {
+		printf("extbbslist_startedit\n");
+		extbbslist_delete(list);
+		del_fil(NULL, &test_lnk, 0);
+		return UNITTEST_RESULT_FAIL;
+	}
+	err = test_extbbslist_appenditem(editctx, input, input_len);
+	if (err < 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	extbbslist_endedit(list, editctx, True);
+
+	err = extbbslist_writefile(list);
+	if (err < 0) {
+		printf("extbbslist_writefile\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	extbbslist_delete(list);
+	/* writing end */
+
+	/* reading start */ 
+	list = extbbslist_new(&test_lnk, TEST_EXTBBSLIST_RECTYPE, TEST_EXTBBSLIST_RECSUBTYPE);
+	if (list == NULL) {
+		del_fil(NULL, &test_lnk, 0);
+		return UNITTEST_RESULT_FAIL;
+	}
+
+	err = extbbslist_readfile(list);
+	if (err < 0) {
+		printf("extbbslist_readfile\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	err = test_extbbslist_checkexpected(list, expected, expected_len);
+	if (err < 0) {
+		result = UNITTEST_RESULT_FAIL;
+	}
+	extbbslist_delete(list);
+	/* reading end */
+
+	del_fil(NULL, &test_lnk, 0);
+
+	return result;
+}
+
 EXPORT VOID test_extbbslist_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_1);
@@ -1413,4 +1562,5 @@ EXPORT VOID test_extbbslist_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_18);
 	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_19);
 	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_20);
+	UNITTEST_DRIVER_REGIST(driver, test_extbbslist_21);
 }
