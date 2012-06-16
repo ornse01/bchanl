@@ -610,6 +610,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	bbsmndraw_t *draw;
 	extbbslist_t *extbbslist;
 	TC *category_extbbs;
+	W err;
 
 	cache = bbsmncache_new();
 	if (cache == NULL) {
@@ -640,6 +641,11 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 		DP_ER("extbbslist_new", 0);
 		goto error_extbbslist;
 	}
+	err = extbbslist_readfile(extbbslist);
+	if (err < 0) {
+		DP_ER("extbbslist_readfile", 0);
+		goto error_extbbslist_readfile;
+	}
 	dget_dtp(TEXT_DATA, BCHANL_DBX_TEXT_CATE_EXTBBS, (void**)&category_extbbs);
 
 	bchanl->gid = gid;
@@ -656,6 +662,8 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 
 	return 0;
 
+error_extbbslist_readfile:
+	extbbslist_delete(extbbslist);
 error_extbbslist:
 	bbsmndraw_delete(draw);
 error_draw:
@@ -1160,6 +1168,7 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	gset_ptr(PS_BUSY, NULL, -1, -1);
 	pdsp_msg(NULL);
 
+	extbbslist_writefile(bchanl->bbsmenu.extbbslist);
 	if (bchanl->exectype == EXECREQ) {
 		oend_prc(bchanl->vid, NULL, 0);
 	}
