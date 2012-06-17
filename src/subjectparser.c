@@ -189,7 +189,7 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 	len = &(thr->title_len);
 
 	switch(ch) {
-	  case '\n':
+	case '\n':
 		if (parser->state == STATE_TITLE) {
 			sbjtparser_convert_str(parser, NULL, 0, TF_ATTR_SUPPRESS_FUSEN, str, len);
 		}
@@ -197,10 +197,10 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 		parser->strstate = STRSTATE_START;
 		return 1; /* TODO */
 		break;
-	  case '<':
+	case '<':
 		parser->isLSTN= True;
 		break;
-	  case '>':
+	case '>':
 		if (parser->isLSTN == False) {
 			/* temporary */
 			if (parser->state == STATE_TITLE) {
@@ -211,17 +211,17 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 			parser->isLSTN = False;
 		}
 		switch (parser->state) {
-		  case STATE_NUMBER:
+		case STATE_NUMBER:
 			parser->state = STATE_TITLE;
 			break;
-		  case STATE_TITLE:
+		case STATE_TITLE:
 			parser->state = STATE_NUMBER;
 			break;
 		}
 		sbjtparser_convert_str(parser, NULL, 0, TF_ATTR_SUPPRESS_FUSEN, str, len);
 		parser->strstate = STRSTATE_START;
 		break;
-	  case '&':
+	case '&':
 		if ((parser->state == STATE_TITLE)&&(parser->strstate == STRSTATE_START)) {
 			charreferparser_resetstate(&(parser->charref));
 			chref_result = charreferparser_parsechar(&(parser->charref), ch);
@@ -231,7 +231,7 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 			parser->strstate = STRSTATE_CHARREF;
 			break;
 		}
-	  default:
+	default:
 		if (parser->isLSTN == True) {
 			parser->isLSTN = False;
 			/* temporary */
@@ -240,7 +240,7 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 			}
 		}
 		switch (parser->state) {
-		  case STATE_NUMBER:
+		case STATE_NUMBER:
 			if (!isdigit(ch)) {
 				break;
 			}
@@ -248,7 +248,7 @@ LOCAL W sbjtparser_parsechar(sbjtparser_t *parser, UB ch, sbjtparser_thread_t *t
 			thr->number = realloc(thr->number, thr->number_len + 1);
 			strncat(thr->number, &ch, 1);
 			break;
-		  case STATE_TITLE:
+		case STATE_TITLE:
 			if (parser->strstate == STRSTATE_START) {
 				sbjtparser_convert_str(parser, &ch, 1, TF_ATTR_CONT|TF_ATTR_SUPPRESS_FUSEN, str, len);
 			} else if (parser->strstate == STRSTATE_CHARREF) {
