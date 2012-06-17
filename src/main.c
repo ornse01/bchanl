@@ -1043,6 +1043,9 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	static	RECT	r0 = {{400, 100, 700+7, 200+30}};
 	static	RECT	r1 = {{100, 100, 300+7, 300+30}};
 	static	RECT	r2 = {{400, 300, 800+7, 400+30}};
+	static	PAT	white = {{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	static	PAT	bgpat0;
+	static	PAT *bgpat;
 	TC *title0 = NULL, *title1 = NULL;
 	W err;
 	WID wid;
@@ -1057,6 +1060,13 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	subjectoptionwindow_t *subjectoptionwindow;
 	registerexternalwindow_t *registerexternalwindow;
 	externalbbswindow_t *externalbbswindow;
+
+	err = wget_inf(WI_PANELBACK, &bgpat0, sizeof(bgpat0));
+	if (err != sizeof(bgpat0)) {
+		bgpat = &white;
+	} else {
+		bgpat = &bgpat0;
+	}
 
 	retriever = sbjtretriever_new();
 	if (retriever == NULL) {
@@ -1080,7 +1090,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		DP_ER("bchanl_subjecthash_new error", 0);
 		goto error_subjecthash;
 	}
-	subjectoptionwindow = bchanlhmi_newsubjectoptionwindow(hmi, &p0, subjectwindow, NULL, NULL, BCHANL_DBX_TB_SBJTOPT_FLT, BCHANL_DBX_WS_SBJTOPT_ODR, BCHANL_DBX_WS_SBJTOPT_ODRBY);
+	subjectoptionwindow = bchanlhmi_newsubjectoptionwindow(hmi, &p0, subjectwindow, NULL, bgpat, BCHANL_DBX_TB_SBJTOPT_FLT, BCHANL_DBX_WS_SBJTOPT_ODR, BCHANL_DBX_WS_SBJTOPT_ODRBY);
 	if (subjectoptionwindow == NULL) {
 		DP_ER("bchanlhmi_newsubjectoptionwindow", 0);
 		goto error_subjectoptionwindow;
@@ -1092,7 +1102,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		goto error_bbsmenuwindow;
 	}
 	gid = bbsmenuwindow_getGID(bbsmenuwindow);
-	registerexternalwindow = bchanlhmi_newregisterexternalwindow(hmi, &p0, 0, NULL, NULL);
+	registerexternalwindow = bchanlhmi_newregisterexternalwindow(hmi, &p0, 0, NULL, bgpat);
 	if (registerexternalwindow == NULL) {
 		DP_ER("bchanlhmi_newregisterexternalwindow error", 0);
 		goto error_registerexternalwindow;
