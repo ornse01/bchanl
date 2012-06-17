@@ -1,7 +1,7 @@
 /*
  * subjectlayout.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -95,10 +95,43 @@ LOCAL W WtoTCS(W num, TC *dest)
 		draw = 1;
 	}
 	digit = num % 10;
-	if ((digit != 0)||(draw != 0)) {
-		dest[i++] = dec[digit];
-		draw = 1;
-	}
+	dest[i++] = dec[digit];
+	draw = 1;
+	dest[i] = TNULL;
+
+	return i;
+}
+
+LOCAL W DATE_TIMtoTCS(DATE_TIM *dtim, TC *dest)
+{
+	W len;
+
+	len = WtoTCS(dtim->d_year + 1900, dest);
+	dest[len++] = TK_SLSH;
+	len += WtoTCS(dtim->d_month, dest + len);
+	dest[len++] = TK_SLSH;
+	len += WtoTCS(dtim->d_day, dest + len);
+	dest[len] = TNULL;
+
+	return len;
+}
+
+LOCAL W VIGORtoTCS(W vigor, TC *dest)
+{
+	W n0 = vigor / 10;
+	W n1 = vigor % 10;
+	W i;
+
+	i = WtoTCS(n0, dest);
+	dest[i++] = TK_PROD;
+	i += WtoTCS(n1, dest + i);
+	dest[i++] = TK_r;
+	dest[i++] = TK_e;
+	dest[i++] = TK_s;
+	dest[i++] = TK_SLSH;
+	dest[i++] = TK_d;
+	dest[i++] = TK_a;
+	dest[i++] = TK_y;
 	dest[i] = TNULL;
 
 	return i;
@@ -186,9 +219,29 @@ LOCAL W sbjtlayout_thread_calcresnumdrawsize(sbjtlayout_thread_t *layout_thread,
 	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
+LOCAL W sbjtlayout_thread_calcsincedrawsize(sbjtlayout_thread_t *layout_thread, GID gid, SIZE *sz)
+{
+	DATE_TIM dtim;
+	TC str[11];
+	W len = 10;
+	sbjtlist_tuple_getsince(layout_thread->tuple, &dtim);
+	len = DATE_TIMtoTCS(&dtim, str);
+	return tadlib_calcdrawsize(str, len, gid, sz);
+}
+
+LOCAL W sbjtlayout_thread_calcvigordrawsize(sbjtlayout_thread_t *layout_thread, GID gid, SIZE *sz)
+{
+	W vigor;
+	TC str[100];
+	W len;
+	sbjtlist_tuple_getvigor(layout_thread->tuple, &vigor);
+	len = VIGORtoTCS(vigor, str);
+	return tadlib_calcdrawsize(str, len, gid, sz);
+}
+
 LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top)
 {
-	SIZE sz_index, sz_title, sz_resnum;
+	SIZE sz_index, sz_title, sz_resnum, sz_since, sz_vigor;
 	W err;
 
 	err = sbjtlayout_thread_calcindexdrawsize(layout_res, gid, &sz_index);
@@ -203,13 +256,21 @@ LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W t
 	if (err < 0) {
 		return err;
 	}
+	err = sbjtlayout_thread_calcsincedrawsize(layout_res, gid, &sz_since);
+	if (err < 0) {
+		return err;
+	}
+	err = sbjtlayout_thread_calcvigordrawsize(layout_res, gid, &sz_vigor);
+	if (err < 0) {
+		return err;
+	}
 
 	layout_res->sz_title = sz_title;
 
 	layout_res->view_t = top + 2;
 	layout_res->view_l = 0;
 	layout_res->view_b = layout_res->view_t + sz_title.v + 16;
-	layout_res->view_r = 16*6 + sz_title.h + sz_resnum.h;
+	layout_res->view_r = 16*6 + sz_title.h + sz_resnum.h + 16 + sz_since.h + 16 + sz_vigor.h;
 
 	layout_res->baseline = 20;
 	layout_res->vframe.c.left = sz_index.h + 16;
@@ -366,12 +427,33 @@ LOCAL W sbjtdraw_entrydraw_drawresnum(sbjtlayout_thread_t *entry, GID gid, W dh,
 }
 
 LOCAL W sbjtdraw_entrydraw_resnumber(sbjtlayout_thread_t *entry, W resnum, GID target)
+
 {
 	TC str[11];
 	W len;
 
 	len = WtoTCS(resnum, str);
 	return gdra_str(target, str, len, G_STORE);
+}
+
+LOCAL W sbjtdraw_entrydraw_drawsince(sbjtlayout_thread_t *entry, GID gid, W dh, W dv)
+{
+	DATE_TIM dtim;
+	TC str[11];
+	W len = 10;
+	sbjtlist_tuple_getsince(entry->tuple, &dtim);
+	len = DATE_TIMtoTCS(&dtim, str);
+	return gdra_str(gid, str, len, G_STORE);
+}
+
+LOCAL W sbjtdraw_entrydraw_drawvigor(sbjtlayout_thread_t *entry, GID gid, W dh, W dv)
+{
+	W vigor;
+	TC str[100];
+	W len;
+	sbjtlist_tuple_getvigor(entry->tuple, &vigor);
+	len = VIGORtoTCS(vigor, str);
+	return gdra_str(gid, str, len, G_STORE);
 }
 
 LOCAL int sectrect_tmp(RECT a, W left, W top, W right, W bottom)
@@ -459,6 +541,22 @@ LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W d
 		return err;
 	}
 	err = sbjtdraw_entrydraw_drawresnum(entry, target, dh, dv);
+	if (err < 0) {
+		return err;
+	}
+	err = gset_chp(target, 16, 0, 0);
+	if (err < 0) {
+		return err;
+	}
+	err = sbjtdraw_entrydraw_drawsince(entry, target, dh, dv);
+	if (err < 0) {
+		return err;
+	}
+	err = gset_chp(target, 16, 0, 0);
+	if (err < 0) {
+		return err;
+	}
+	err = sbjtdraw_entrydraw_drawvigor(entry, target, dh, dv);
 	if (err < 0) {
 		return err;
 	}
