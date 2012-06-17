@@ -735,7 +735,9 @@ EXPORT Bool subjectoptionwindow_isopen(subjectoptionwindow_t *window)
 LOCAL VOID subjectoptionwindow_draw(subjectoptionwindow_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
+	gset_chc(window->gid, 0x10000000, -1);
 	gdra_stp(window->gid, 8, 26, (TC[]){0x2555, 0x2523, 0x256b, 0x253f, 0x2127, TNULL}, 5, G_STORE);
+	gset_chc(window->gid, 0x10000000, -1);
 	gdra_stp(window->gid, 8, 58, (TC[]){0x4a42, 0x2459, 0x3d67, 0x2127, TNULL}, 4, G_STORE);
 }
 
@@ -1167,7 +1169,9 @@ EXPORT Bool registerexternalwindow_isopen(registerexternalwindow_t *window)
 LOCAL VOID registerexternalwindow_draw(registerexternalwindow_t *window, RECT *r)
 {
 	cdsp_pwd(window->wid, r, P_RDISP);
+	gset_chc(window->gid, 0x10000000, -1);
 	gdra_stp(window->gid, 8, 26, (TC[]){0x4844, 0x4c3e, 0x2127, TNULL}, 3, G_STORE);
+	gset_chc(window->gid, 0x10000000, -1);
 	gdra_stp(window->gid, 8, 58, (TC[]){0x2355, 0x2352, 0x234c, 0x2127, TNULL}, 4, G_STORE);
 }
 
@@ -2219,6 +2223,11 @@ EXPORT subjectwindow_t* subjectwindow_new(RECT *r, WID parent, TC *title, PAT *b
 	window->gid = -1;
 	window->parent = parent;
 	window->r = *r;
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
 	if (err < 0) {
 		free(window);
@@ -2258,6 +2267,11 @@ EXPORT bbsmenuwindow_t* bbsmenuwindow_new(RECT *r, WID parent, TC *title, PAT *b
 	window->gid = -1;
 	window->parent = parent;
 	window->r = *r;
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
 	if (err < 0) {
 		free(window);
@@ -2298,6 +2312,11 @@ EXPORT subjectoptionwindow_t* subjectoptionwindow_new(PNT *p, subjectwindow_t *p
 	window->r.c.top = p->y;
 	window->r.c.right = p->x + 384;
 	window->r.c.bottom = p->y + 160;
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	tc_strset(window->title, TNULL, 256+1);
 	if (title != 0) {
 		tc_strncpy(window->title, title, 256);
@@ -2355,6 +2374,11 @@ EXPORT registerexternalwindow_t* registerexternalwindow_new(PNT *p, WID parent, 
 	window->r.c.top = p->y;
 	window->r.c.right = p->x + 384;
 	window->r.c.bottom = p->y + 138;
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	tc_strset(window->title, TNULL, 256+1);
 	if (title != 0) {
 		tc_strncpy(window->title, title, 256);
@@ -2416,6 +2440,11 @@ EXPORT externalbbswindow_t* externalbbswindow_new(RECT *r, WID parent, TC *title
 	window->gid = -1;
 	window->parent = parent;
 	window->r = *r;
+	if (bgpat != NULL) {
+		window->bgpat = *bgpat;
+	} else {
+		window->bgpat = (PAT){{0, 16, 16, 0x10ffffff, 0, FILL100}};
+	}
 	err = hmi_windowscroll_initialize(&window->wscr, window->wid);
 	if (err < 0) {
 		free(window);
