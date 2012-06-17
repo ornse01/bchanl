@@ -318,6 +318,36 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tup
 	return BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED;
 }
 
+EXPORT VOID bchanl_subject_setresnumberdisplay(bchanl_subject_t *subject, Bool display)
+{
+	sbjtlayout_setresnumberdisplay(subject->layout, display);
+}
+
+EXPORT VOID bchanl_subject_setsincedisplay(bchanl_subject_t *subject, Bool display)
+{
+	sbjtlayout_setsincedisplay(subject->layout, display);
+}
+
+EXPORT VOID bchanl_subject_setvigordisplay(bchanl_subject_t *subject, Bool display)
+{
+	sbjtlayout_setvigordisplay(subject->layout, display);
+}
+
+EXPORT Bool bchanl_subject_getresnumberdisplay(bchanl_subject_t *subject)
+{
+	return sbjtlayout_getresnumberdisplay(subject->layout);
+}
+
+EXPORT Bool bchanl_subject_getsincedisplay(bchanl_subject_t *subject)
+{
+	return sbjtlayout_getsincedisplay(subject->layout);
+}
+
+EXPORT Bool bchanl_subject_getvigordisplay(bchanl_subject_t *subject)
+{
+	return sbjtlayout_getvigordisplay(subject->layout);
+}
+
 LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
 {
 	sbjtcache_t *cache;

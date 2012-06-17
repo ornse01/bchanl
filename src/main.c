@@ -159,6 +159,11 @@ struct bchanl_t_ {
 	bchanl_subjecthash_t *subjecthash;
 	bchanl_bbsmenu_t bbsmenu;
 	bchanl_subject_t *currentsubject;
+	struct {
+		Bool resnum;
+		Bool since;
+		Bool vigor;
+	} subjectdisplay;
 
 	bchanlhmi_t *hmi;
 	subjectwindow_t *subjectwindow;
@@ -168,6 +173,33 @@ struct bchanl_t_ {
 	externalbbswindow_t *externalbbswindow;
 };
 typedef struct bchanl_t_ bchanl_t;
+
+LOCAL VOID bchanl_swapresnumberdisplay(bchanl_t *bchanl)
+{
+	if (bchanl->subjectdisplay.resnum != False) {
+		bchanl->subjectdisplay.resnum = False;
+	} else {
+		bchanl->subjectdisplay.resnum = True;
+	}
+}
+
+LOCAL VOID bchanl_swapsincedisplay(bchanl_t *bchanl)
+{
+	if (bchanl->subjectdisplay.since != False) {
+		bchanl->subjectdisplay.since = False;
+	} else {
+		bchanl->subjectdisplay.since = True;
+	}
+}
+
+LOCAL VOID bchanl_swapvigordisplay(bchanl_t *bchanl)
+{
+	if (bchanl->subjectdisplay.vigor != False) {
+		bchanl->subjectdisplay.vigor = False;
+	} else {
+		bchanl->subjectdisplay.vigor = True;
+	}
+}
 
 LOCAL VOID bchanl_killme(bchanl_t *bchanl);
 
@@ -381,6 +413,9 @@ LOCAL VOID bchanl_subjectwindow_butdn(bchanl_t *bchanl, W dck, PNT evpos)
 LOCAL VOID bchanl_setcurrentsubject(bchanl_t *bchanl, bchanl_subject_t *sbjt)
 {
 	bchanl->currentsubject = sbjt;
+	bchanl_subject_setresnumberdisplay(sbjt, bchanl->subjectdisplay.resnum);
+	bchanl_subject_setsincedisplay(sbjt, bchanl->subjectdisplay.since);
+	bchanl_subject_setvigordisplay(sbjt, bchanl->subjectdisplay.vigor);
 	subjectwindow_requestredisp(bchanl->subjectwindow);
 }
 
@@ -1138,6 +1173,9 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	bchanl->subjecthash = subjecthash;
 
 	bchanl->currentsubject = NULL;
+	bchanl->subjectdisplay.resnum = True;
+	bchanl->subjectdisplay.since = False;
+	bchanl->subjectdisplay.vigor = False;
 
 	bchanl->vid = vid;
 	bchanl->exectype = exectype;
@@ -1515,7 +1553,7 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl, BCHANL_TEXTBOX_MENU_TYPE type)
 		break;
 	}
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray, False, False, False);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray, bchanl->subjectdisplay.resnum, bchanl->subjectdisplay.since, bchanl->subjectdisplay.vigor);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE type)
@@ -1683,10 +1721,22 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 		}
 		break;
 	case BCHANL_MAINMENU_SELECT_DISPLAY_RESNUMBER:
+		bchanl_swapresnumberdisplay(bchanl);
+		if (bchanl->currentsubject != NULL) {
+			bchanl_subject_setresnumberdisplay(bchanl->currentsubject, bchanl->subjectdisplay.resnum);
+		}
 		break;
 	case BCHANL_MAINMENU_SELECT_DISPLAY_SINCE:
+		bchanl_swapsincedisplay(bchanl);
+		if (bchanl->currentsubject != NULL) {
+			bchanl_subject_setsincedisplay(bchanl->currentsubject, bchanl->subjectdisplay.since);
+		}
 		break;
 	case BCHANL_MAINMENU_SELECT_DISPLAY_VIGOR:
+		bchanl_swapvigordisplay(bchanl);
+		if (bchanl->currentsubject != NULL) {
+			bchanl_subject_setvigordisplay(bchanl->currentsubject, bchanl->subjectdisplay.vigor);
+		}
 		break;
 	}
 	return;

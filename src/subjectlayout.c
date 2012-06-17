@@ -147,6 +147,10 @@ struct sbjtlayout_thread_t_ {
 	RECT vframe;
 };
 
+#define SBJTLAYOUT_FLAG_RESNUM_DISPLAY 0x00000001
+#define SBJTLAYOUT_FLAG_SINCE_DISPLAY 0x00000002
+#define SBJTLAYOUT_FLAG_VIGOR_DISPLAY 0x00000004
+
 struct sbjtlayout_t_ {
 	GID target;
 	W draw_l,draw_t,draw_r,draw_b;
@@ -154,6 +158,7 @@ struct sbjtlayout_t_ {
 	W len;
 	FSSPEC fspec;
 	COLOR vobjbgcol;
+	UW flag;
 };
 
 LOCAL sbjtlayout_thread_t* sbjtlayout_thread_new(sbjtlist_tuple_t *thread)
@@ -367,6 +372,60 @@ EXPORT COLOR sbjtlayout_getvobjbgcol(sbjtlayout_t *layout)
 	return layout->vobjbgcol;
 }
 
+EXPORT VOID sbjtlayout_setresnumberdisplay(sbjtlayout_t *layout, Bool display)
+{
+	if (display == False) {
+		layout->flag = layout->flag & ~SBJTLAYOUT_FLAG_RESNUM_DISPLAY;
+	} else {
+		layout->flag |= SBJTLAYOUT_FLAG_RESNUM_DISPLAY;
+	}
+}
+
+EXPORT VOID sbjtlayout_setsincedisplay(sbjtlayout_t *layout, Bool display)
+{
+	if (display == False) {
+		layout->flag = layout->flag & ~SBJTLAYOUT_FLAG_SINCE_DISPLAY;
+	} else {
+		layout->flag |= SBJTLAYOUT_FLAG_SINCE_DISPLAY;
+	}
+}
+
+EXPORT VOID sbjtlayout_setvigordisplay(sbjtlayout_t *layout, Bool display)
+{
+	if (display == False) {
+		layout->flag = layout->flag & ~SBJTLAYOUT_FLAG_VIGOR_DISPLAY;
+	} else {
+		layout->flag |= SBJTLAYOUT_FLAG_VIGOR_DISPLAY;
+	}
+}
+
+EXPORT Bool sbjtlayout_getresnumberdisplay(sbjtlayout_t *layout)
+{
+	if ((layout->flag & SBJTLAYOUT_FLAG_RESNUM_DISPLAY) != 0) {
+		return True;
+	} else {
+		return False;
+	}
+}
+
+EXPORT Bool sbjtlayout_getsincedisplay(sbjtlayout_t *layout)
+{
+	if ((layout->flag & SBJTLAYOUT_FLAG_SINCE_DISPLAY) != 0) {
+		return True;
+	} else {
+		return False;
+	}
+}
+
+EXPORT Bool sbjtlayout_getvigordisplay(sbjtlayout_t *layout)
+{
+	if ((layout->flag & SBJTLAYOUT_FLAG_VIGOR_DISPLAY) != 0) {
+		return True;
+	} else {
+		return False;
+	}
+}
+
 EXPORT sbjtlayout_t* sbjtlayout_new(GID gid)
 {
 	sbjtlayout_t *layout;
@@ -388,6 +447,7 @@ EXPORT sbjtlayout_t* sbjtlayout_new(GID gid)
 	layout->fspec.size.h = 16;
 	layout->fspec.size.v = 16;
 	layout->vobjbgcol = 0x10000000;
+	layout->flag = 0;
 
 	return layout;
 }

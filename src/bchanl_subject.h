@@ -52,6 +52,12 @@ IMPORT W bchanl_subject_reorder(bchanl_subject_t *subject, TC *filterword, W fil
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CANCELED 0
 #define BCHANL_SUBJECT_CREATEVIEWERVOBJ_CREATED  1
 IMPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk);
+IMPORT VOID bchanl_subject_setresnumberdisplay(bchanl_subject_t *subject, Bool display);
+IMPORT VOID bchanl_subject_setsincedisplay(bchanl_subject_t *subject, Bool display);
+IMPORT VOID bchanl_subject_setvigordisplay(bchanl_subject_t *subject, Bool display);
+IMPORT Bool bchanl_subject_getresnumverdisplay(bchanl_subject_t *subject);
+IMPORT Bool bchanl_subject_getsincedisplay(bchanl_subject_t *subject);
+IMPORT Bool bchanl_subject_getvigordisplay(bchanl_subject_t *subject);
 
 IMPORT bchanl_subjecthash_t* bchanl_subjecthash_new(GID gid, W base);
 IMPORT VOID bchanl_subjecthash_delete(bchanl_subjecthash_t *subjecthash);

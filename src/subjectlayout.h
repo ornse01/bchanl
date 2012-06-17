@@ -43,6 +43,12 @@ IMPORT VOID sbjtlayout_clear(sbjtlayout_t *layout);
 IMPORT VOID sbjtlayout_setfsspec(sbjtlayout_t *layout, FSSPEC *fspec);
 IMPORT VOID sbjtlayout_setvobjbgcol(sbjtlayout_t *layout, COLOR color);
 IMPORT COLOR sbjtlayout_getvobjbgcol(sbjtlayout_t *layout);
+IMPORT VOID sbjtlayout_setresnumberdisplay(sbjtlayout_t *layout, Bool display);
+IMPORT VOID sbjtlayout_setsincedisplay(sbjtlayout_t *layout, Bool display);
+IMPORT VOID sbjtlayout_setvigordisplay(sbjtlayout_t *layout, Bool display);
+IMPORT Bool sbjtlayout_getresnumberdisplay(sbjtlayout_t *layout);
+IMPORT Bool sbjtlayout_getsincedisplay(sbjtlayout_t *layout);
+IMPORT Bool sbjtlayout_getvigordisplay(sbjtlayout_t *layout);
 
 typedef struct sbjtdraw_t_ sbjtdraw_t;
 
