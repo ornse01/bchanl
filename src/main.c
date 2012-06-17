@@ -1515,7 +1515,7 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl, BCHANL_TEXTBOX_MENU_TYPE type)
 		break;
 	}
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray, False, False, False);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE type)
@@ -1681,6 +1681,12 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 		default:
 			break;
 		}
+		break;
+	case BCHANL_MAINMENU_SELECT_DISPLAY_RESNUMBER:
+		break;
+	case BCHANL_MAINMENU_SELECT_DISPLAY_SINCE:
+		break;
+	case BCHANL_MAINMENU_SELECT_DISPLAY_VIGOR:
 		break;
 	}
 	return;

@@ -43,13 +43,34 @@
 #define BCHANL_MAINMENU_ITEMNUM_WINDOW 5
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
-EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray)
+EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray, Bool resnumdisplay, Bool sincedisplay, Bool vigordisplay)
 {
 	/* [表示] -> [スレ一覧設定] */
 	if (subectjoptionenable == False) {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_NOSEL);
 	} else {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_SEL);
+	}
+
+	/* [表示] -> [レス数] */
+	if (resnumdisplay == False) {
+		mchg_atr(mainmenu->mnid, (1 << 8)|4, M_NOSEL);
+	} else {
+		mchg_atr(mainmenu->mnid, (1 << 8)|4, M_SEL);
+	}
+
+	/* [表示] -> [Ｓｉｎｃｅ] */
+	if (sincedisplay == False) {
+		mchg_atr(mainmenu->mnid, (1 << 8)|5, M_NOSEL);
+	} else {
+		mchg_atr(mainmenu->mnid, (1 << 8)|5, M_SEL);
+	}
+
+	/* [表示] -> [勢い] */
+	if (vigordisplay == False) {
+		mchg_atr(mainmenu->mnid, (1 << 8)|6, M_NOSEL);
+	} else {
+		mchg_atr(mainmenu->mnid, (1 << 8)|6, M_SEL);
 	}
 
 	/* [編集] -> [トレーから*] */
@@ -120,6 +141,15 @@ LOCAL W bchanl_mainmenu_select(bchanl_mainmenu_t *mainmenu, W i)
 			break;
 		case 2: /* [スレ一覧設定] */
 			ret = BCHANL_MAINMENU_SELECT_SUBJECTOPTION;
+			break;
+		case 4: /* [レス数] */
+			ret = BCHANL_MAINMENU_SELECT_DISPLAY_RESNUMBER;
+			break;
+		case 5: /* [Ｓｉｎｃｅ] */
+			ret = BCHANL_MAINMENU_SELECT_DISPLAY_SINCE;
+			break;
+		case 6: /* [勢い] */
+			ret = BCHANL_MAINMENU_SELECT_DISPLAY_VIGOR;
 			break;
 		default:
 			ret = BCHANL_MAINMENU_SELECT_NOSELECT;
