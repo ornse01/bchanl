@@ -244,10 +244,11 @@ LOCAL W sbjtlayout_thread_calcvigordrawsize(sbjtlayout_thread_t *layout_thread, 
 	return tadlib_calcdrawsize(str, len, gid, sz);
 }
 
-LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top)
+LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W top, sbjtlayout_t *layout)
 {
 	SIZE sz_index, sz_title, sz_resnum, sz_since, sz_vigor;
 	W err;
+	Bool ok;
 
 	err = sbjtlayout_thread_calcindexdrawsize(layout_res, gid, &sz_index);
 	if (err < 0) {
@@ -275,7 +276,19 @@ LOCAL W sbjtlayout_thread_calcsize(sbjtlayout_thread_t *layout_res, GID gid, W t
 	layout_res->view_t = top + 2;
 	layout_res->view_l = 0;
 	layout_res->view_b = layout_res->view_t + sz_title.v + 16;
-	layout_res->view_r = 16*6 + sz_title.h + sz_resnum.h + 16 + sz_since.h + 16 + sz_vigor.h;
+	layout_res->view_r = 16*6 + sz_title.h;
+	ok = sbjtlayout_getresnumberdisplay(layout);
+	if (ok != False) {
+		layout_res->view_r += sz_resnum.h;
+	}
+	ok = sbjtlayout_getsincedisplay(layout);
+	if (ok != False) {
+		layout_res->view_r += 16 + sz_since.h;
+	}
+	ok = sbjtlayout_getvigordisplay(layout);
+	if (ok != False) {
+		layout_res->view_r += 16 + sz_vigor.h;
+	}
 
 	layout_res->baseline = 20;
 	layout_res->vframe.c.left = sz_index.h + 16;
@@ -312,7 +325,7 @@ EXPORT W sbjtlayout_appendthread(sbjtlayout_t *layout, sbjtlist_tuple_t *tuple)
 
 	sbjtlayout_setupgid(layout, layout->target);
 
-	sbjtlayout_thread_calcsize(layout_thread, layout->target, layout->draw_b);
+	sbjtlayout_thread_calcsize(layout_thread, layout->target, layout->draw_b, layout);
 
 	/* orrect */
 	if (layout->draw_l > layout_thread->view_l) {
@@ -521,7 +534,7 @@ LOCAL int sectrect_tmp(RECT a, W left, W top, W right, W bottom)
 	return (a.c.left<right && left<a.c.right && a.c.top<bottom && top<a.c.bottom);
 }
 
-LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W dh, W dv, COLOR vobjbgcol)
+LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W dh, W dv, COLOR vobjbgcol, sbjtlayout_t *layout)
 {
 	W sect, err, num;
 	RECT view, vframe, vframe_b;
@@ -539,6 +552,7 @@ LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W d
 		0x10000000,
 		FILL100
 	}};
+	Bool ok;
 
 	/* sectrect */
 	sect = sectrect_tmp(*r, entry->view_l - dh, entry->view_t - dv, entry->view_r - dh, entry->view_b - dv);
@@ -596,29 +610,38 @@ LOCAL W sbjtdraw_drawthread(sbjtlayout_thread_t *entry, GID target, RECT *r, W d
 	}
 
 	gset_chc(target, 0x10000000, 0x10FFFFFF);
+	ok = sbjtlayout_getresnumberdisplay(layout);
 	err = gset_chp(target, 16, 0, 0);
 	if (err < 0) {
 		return err;
 	}
-	err = sbjtdraw_entrydraw_drawresnum(entry, target, dh, dv);
-	if (err < 0) {
-		return err;
+	if (ok != False) {
+		err = sbjtdraw_entrydraw_drawresnum(entry, target, dh, dv);
+		if (err < 0) {
+			return err;
+		}
 	}
-	err = gset_chp(target, 16, 0, 0);
-	if (err < 0) {
-		return err;
+	ok = sbjtlayout_getsincedisplay(layout);
+	if (ok != False) {
+		err = gset_chp(target, 16, 0, 0);
+		if (err < 0) {
+			return err;
+		}
+		err = sbjtdraw_entrydraw_drawsince(entry, target, dh, dv);
+		if (err < 0) {
+			return err;
+		}
 	}
-	err = sbjtdraw_entrydraw_drawsince(entry, target, dh, dv);
-	if (err < 0) {
-		return err;
-	}
-	err = gset_chp(target, 16, 0, 0);
-	if (err < 0) {
-		return err;
-	}
-	err = sbjtdraw_entrydraw_drawvigor(entry, target, dh, dv);
-	if (err < 0) {
-		return err;
+	ok = sbjtlayout_getvigordisplay(layout);
+	if (ok != False) {
+		err = gset_chp(target, 16, 0, 0);
+		if (err < 0) {
+			return err;
+		}
+		err = sbjtdraw_entrydraw_drawvigor(entry, target, dh, dv);
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	return 0;
@@ -635,7 +658,7 @@ EXPORT W sbjtdraw_draw(sbjtdraw_t *draw, RECT *r)
 
 	for (i=0;i < layout->len;i++) {
 		sbjtlayout_setupgid(layout, layout->target);
-		err = sbjtdraw_drawthread(layout->layout_thread[i], target, r, draw->view_l, draw->view_t, layout->vobjbgcol);
+		err = sbjtdraw_drawthread(layout->layout_thread[i], target, r, draw->view_l, draw->view_t, layout->vobjbgcol, layout);
 		if (err < 0) {
 			return err;
 		}

@@ -549,6 +549,30 @@ LOCAL VOID bchanl_changesubjectfilterword(bchanl_t *bchanl, TC *newstr, W newstr
 	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
 }
 
+LOCAL VOID bchanl_changedisplayattribute(bchanl_t *bchanl)
+{
+	sbjtlayout_t *layout;
+	SUBJECTOPTIONWINDOW_ORDERBYVALUE_T order;
+	SUBJECTOPTIONWINDOW_ORDERBYVALUE_T orderby;
+	W len;
+	TC buf[512];
+	W l, t, r, b;
+
+	if (bchanl->currentsubject == NULL) {
+		return;
+	}
+
+	subjectoptionwindow_getordervalue(bchanl->subjectoptionwindow, &order);
+	subjectoptionwindow_getorderbyvalue(bchanl->subjectoptionwindow, &orderby);
+	len = subjectoptionwindow_getfiltertext(bchanl->subjectoptionwindow, buf, 512);
+
+	bchanl_updatesubjectorder(bchanl, order, orderby, buf, len);
+
+	layout = bchanl_subject_getlayout(bchanl->currentsubject);
+	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
+	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
+}
+
 LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
 {
 	sbjtcache_t *cache;
@@ -1724,18 +1748,21 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 		bchanl_swapresnumberdisplay(bchanl);
 		if (bchanl->currentsubject != NULL) {
 			bchanl_subject_setresnumberdisplay(bchanl->currentsubject, bchanl->subjectdisplay.resnum);
+			bchanl_changedisplayattribute(bchanl);
 		}
 		break;
 	case BCHANL_MAINMENU_SELECT_DISPLAY_SINCE:
 		bchanl_swapsincedisplay(bchanl);
 		if (bchanl->currentsubject != NULL) {
 			bchanl_subject_setsincedisplay(bchanl->currentsubject, bchanl->subjectdisplay.since);
+			bchanl_changedisplayattribute(bchanl);
 		}
 		break;
 	case BCHANL_MAINMENU_SELECT_DISPLAY_VIGOR:
 		bchanl_swapvigordisplay(bchanl);
 		if (bchanl->currentsubject != NULL) {
 			bchanl_subject_setvigordisplay(bchanl->currentsubject, bchanl->subjectdisplay.vigor);
+			bchanl_changedisplayattribute(bchanl);
 		}
 		break;
 	}
