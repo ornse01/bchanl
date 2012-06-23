@@ -140,6 +140,9 @@ EXPORT W bbsmnretriever_recievehttpevent(bbsmnretriever_t *retriever, bbsmncache
 		DP(("HTTP_CONNECTOR_EVENTTYPE_RECEIVE_STATUSLINE\n"));
 		DP(("    status = %d\n", hevent->data.receive_statusline.statuscode));
 		retriever->status = hevent->data.receive_statusline.statuscode;
+		if (retriever->status == HTTP_STATUSCODE_200_OK) {
+			bbsmncache_cleardata(cache);
+		}
 	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_HEADER) {
 #ifdef BCHANL_CONFIG_DEBUG
 		{
