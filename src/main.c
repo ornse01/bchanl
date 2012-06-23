@@ -58,6 +58,8 @@
 #include    "bchanl_menus.h"
 #include    "bchanl_panels.h"
 
+#include	<http/http_connector.h>
+
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
 # define DP_ER(msg, err) printf("%s (%d/%x)\n", msg, err>>16, err)
@@ -144,15 +146,19 @@ struct bchanl_bbsmenu_t_ {
 	TC *category_extbbs;
 };
 
+#define BCHANL_NETWORK_FLAG_WAITHTTPEVENT 0x00000001
+
 struct bchanl_t_ {
 	W taskid;
-	W mbfid;
+	W flgid; /* for reduce TMOUT message sending. */
 
 	bchanl_mainmenu_t mainmenu;
 	VID vid;
 	W exectype;
 
 	bchanl_hmistate_t hmistate;
+
+	http_connector_t *connector;
 
 	sbjtretriever_t *retriever;
 
@@ -659,7 +665,7 @@ LOCAL VOID bchanl_bbsmenuwindow_butdn(bchanl_t *bchanl, W dck, PNT evpos)
 	}
 }
 
-LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subjecthash_t *subjecthash, LINK *storage)
+LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subjecthash_t *subjecthash, LINK *storage, http_connector_t *connector)
 {
 	bbsmnretriever_t *retriever;
 	bbsmncache_t *cache;
@@ -675,7 +681,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	if (cache == NULL) {
 		goto error_cache;
 	}
-	retriever = bbsmnretriever_new();
+	retriever = bbsmnretriever_new(connector);
 	if (retriever == NULL) {
 		goto error_retriever;
 	}
@@ -1007,40 +1013,78 @@ LOCAL VOID bchanl_externalbbswindow_scroll(bchanl_t *bchanl, W dh, W dv)
 
 #define BCHANL_MESSAGE_RETRIEVER_RELAYOUT 1
 #define BCHANL_MESSAGE_RETRIEVER_ERROR -1
+#define BCHANL_MESSAGE_HTTP_EVENT 2
 
-LOCAL VOID bchanl_retriever_task(W arg)
+LOCAL Bool bchanl_bbsmenu_httpevent(bchanl_bbsmenu_t *bchanl, http_connector_event *hevent)
+{
+	Bool ok;
+	W err;
+
+	ok = bbsmnretriever_iswaitingendpoint(bchanl->retriever, hevent->endpoint);
+	if (ok == False) {
+		return False;
+	}
+	err = bbsmnretriever_recievehttpevent(bchanl->retriever, bchanl->cache, hevent);
+
+	switch (err) {
+	case BBSMNRETRIEVER_REQUEST_ALLRELOAD:
+		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
+		break;
+	case BBSMNRETRIEVER_REQUEST_WAITNEXT:
+		break;
+	default:
+		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_ERROR);
+		DP_ER("bbsmnretriever_recievehttpevent", err);
+		break;
+	}
+
+	return True;
+}
+
+LOCAL VOID bchanl_http_task(W arg)
 {
 	bchanl_t *bchanl;
+	http_connector_t *connector;
 	bbsmnretriever_t *retr;
 	bbsmncache_t *cache;
-	W msg,err;
+	W err;
 
 	bchanl = (bchanl_t*)arg;
+	connector = bchanl->connector;
 	retr = bchanl->bbsmenu.retriever;
 	cache = bchanl->bbsmenu.cache;
 
 	for (;;) {
-		DP(("before rcv_mbf %d\n", bchanl->mbfid));
-		err = rcv_mbf(bchanl->mbfid, (VP)&msg, T_FOREVER);
-		DP_ER("rcv_mbf error:",err);
-		if (err != 4) {
-			continue;
-		}
-
-		err = bbsmnretriever_sendrequest(retr, cache);
-
-		switch (err) {
-		case BBSMNRETRIEVER_REQUEST_ALLRELOAD:
-			req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
-			break;
-		default:
+		err = http_connector_waitconnection(connector, T_FOREVER);
+		if (err < 0) {
+			DP_ER("http_connector_waitconnection", err);
 			req_tmg(0, BCHANL_MESSAGE_RETRIEVER_ERROR);
-			DP_ER("bbsmnretreiver_request error",err);
 			break;
 		}
+
+		err = wai_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT, WF_AND, T_FOREVER);
+		if (err < 0) {
+			DP_ER("wai_flg", err);
+		}
+		req_tmg(0, BCHANL_MESSAGE_HTTP_EVENT);
 	}
 
 	ext_tsk();
+}
+
+LOCAL VOID bchanl_handle_httpevent(bchanl_t *bchanl)
+{
+	W err;
+	http_connector_event hevent;
+
+	set_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT);
+
+	err = http_connector_getevent(bchanl->connector, &hevent);
+	if (err < 0) {
+		return;
+	}
+
+	bchanl_bbsmenu_httpevent(&bchanl->bbsmenu, &hevent);
 }
 
 LOCAL W bchanl_prepare_network(bchanl_t *bchanl)
@@ -1049,16 +1093,16 @@ LOCAL W bchanl_prepare_network(bchanl_t *bchanl)
 		return 0;
 	}
 
-	bchanl->mbfid = cre_mbf(sizeof(W), sizeof(W), DELEXIT);
-	if (bchanl->mbfid < 0) {
-		DP_ER("error cre_mbf:", bchanl->mbfid);
+	bchanl->taskid = cre_tsk(bchanl_http_task, -1, (W)bchanl);
+	if (bchanl->taskid < 0) {
+		DP_ER("error cre_tsk:", bchanl->taskid);
 		return -1;
 	}
-	bchanl->taskid = cre_tsk(bchanl_retriever_task, -1, (W)bchanl);
-	if (bchanl->taskid < 0) {
-		del_mbf(bchanl->mbfid);
-		bchanl->mbfid = -1;
-		DP_ER("error cre_tsk:", bchanl->taskid);
+	bchanl->flgid = cre_flg(0, DELEXIT);
+	if (bchanl->flgid < 0) {
+		ter_tsk(bchanl->taskid);
+		bchanl->taskid = -1;
+		DP_ER("error cre_flg:", bchanl->flgid);
 		return -1;
 	}
 
@@ -1067,11 +1111,11 @@ LOCAL W bchanl_prepare_network(bchanl_t *bchanl)
 
 LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 {
-	W msg = 1, err;
+	W err;
 	static UW lastrequest = 0;
 	UW etime;
 
-	if (bchanl->mbfid < 0) {
+	if (bchanl->flgid < 0) {
 		return 0;
 	}
 
@@ -1085,11 +1129,15 @@ LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 	}
 	lastrequest = etime;
 
-	err = snd_mbf(bchanl->mbfid, &msg, sizeof(W), T_FOREVER);
+	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
+
+	err = bbsmnretriever_sendrequest(bchanl->bbsmenu.retriever, bchanl->bbsmenu.cache);
 	if (err < 0) {
-		DP_ER("snd_mbf error:", err);
+		DP_ER("bbsmnretriever_sendrequest error:", err);
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
 		return err;
 	}
+	set_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT);
 
 	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
 	pdsp_msg(bchanl->hmistate.msg_retr_bbsmenu);
@@ -1111,6 +1159,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	GID gid;
 	RECT w_work;
 	PNT p0 = {450, 0};
+	http_connector_t *connector;
 	sbjtretriever_t *retriever;
 	bchanlhmi_t *hmi;
 	bchanl_subjecthash_t *subjecthash;
@@ -1125,6 +1174,12 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		bgpat = &white;
 	} else {
 		bgpat = &bgpat0;
+	}
+
+	connector = http_connector_new();
+	if (connector == NULL) {
+		DP_ER("http_connector_new error", 0);
+		goto error_http_connector;
 	}
 
 	retriever = sbjtretriever_new();
@@ -1171,7 +1226,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		DP_ER("bchanlhmi_newexternalbbswindow", 0);
 		goto error_externalbbswindow;
 	}
-	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash, storage);
+	err = bchanl_bbsmenu_initialize(&(bchanl->bbsmenu), gid, subjecthash, storage, connector);
 	if (err < 0) {
 		DP_ER("bchanl_bbsmenu_initialize error", err);
 		goto error_bbsmenu;
@@ -1193,6 +1248,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	bbsmndraw_setviewrect(bchanl->bbsmenu.draw, 0, 0, w_work.c.right, w_work.c.bottom);
 	bbsmenuwindow_setworkrect(bbsmenuwindow, 0, 0, w_work.c.right, w_work.c.bottom);
 
+	bchanl->connector = connector;
 	bchanl->retriever = retriever;
 	bchanl->subjecthash = subjecthash;
 
@@ -1232,6 +1288,8 @@ error_subjectwindow:
 error_bchanlhmi:
 	sbjtretriever_delete(retriever);
 error_retriever:
+	http_connector_delete(connector);
+error_http_connector:
 	return -1; /* TODO */
 }
 
@@ -1253,6 +1311,7 @@ LOCAL VOID bchanl_killme(bchanl_t *bchanl)
 	bchanlhmi_deletesubjectwindow(bchanl->hmi, bchanl->subjectwindow);
 	bchanlhmi_delete(bchanl->hmi);
 	sbjtretriever_delete(bchanl->retriever);
+	http_connector_delete(bchanl->connector);
 
 	ext_prc(0);
 }
@@ -1802,6 +1861,9 @@ LOCAL VOID bchanl_handletimeout(bchanl_t *bchanl, W code)
 	case BCHANL_MESSAGE_RETRIEVER_ERROR:
 		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
 		pdsp_msg(NULL);
+		break;
+	case BCHANL_MESSAGE_HTTP_EVENT:
+		bchanl_handle_httpevent(bchanl);
 		break;
 	}
 }

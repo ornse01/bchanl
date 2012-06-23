@@ -1,7 +1,7 @@
 /*
  * bbsmenuretriever.c
  *
- * Copyright (c) 2009-2010 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -34,8 +34,9 @@
 
 #include    "bbsmenuretriever.h"
 
-#include    "retriever.h"
 #include    "bbsmenucache.h"
+#include	<http/http_typedef.h>
+#include	<http/http_connector.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -46,10 +47,12 @@
 #endif
 
 struct bbsmnretriever_t_ {
-	retriever_t *retr;
+	http_connector_t *connector;
+	ID endpoint;
+	HTTP_STATUSCODE status;
 };
 
-EXPORT bbsmnretriever_t* bbsmnretriever_new()
+EXPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector)
 {
 	bbsmnretriever_t *retriever;
 
@@ -57,45 +60,21 @@ EXPORT bbsmnretriever_t* bbsmnretriever_new()
 	if (retriever == NULL) {
 		return NULL;
 	}
-	retriever->retr = retriever_new();
-	if (retriever->retr == NULL) {
-		free(retriever);
-		return NULL;
-	}
+	retriever->connector = connector;
+	retriever->endpoint = -1;
+	retriever->status = 0;
 
 	return retriever;
 }
 
 EXPORT VOID bbsmnretriever_delete(bbsmnretriever_t *retriever)
 {
-	retriever_delete(retriever->retr);
+	if (retriever->endpoint > 0) {
+		http_connector_deleteendpoint(retriever->connector, retriever->endpoint);
+	}
 	free(retriever);
 }
 
-#define SO_ERR_SEND_LEN(sockID, str, len) \
-   err = so_send(sockID, (str), (len), 0); \
-   if(err < 0){ \
-     return err; \
-   }
-
-#define SO_ERR_SEND(sockID, str) SO_ERR_SEND_LEN(sockID, (str), strlen((str)))
-
-LOCAL W bbsmnretriever_sendheader(W sock)
-{
-	W err;
-
-	SO_ERR_SEND(sock, "GET /bbsmenu.html HTTP/1.1\r\n");
-	SO_ERR_SEND(sock, "Accept-Encoding: gzip\r\n");
-	SO_ERR_SEND(sock, "Host: menu.2ch.net\r\n");
-	SO_ERR_SEND(sock, "Accept: */*\r\n");
-	SO_ERR_SEND(sock, "Referer: http://menu.2ch.net/\r\n");
-	SO_ERR_SEND(sock, "Accept-Language: ja\r\n");
-	SO_ERR_SEND(sock, "User-Agent: Monazilla/1.00 (bchanl/0.101)\r\n");
-	SO_ERR_SEND(sock, "Connection: close\r\n");
-	SO_ERR_SEND(sock, "\r\n");
-
-	return 0;
-}
 /* from http://www.monazilla.org/index.php?e=196 */
 #if 0
 "
@@ -112,62 +91,80 @@ Connection: close
 
 EXPORT W bbsmnretriever_sendrequest(bbsmnretriever_t *retriever, bbsmncache_t *cache)
 {
-	W sock, err, ret = -1, len, status;
-	UB *bin, *host = "menu.2ch.net";
+	UB host[] = "menu.2ch.net";
 
-	retriever_clearbuffer(retriever->retr);
-
-	err = retriever_gethost(retriever->retr, host);
-	if (err < 0) {
-		return err;
-	}
-	sock = retriver_connectsocket(retriever->retr);
-	if (sock < 0) {
-		return sock;
+	if (retriever->endpoint > 0) {
+		DP(("bbsmnretriever_sendrequest: requesting\n"));
+		return -1;
 	}
 
-	err = bbsmnretriever_sendheader(sock);
-	if (err < 0) {
-		so_close(sock);
-		return err;
+	retriever->endpoint = http_connector_createendpoint(retriever->connector, host, strlen(host), 80, HTTP_METHOD_GET);
+	if (retriever->endpoint < 0) {
+		DP_ER("http_connector_createendpoint error", retriever->endpoint);
+		return -1;
 	}
 
-	err = retriever_recieve(retriever->retr, sock);
-	if (err < 0) {
-		so_close(sock);
-		return err;
+	return 0;
+}
+
+EXPORT Bool bbsmnretriever_iswaitingendpoint(bbsmnretriever_t *retriever, ID endpoint)
+{
+	if (retriever->endpoint == endpoint) {
+		return True;
+	}
+	return False;
+}
+
+LOCAL UB path[] = "/bbsmenu.html";
+LOCAL UB header[] =
+"Accept: */*\r\n"
+"Referer: http://menu.2ch.net/\r\n"
+"Accept-Language: ja\r\n"
+"User-Agent: Monazilla/1.00\r\n";
+
+EXPORT W bbsmnretriever_recievehttpevent(bbsmnretriever_t *retriever, bbsmncache_t *cache, http_connector_event *hevent)
+{
+	http_connector_t *connector = retriever->connector;
+
+	if (retriever->endpoint <= 0) {
+		return -1;
 	}
 
-	err = retriever_parsehttpresponse(retriever->retr);
-	if (err < 0) {
-		so_close(sock);
-		return err;
+	if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_SEND) {
+		http_connector_sendrequestline(connector, hevent->endpoint, path, strlen(path));
+		http_connector_sendheader(connector, hevent->endpoint, header, strlen(header));
+		http_connector_sendheaderend(connector, hevent->endpoint);
+		http_connector_sendmessagebody(connector, hevent->endpoint, NULL, 0);
+		http_connector_sendmessagebodyend(connector, hevent->endpoint);
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_STATUSLINE) {
+		DP(("HTTP_CONNECTOR_EVENTTYPE_RECEIVE_STATUSLINE\n"));
+		DP(("    status = %d\n", hevent->data.receive_statusline.statuscode));
+		retriever->status = hevent->data.receive_statusline.statuscode;
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_HEADER) {
+#ifdef BCHANL_CONFIG_DEBUG
+		{
+			W i = 0;
+			for (i = 0; i < hevent->data.receive_header.len; i++) {
+				printf("%c", hevent->data.receive_header.bin[i]);
+			}
+		}
+#endif
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_HEADER_END) {
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY) {
+		if (retriever->status == HTTP_STATUSCODE_200_OK) {
+			bbsmncache_appenddata(cache, hevent->data.receive_messagebody.bin, hevent->data.receive_messagebody.len);
+		}
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_RECEIVE_MESSAGEBODY_END) {
+		http_connector_deleteendpoint(connector, hevent->endpoint);
+		retriever->endpoint = -1;
+		return BBSMNRETRIEVER_REQUEST_ALLRELOAD;
+	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_ERROR) {
+		http_connector_deleteendpoint(connector, hevent->endpoint);
+		retriever->endpoint = -1;
+	} else {
+		/* error */
+		return -1;
 	}
-	retriever_dumpheader(retriever->retr);
 
-	err = retriever_decompress(retriever->retr);
-	if (err < 0) {
-		so_close(sock);
-		return err;
-	}
-
-	status = retriever_parse_response_status(retriever->retr);
-	if (status == 200) {
-		bin = retriever_getbody(retriever->retr);
-		len = retriever_getbodylength(retriever->retr);
-		bbsmncache_cleardata(cache);
-		bbsmncache_appenddata(cache, bin, len);
-
-		bin = retriever_getheader(retriever->retr);
-		len = retriever_getheaderlength(retriever->retr);
-		bbsmncache_updatelatestheader(cache, bin, len);
-
-		ret = BBSMNRETRIEVER_REQUEST_ALLRELOAD;
-	}
-
-	so_close(sock);
-
-	retriever_clearbuffer(retriever->retr);
-
-	return ret;
+	return BBSMNRETRIEVER_REQUEST_WAITNEXT;
 }
