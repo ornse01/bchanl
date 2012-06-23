@@ -165,6 +165,7 @@ struct bchanl_t_ {
 	bchanl_subjecthash_t *subjecthash;
 	bchanl_bbsmenu_t bbsmenu;
 	bchanl_subject_t *currentsubject;
+	bchanl_subject_t *nextsubject;
 	struct {
 		Bool resnum;
 		Bool since;
@@ -425,6 +426,11 @@ LOCAL VOID bchanl_setcurrentsubject(bchanl_t *bchanl, bchanl_subject_t *sbjt)
 	subjectwindow_requestredisp(bchanl->subjectwindow);
 }
 
+LOCAL VOID bchanl_setnextsubject(bchanl_t *bchanl, bchanl_subject_t *sbjt)
+{
+	bchanl->nextsubject = sbjt;
+}
+
 LOCAL VOID bchanl_bbsmenuwindow_draw(bchanl_t *bchanl)
 {
 	RECT r;
@@ -582,11 +588,7 @@ LOCAL VOID bchanl_changedisplayattribute(bchanl_t *bchanl)
 LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject)
 {
 	sbjtcache_t *cache;
-	sbjtlayout_t *layout;
-	sbjtdraw_t *draw;
-	TC *title;
-	RECT w_work;
-	W l, t, r, b, title_len, err;
+	W err;
 
 	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
 	pdsp_msg(bchanl->hmistate.msg_retr_subject);
@@ -598,29 +600,8 @@ LOCAL VOID bchanl_sendsubjectrequest(bchanl_t *bchanl, bchanl_subject_t *subject
 		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
 		return;
 	}
-
-	pdsp_msg(NULL);
-	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-
-	subjectoptionwindow_setfiltertext(bchanl->subjectoptionwindow, NULL, 0);
-	err = subjectoptionwindow_setordervalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING);
-	subjectoptionwindow_setorderbyvalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER);
-
-	bchanl_subject_relayout(subject);
-
-	bchanl_setcurrentsubject(bchanl, subject);
-
-	subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
-	draw = bchanl_subject_getdraw(subject);
-	sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
-	subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
-
-	layout = bchanl_subject_getlayout(subject);
-	sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
-	subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
-
-	bchanl_subject_gettitle(subject, &title, &title_len);
-	subjectwindow_settitle(bchanl->subjectwindow, title);
+	bchanl_setnextsubject(bchanl, subject);
+	set_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT);
 }
 
 LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
@@ -1041,6 +1022,69 @@ LOCAL Bool bchanl_bbsmenu_httpevent(bchanl_bbsmenu_t *bchanl, http_connector_eve
 	return True;
 }
 
+LOCAL Bool bchanl_subject_httpevent(bchanl_t *bchanl, http_connector_event *hevent)
+{
+	Bool ok;
+	W err;
+	sbjtcache_t *cache;
+	sbjtlayout_t *layout;
+	sbjtdraw_t *draw;
+	TC *title;
+	RECT w_work;
+	W l, t, r, b, title_len;
+
+	if (bchanl->nextsubject == NULL) {
+		return False;
+	}	
+
+	ok = sbjtretriever_iswaitingendpoint(bchanl->retriever, hevent->endpoint);
+	if (ok == False) {
+		return False;
+	}
+	cache = bchanl_subject_getcache(bchanl->nextsubject);
+	err = sbjtretriever_recievehttpevent(bchanl->retriever, cache, hevent);
+
+	switch (err) {
+	case SBJTRETRIEVER_REQUEST_ALLRELOAD:
+		/* should asynchronous layout? */
+
+		pdsp_msg(NULL);
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
+
+		subjectoptionwindow_setfiltertext(bchanl->subjectoptionwindow, NULL, 0);
+		err = subjectoptionwindow_setordervalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING);
+		subjectoptionwindow_setorderbyvalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER);
+
+
+		bchanl_subject_relayout(bchanl->nextsubject);
+
+		bchanl_setcurrentsubject(bchanl, bchanl->nextsubject);
+		bchanl_setnextsubject(bchanl, NULL);
+
+		subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
+		draw = bchanl_subject_getdraw(bchanl->currentsubject);
+		sbjtdraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
+		subjectwindow_setworkrect(bchanl->subjectwindow, 0, 0, w_work.c.right, w_work.c.bottom);
+
+		layout = bchanl_subject_getlayout(bchanl->currentsubject);
+		sbjtlayout_getdrawrect(layout, &l, &t, &r, &b);
+		subjectwindow_setdrawrect(bchanl->subjectwindow, l, t, r, b);
+
+		bchanl_subject_gettitle(bchanl->currentsubject, &title, &title_len);
+		subjectwindow_settitle(bchanl->subjectwindow, title);
+
+		break;
+	case SBJTRETRIEVER_REQUEST_WAITNEXT:
+		break;
+	default:
+		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_ERROR);
+		DP_ER("bbsmnretriever_recievehttpevent", err);
+		break;
+	}
+
+	return True;
+}
+
 LOCAL VOID bchanl_http_task(W arg)
 {
 	bchanl_t *bchanl;
@@ -1076,6 +1120,7 @@ LOCAL VOID bchanl_handle_httpevent(bchanl_t *bchanl)
 {
 	W err;
 	http_connector_event hevent;
+	Bool rcv;
 
 	set_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT);
 
@@ -1084,7 +1129,12 @@ LOCAL VOID bchanl_handle_httpevent(bchanl_t *bchanl)
 		return;
 	}
 
-	bchanl_bbsmenu_httpevent(&bchanl->bbsmenu, &hevent);
+	rcv = bchanl_bbsmenu_httpevent(&bchanl->bbsmenu, &hevent);
+	if (rcv != False) {
+		return;
+	}
+
+	rcv = bchanl_subject_httpevent(bchanl, &hevent);
 }
 
 LOCAL W bchanl_prepare_network(bchanl_t *bchanl)
@@ -1182,7 +1232,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		goto error_http_connector;
 	}
 
-	retriever = sbjtretriever_new();
+	retriever = sbjtretriever_new(connector);
 	if (retriever == NULL) {
 		DP_ER("sbjtretriever_new error", 0);
 		goto error_retriever;
@@ -1253,6 +1303,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 	bchanl->subjecthash = subjecthash;
 
 	bchanl->currentsubject = NULL;
+	bchanl->nextsubject = NULL;
 	bchanl->subjectdisplay.resnum = True;
 	bchanl->subjectdisplay.since = False;
 	bchanl->subjectdisplay.vigor = False;

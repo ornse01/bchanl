@@ -1,7 +1,7 @@
 /*
  * subjectretriever.h
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2012 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -26,14 +26,21 @@
 
 #include	<basic.h>
 #include	"subjectcache.h"
+#include	<http/http_connector.h>
 
 #ifndef __SUBJECTRETREIEVER_H__
 #define __SUBJECTRETREIEVER_H__
 
 typedef struct sbjtretriever_t_ sbjtretriever_t;
 
-IMPORT sbjtretriever_t* sbjtretriever_new();
+IMPORT sbjtretriever_t* sbjtretriever_new(http_connector_t *connector);
 IMPORT VOID sbjtretriever_delete(sbjtretriever_t *retriever);
 IMPORT W sbjtretriever_sendrequest(sbjtretriever_t *retriever, sbjtcache_t *cache);
+IMPORT Bool sbjtretriever_iswaitingendpoint(sbjtretriever_t *retriever, ID endpoint);
+IMPORT W sbjtretriever_recievehttpevent(sbjtretriever_t *retriever, sbjtcache_t *cache, http_connector_event *hevent);
+
+#define SBJTRETRIEVER_REQUEST_NOT_MODIFIED 0
+#define SBJTRETRIEVER_REQUEST_ALLRELOAD    1
+#define SBJTRETRIEVER_REQUEST_WAITNEXT     2
 
 #endif
