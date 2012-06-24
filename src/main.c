@@ -1048,9 +1048,6 @@ LOCAL Bool bchanl_subject_httpevent(bchanl_t *bchanl, http_connector_event *heve
 	case SBJTRETRIEVER_REQUEST_ALLRELOAD:
 		/* should asynchronous layout? */
 
-		pdsp_msg(NULL);
-		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
-
 		subjectoptionwindow_setfiltertext(bchanl->subjectoptionwindow, NULL, 0);
 		err = subjectoptionwindow_setordervalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING);
 		subjectoptionwindow_setorderbyvalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER);
@@ -1072,6 +1069,9 @@ LOCAL Bool bchanl_subject_httpevent(bchanl_t *bchanl, http_connector_event *heve
 
 		bchanl_subject_gettitle(bchanl->currentsubject, &title, &title_len);
 		subjectwindow_settitle(bchanl->subjectwindow, title);
+
+		pdsp_msg(NULL);
+		bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_SELECT);
 
 		break;
 	case SBJTRETRIEVER_REQUEST_WAITNEXT:
@@ -1180,6 +1180,7 @@ LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 	lastrequest = etime;
 
 	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
+	pdsp_msg(bchanl->hmistate.msg_retr_bbsmenu);
 
 	err = bbsmnretriever_sendrequest(bchanl->bbsmenu.retriever, bchanl->bbsmenu.cache);
 	if (err < 0) {
@@ -1188,9 +1189,6 @@ LOCAL W bchanl_networkrequest_bbsmenu(bchanl_t *bchanl)
 		return err;
 	}
 	set_flg(bchanl->flgid, BCHANL_NETWORK_FLAG_WAITHTTPEVENT);
-
-	bchanl_hmistate_updateptrstyle(&bchanl->hmistate, PS_BUSY);
-	pdsp_msg(bchanl->hmistate.msg_retr_bbsmenu);
 
 	return 0;
 }
