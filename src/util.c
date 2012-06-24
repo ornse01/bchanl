@@ -33,6 +33,7 @@
 #include	<btron/hmi.h>
 
 #include    "util.h"
+#include	<tad/traydata_iterator.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -111,134 +112,37 @@ EXPORT W tray_pushstring(TC *str, W len)
 }
 
 struct traydata_textiterator_t_ {
-	TRAYREC *rec;
-	W recnum;
-	enum {
-		TRAYDATA_TEXTITERATOR_STATE_READING,
-		TRAYDATA_TEXTITERATOR_STATE_END,
-	} state;
-	W i_rec;
-	W rec_read_len;
+	traydata_iterator_t base;
 };
 typedef struct traydata_textiterator_t_ traydata_textiterator_t;
 
 LOCAL VOID traydata_textiterator_initialize(traydata_textiterator_t *iter, TRAYREC *rec, W recnum)
 {
-	iter->rec = rec;
-	iter->recnum = recnum;
-	iter->i_rec = 0;
-
-	if (iter->i_rec < recnum) {
-		if (rec[iter->i_rec].id == TS_INFO) {
-			iter->i_rec++;
-		}
-	}
-	if (iter->i_rec < recnum) {
-		if (rec[iter->i_rec].id == TS_TEXT) {
-			iter->state = TRAYDATA_TEXTITERATOR_STATE_READING;
-		} else {
-			iter->state = TRAYDATA_TEXTITERATOR_STATE_END;
-		}
-		iter->i_rec++;
-	} else {
-		iter->state = TRAYDATA_TEXTITERATOR_STATE_END;
-	}
-	iter->rec_read_len = 0;
+	traydata_iterator_initialize(&iter->base, rec, recnum);
 }
 
 LOCAL Bool traydata_textiterator_getnext(traydata_textiterator_t *iter, TC *ch)
 {
-	TC *ch0;
-	LTADSEG *seg0;
-	W skipsize;
-	Bool ch_set;
+	traydata_iterator_result result;
+	Bool cont;
 
-	if (iter->state == TRAYDATA_TEXTITERATOR_STATE_END) {
-		return False;
-	}
-
-	for (; iter->i_rec < iter->recnum;) {
-		if (iter->rec[iter->i_rec].id != TR_TEXT && iter->rec[iter->i_rec].id != (TR_TEXT | TR_CONT)) {
-			iter->i_rec++;
-			continue;
-		}
-
-		ch_set = False;
-		for (;iter->i_rec < iter->recnum;) {
-			if (iter->rec_read_len >= iter->rec[iter->i_rec].len) {
-				if (iter->rec[iter->i_rec].id == TR_TEXT) {
-					break;
-				}
-				iter->i_rec++;
-				iter->rec_read_len = 0;
-				continue;
-			}
-			if (iter->rec_read_len == (iter->rec[iter->i_rec].len + 1)) {
-				if (iter->rec[iter->i_rec].id == TR_TEXT) {
-					/* tmp */
-					iter->i_rec++;
-					iter->rec_read_len = 0;
-					break;
-				}
-				*ch = iter->rec[iter->i_rec].dt[iter->rec_read_len] << 8;
-				iter->i_rec++;
-				if (iter->rec[iter->i_rec].id != TR_TEXT && iter->rec[iter->i_rec].id != (TR_TEXT | TR_CONT)) {
-					iter->rec_read_len = 0;
-					break;
-				}
-				*ch |= iter->rec[iter->i_rec].dt[0];
-				iter->rec_read_len = 1;
-				ch_set = True;
-			}
-			ch0 = (TC*)(iter->rec[iter->i_rec].dt + iter->rec_read_len);
-			if ((*ch0 & 0xFF00) == 0xFF00) {
-				seg0 = (LTADSEG*)ch0;
-				if (seg0->len == 0xffff) {
-					skipsize = 2 + seg0->llen + 6;
-				} else {
-					skipsize = 2 + seg0->len + 2;
-				}
-				for (; skipsize > 0;) {
-					if (iter->rec_read_len + skipsize > iter->rec[iter->i_rec].len) {
-						skipsize -= iter->rec[iter->i_rec].len - iter->rec_read_len;
-						iter->i_rec++;
-						iter->rec_read_len = 0;
-						break;
-					} else {
-						iter->rec_read_len += skipsize;
-						skipsize = 0;
-					}
-				}
-				break;
-			} else {
-				*ch = *ch0;
-				iter->rec_read_len += sizeof(TC);
-				if (iter->rec_read_len == iter->rec[iter->i_rec].len) {
-					iter->i_rec++;
-					iter->rec_read_len = 0;
-					if (iter->rec[iter->i_rec].id != TR_TEXT && iter->rec[iter->i_rec].id != (TR_TEXT | TR_CONT)) {
-						iter->state = TRAYDATA_TEXTITERATOR_STATE_READING;
-					}
-				}
-				ch_set = True;
-				break;
-			}
-		}
-
-		if (ch_set != False) {
+	for (;;) {
+		cont = traydata_iterator_next(&iter->base, &result);
+		if (cont == False) {
 			break;
 		}
+		if (result.type == TRAYDATA_ITERATOR_RESULTTYPE_FIXED_SEGMENT) {
+			*ch = result.val.ch;
+			return True;
+		}
 	}
 
-	if (iter->i_rec >= iter->recnum) {
-		iter->state = TRAYDATA_TEXTITERATOR_STATE_END;
-	}
-
-	return True;
+	return False;
 }
 
 LOCAL VOID traydata_textiterator_finalize(traydata_textiterator_t *iter)
 {
+	traydata_iterator_finalize(&iter->base);
 }
 
 EXPORT W tray_popstring(TC *str, W len)
