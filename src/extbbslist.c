@@ -809,8 +809,8 @@ LOCAL W extbbslist_editcontext_drawcolseparater(extbbslist_editcontext_t *ctx, G
 	gdra_lin(target, p1, p2, 1, lnpat, G_STORE);
 
 	p1.y = p2.y;
-	p1.x = ctx->view_l;
-	p2.x = ctx->view_r;
+	p1.x = 0;
+	p2.x = ctx->view_r - ctx->view_l;
 	gdra_lin(target, p1, p2, 1, lnpat, G_STORE);
 
 	return 0;
@@ -1023,11 +1023,37 @@ EXPORT VOID extbbslist_editcontext_scrollviewrect(extbbslist_editcontext_t *ctx,
 	ctx->view_b += dv;
 }
 
-EXPORT VOID extbbslist_editcontext_getdrawrect(extbbslist_editcontext_t *ctx, W *l, W *t, W *r, W *b)
+EXPORT VOID extbbslist_editcontext_getdrawrect(extbbslist_editcontext_t *ctx, GID gid, W *l, W *t, W *r, W *b)
 {
+	extbbslist_item_t *senti, *item;
+	W max = 0, width;
+	FSSPEC fspec;
+
+	gget_fon(gid, &fspec, NULL);
+	fspec.size.h = fspec.size.v / 2;
+	gset_fon(gid, &fspec);
+
+	senti = extbbslist_editcontext_sentinelnode(ctx);
+	item = extbbslist_item_nextnode(senti);
+	for (;;) {
+		if (item == senti) {
+			break;
+		}
+
+		width = gget_stw(gid, item->url.tc, item->url.tc_len, NULL, NULL);
+		if (width < 0) {
+			continue;
+		}
+		if (width > max) {
+			max = width;
+		}
+
+		item = extbbslist_item_nextnode(item);
+	}
+
 	*l = 0;
 	*t = 0;
-	*r = 200;
+	*r = EXTBBSLIST_TITLE_WIDTH + 8 + max + 4;
 	*b = EXTBBSLIST_ENTRY_HEIGHT * ctx->num;
 }
 

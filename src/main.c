@@ -866,8 +866,9 @@ LOCAL Bool bchanl_registerexternalbbs(bchanl_t *bchanl)
 {
 	TC title[128];
 	TC url[256];
-	W title_len, url_len;
+	W title_len, url_len, l, t, r, b;
 	TCURL_CHECK_VALID_BBSURL ret;
+	GID gid;
 
 	title_len = registerexternalwindow_getboradnametext(bchanl->registerexternalwindow, title, 128);
 	if (title_len < 0) {
@@ -906,6 +907,9 @@ LOCAL Bool bchanl_registerexternalbbs(bchanl_t *bchanl)
 	registerexternalwindow_setboradnametext(bchanl->registerexternalwindow, NULL, 0);
 	registerexternalwindow_seturltext(bchanl->registerexternalwindow, NULL, 0);
 
+	gid = externalbbswindow_getGID(bchanl->externalbbswindow);
+	extbbslist_editcontext_getdrawrect(bchanl->bbsmenu.editctx, gid, &l, &t, &r, &b);
+	externalbbswindow_setdrawrect(bchanl->externalbbswindow, l, t, r, b);
 	externalbbswindow_requestredisp(bchanl->externalbbswindow);
 
 	return True;
@@ -1694,7 +1698,8 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 	RECT work;
 #define BCHANL_SELECTMENU_STRBUF_LENGTH 256
 	TC str[BCHANL_SELECTMENU_STRBUF_LENGTH];
-	W index, len = 0;
+	W index, len = 0, l, t, r, b;
+	GID gid;
 
 	switch(sel) {
 	case BCHANL_MAINMENU_SELECT_CLOSE: /* [½ªÎ»] */
@@ -1727,6 +1732,9 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 			externalbbswindow_getworkrect(bchanl->externalbbswindow, &work);
 			extbbslist_editcontext_setviewrect(bchanl->bbsmenu.editctx, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
 			externalbbswindow_setworkrect(bchanl->externalbbswindow, 0, 0, work.c.right - work.c.left, work.c.bottom - work.c.top);
+			gid = externalbbswindow_getGID(bchanl->externalbbswindow);
+			extbbslist_editcontext_getdrawrect(bchanl->bbsmenu.editctx, gid, &l, &t, &r, &b);
+			externalbbswindow_setdrawrect(bchanl->externalbbswindow, l, t, r, b);
 		}
 		break;
 	case BCHANL_MAINMENU_SELECT_EXTBBS_REGISTER:
@@ -1765,6 +1773,9 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 				break;
 			}
 			extbbslist_editcontext_deleteitem(bchanl->bbsmenu.editctx, index);
+			gid = externalbbswindow_getGID(bchanl->externalbbswindow);
+			extbbslist_editcontext_getdrawrect(bchanl->bbsmenu.editctx, gid, &l, &t, &r, &b);
+			externalbbswindow_setdrawrect(bchanl->externalbbswindow, l, t, r, b);
 			externalbbswindow_requestredisp(bchanl->externalbbswindow);
 		}
 		break;
@@ -2043,8 +2054,8 @@ LOCAL VOID bchanl_eventdispatch(bchanl_t *bchanl)
 		bchanl_externalbbswindow_draw(bchanl);
 		break;
 	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_RESIZE:
-		break;
 		bchanl_externalbbswindow_resize(bchanl, evt->data.externalbbswindow_resize.work_sz);
+		break;
 	case BCHANLHMIEVENT_TYPE_EXTERNALBBSWINDOW_CLOSE:
 		bchanl_externalbbswindow_close(bchanl);
 		break;

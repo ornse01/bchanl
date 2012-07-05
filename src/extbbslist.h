@@ -60,6 +60,6 @@ IMPORT Bool extbbslist_editcontext_ischanged(extbbslist_editcontext_t *ctx);
 IMPORT VOID extbbslist_editcontext_setviewrect(extbbslist_editcontext_t *ctx, W l, W t, W r, W b);
 IMPORT VOID extbbslist_editcontext_getviewrect(extbbslist_editcontext_t *ctx, W *l, W *t, W *r, W *b);
 IMPORT VOID extbbslist_editcontext_scrollviewrect(extbbslist_editcontext_t *ctx, W dh, W dv);
-IMPORT VOID extbbslist_editcontext_getdrawrect(extbbslist_editcontext_t *ctx, W *l, W *t, W *r, W *b);
+IMPORT VOID extbbslist_editcontext_getdrawrect(extbbslist_editcontext_t *ctx, GID gid, W *l, W *t, W *r, W *b);
 
 #endif
