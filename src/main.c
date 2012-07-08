@@ -985,9 +985,51 @@ LOCAL VOID bchanl_externalbbswindow_butdn(bchanl_t *bchanl, W type, PNT pos)
 	}
 }
 
+LOCAL W bchanl_externalbbswindow_paste_readtray(bchanl_t *bchanl)
+{
+	W err, name_len, url_len;
+	TC *name, *url;
+
+	err = tray_getextbbsinfo(NULL, &name_len, NULL, &url_len);
+	if (err < 0) {
+		return 1;
+	}
+
+	name = malloc(sizeof(TC)*(name_len+1));
+	if (name == NULL) {
+		return 1;
+	}
+	url = malloc(sizeof(TC)*url_len+1);
+	if (url == NULL) {
+		free(name);
+		return 1;
+	}
+
+	err = tray_getextbbsinfo(name, &name_len, url, &url_len);
+	if (err < 0) {
+		free(url);
+		free(name);
+		return 1;
+	}
+	name[name_len] = TNULL;
+	url[url_len] = TNULL;
+
+	registerexternalwindow_setboradnametext(bchanl->registerexternalwindow, name, name_len);
+	registerexternalwindow_seturltext(bchanl->registerexternalwindow, url, url_len);
+	registerexternalwindow_open(bchanl->registerexternalwindow);
+
+	free(url);
+	free(name);
+
+	return 0;
+}
+
 LOCAL VOID bchanl_externalbbswindow_paste(bchanl_t *bchanl)
 {
-	externalbbswindow_responsepasterequest(bchanl->externalbbswindow, /* NACK */ 1, NULL);
+	W nak;
+	PNT p = {0x8000, 0x8000};
+	nak = bchanl_externalbbswindow_paste_readtray(bchanl);
+	externalbbswindow_responsepasterequest(bchanl->externalbbswindow, nak, &p);
 }
 
 LOCAL VOID bchanl_externalbbswindow_scroll(bchanl_t *bchanl, W dh, W dv)
