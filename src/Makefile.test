@@ -66,9 +66,9 @@ LOADLIBES += -limg
 INST = $(addprefix $(TARGET), .map)
 NOINST = $(addprefix $(TARGET), .out)
 
-all: $(INST)
+all: library $(INST)
 
-bchanf/libbchanf.a:
+library:
 	@$(MAKE) -f Makefile.lib -C ./bchanf
 
 $(TARGET).out: $(OBJ) bchanf/libbchanf.a
