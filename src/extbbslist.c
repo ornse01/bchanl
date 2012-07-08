@@ -151,13 +151,13 @@ LOCAL W extbbslist_item_assignurl(extbbslist_item_t *item, CONST TC *url, W url_
 	memcpy(str, url, sizeof(TC)*url_len);
 	str[url_len] = TNULL;
 
-	len = tcstosjs(NULL, url);
+	len = tcstosjs(NULL, str);
 	str_ac = malloc(sizeof(UB)*(len+1));
 	if (str_ac == NULL) {
 		free(str);
 		return -1; /* TODO */
 	}
-	tcstosjs(str_ac, url);
+	tcstosjs(str_ac, str);
 	str_ac[len] = '\0';
 
 	extbbslist_item_replaceTCurl(item, str, url_len);
