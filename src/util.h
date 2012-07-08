@@ -43,5 +43,6 @@ IMPORT W tray_pushstring(TC *str, W len);
 IMPORT W tray_popstring(TC *str, W len);
 IMPORT W tray_deletedata();
 IMPORT Bool tray_isempty();
+IMPORT W tray_getextbbsinfo(TC *name, W *name_len, TC *url, W *url_len);
 
 #endif

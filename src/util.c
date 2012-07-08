@@ -30,10 +30,13 @@
 #include	<tcode.h>
 #include	<tstring.h>
 #include	<errcode.h>
+#include	<btron/btron.h>
 #include	<btron/hmi.h>
 
 #include    "util.h"
 #include	<tad/traydata_iterator.h>
+#include	<tad/taditerator.h>
+#include	<tad/tadstack.h>
 
 #ifdef BCHANL_CONFIG_DEBUG
 # define DP(arg) printf arg
@@ -145,6 +148,66 @@ LOCAL VOID traydata_textiterator_finalize(traydata_textiterator_t *iter)
 	traydata_iterator_finalize(&iter->base);
 }
 
+struct traydata_vobjiterator_t_ {
+	traydata_iterator_t base;
+	VLINK buf;
+};
+typedef struct traydata_vobjiterator_t_ traydata_vobjiterator_t;
+
+LOCAL VOID traydata_vobjiterator_initialize(traydata_vobjiterator_t *iter, TRAYREC *rec, W recnum)
+{
+	traydata_iterator_initialize(&iter->base, rec, recnum);
+}
+
+LOCAL Bool traydata_vobjiterator_getnext(traydata_vobjiterator_t *iter, VLINK **lnk)
+{
+	traydata_iterator_result result;
+	Bool cont;
+	W writelen = 0, cpsize;
+
+	for (;;) {
+		cont = traydata_iterator_next(&iter->base, &result);
+		if (cont == False) {
+			break;
+		}
+		if (result.type == TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC_CONT) {
+			if (writelen + result.val.vobj.chunk_data_len > sizeof(VLINK)) {
+				cpsize = sizeof(VLINK) - writelen;
+			} else {
+				cpsize = result.val.vobj.chunk_data_len;
+			}
+			memcpy(((UB*)&iter->buf) + writelen, result.val.vobj.chunk_data, cpsize);
+			writelen += cpsize;
+			if (cpsize >= sizeof(VLINK)) {
+				*lnk = &iter->buf;
+				return True;
+			}
+			continue;
+		}
+		if (result.type == TRAYDATA_ITERATOR_RESULTTYPE_VOBJREC) {
+			if (writelen + result.val.vobj.chunk_data_len > sizeof(VLINK)) {
+				cpsize = sizeof(VLINK) - writelen;
+			} else {
+				cpsize = result.val.vobj.chunk_data_len;
+			}
+			memcpy(((UB*)&iter->buf) + writelen, result.val.vobj.chunk_data, cpsize);
+			writelen += cpsize;
+			if (cpsize >= sizeof(VLINK)) {
+				*lnk = &iter->buf;
+				return True;
+			}
+			return False;
+		}
+	}
+
+	return False;
+}
+
+LOCAL VOID traydata_vobjiterator_finalize(traydata_vobjiterator_t *iter)
+{
+	traydata_iterator_finalize(&iter->base);
+}
+
 EXPORT W tray_popstring(TC *str, W len)
 {
 	TRAYREC *data;
@@ -212,4 +275,169 @@ EXPORT Bool tray_isempty()
 		return True;
 	}
 	return False;
+}
+
+LOCAL W tray_getfirstvobj(VLINK *lnk)
+{
+	TRAYREC *data;
+	W size, recs, err;
+	traydata_vobjiterator_t iter;
+	VLINK *lnk0 = NULL;
+	Bool cont;
+
+	err = tget_dat(NULL, 0, &size, -1);
+	if (err < 0) {
+		DP_ER("tget_dat: get size error", err);
+		return err;
+	}
+	if (err == 0) {
+		/* tray is empty */
+		return -1; /* TODO */
+	}
+	data = (TRAYREC*)malloc(size);
+	if (data == NULL) {
+		return -1; /* TODO */
+	}
+	recs = tget_dat(data, size, NULL, -1);
+	if (recs < 0) {
+		DP_ER("tget_dat: get data error", recs);
+		free(data);
+		return err;
+	}
+
+	traydata_vobjiterator_initialize(&iter, data, recs);
+	for (;;) {
+		cont = traydata_vobjiterator_getnext(&iter, &lnk0);
+		if (cont == False) {
+			break;
+		}
+		if (lnk0 != NULL) {
+			*lnk = *lnk0;
+			break;
+		}
+	}
+	traydata_vobjiterator_finalize(&iter);
+
+	free(data);
+
+	if (lnk0 == NULL) {
+		return -1;
+	}
+
+	return 0;
+}
+
+LOCAL W tray_getextbbsinf_readfiestline(UB *buf, W buflen, TC *url, W url_len)
+{
+	tadstack_t stack;
+	taditerator_t iter;
+	taditerator_result result;
+	TADSTACK_RESULT stk_result;
+	W len = 0;
+
+	tadstack_initialize(&stack);
+	taditerator_initialize(&iter, (TC*)buf, buflen/sizeof(TC));
+
+	for (;;) {
+		taditerator_next2(&iter, &result);
+		if (result.type == TADITERATOR_RESULTTYPE_END) {
+			break;
+		}
+		stk_result = TADSTACK_RESULT_OK;
+		if (result.type == TADITERATOR_RESULTTYPE_CHARCTOR) {
+			
+			stk_result = tadstack_inputcharactor(&stack, result.segment);
+			if (stk_result == TADSTACK_RESULT_OK) {
+				if (result.segment == TK_NL) {
+					break;
+				}
+				if ((url != NULL)&&(len < url_len)) {
+					url[len] = result.segment;
+				}
+				len++;
+			}
+		} else if (result.type == TADITERATOR_RESULTTYPE_SEGMENT) {
+			stk_result = tadstack_inputvsegment(&stack, result.segment, result.data, result.segsize);
+		}
+		if (stk_result == TADSTACK_RESULT_FORMAT_ERROR) {
+			len = -1;
+			break;
+		}
+	}
+
+	taditerator_finalize(&iter);
+	tadstack_finalize(&stack);
+
+	return len;
+}
+
+LOCAL W tray_getextbbsinf_readfile(VLINK *vlnk, TC *url, W url_len)
+{
+	W fd, err, size;
+	UB *buf;
+
+	fd = opn_fil((LINK*)vlnk, F_READ, NULL);
+	if (fd < 0) {
+		return fd;
+	}
+	err = fnd_rec(fd, F_TOPEND, RM_TADDATA, 0, NULL);
+	if (err < 0) {
+		cls_fil(fd);
+		return err;
+	}
+	err = rea_rec(fd, 0, NULL, 0, &size, NULL);
+	if (err < 0) {
+		cls_fil(fd);
+		return err;
+	}
+	buf = malloc(size*sizeof(UB));
+	if (buf == NULL) {
+		cls_fil(fd);
+		return -1; /* TODO */
+	}
+	err = rea_rec(fd, 0, buf, size, NULL, NULL);
+	if (err < 0) {
+		free(buf);
+		cls_fil(fd);
+		return err;
+	}
+	cls_fil(fd);
+
+	err = tray_getextbbsinf_readfiestline(buf, size, url, url_len);
+
+	free(buf);
+
+	return err;
+}
+
+EXPORT W tray_getextbbsinfo(TC *name, W *name_len, TC *url, W *url_len)
+{
+	VLINK lnk;
+	W err;
+	TC fname[L_FNM + 1];
+
+	err = tray_getfirstvobj(&lnk);
+	if (err < 0) {
+		return err;
+	}
+
+	err = fil_sts((LINK*)&lnk, fname, NULL, NULL);
+	if (err < 0) {
+		return err;
+	}
+	if (name != NULL) {
+		tc_strncpy(name, fname, *name_len);
+	} else if (name_len != NULL) {
+		*name_len = tc_strlen(fname);
+	}
+
+	err = tray_getextbbsinf_readfile(&lnk, url, *url_len);
+	if (err < 0) {
+		return err;
+	}
+	if (url_len != NULL) {
+		*url_len = err;
+	}
+
+	return 0;
 }
