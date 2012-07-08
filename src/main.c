@@ -885,19 +885,19 @@ LOCAL Bool bchanl_registerexternalbbs(bchanl_t *bchanl)
 
 	ret = tcurl_check_valid_bbsurl(url, url_len);
 	switch (ret) {
-	  case TCURL_CHECK_VALID_BBSURL_NO_LAST_SLSH:
+	case TCURL_CHECK_VALID_BBSURL_NO_LAST_SLSH:
 		url[url_len+1] = TK_SLSH;
 		url_len++;
 		/* intentional */
-	  case TCURL_CHECK_VALID_BBSURL_OK:
+	case TCURL_CHECK_VALID_BBSURL_OK:
 		break;
-	  case TCURL_CHECK_VALID_BBSURL_INVALID_SCHEME:
+	case TCURL_CHECK_VALID_BBSURL_INVALID_SCHEME:
 		bchan_panels_urlerror_scheme();
 		return False;
-	  case TCURL_CHECK_VALID_BBSURL_INVALID_HOST:
+	case TCURL_CHECK_VALID_BBSURL_INVALID_HOST:
 		bchan_panels_urlerror_host();
 		return False;
-	  case TCURL_CHECK_VALID_BBSURL_INVALID_PATH:
+	case TCURL_CHECK_VALID_BBSURL_INVALID_PATH:
 		bchan_panels_urlerror_path();
 		return False;
 	}
