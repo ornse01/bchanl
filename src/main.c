@@ -1098,11 +1098,9 @@ LOCAL Bool bchanl_subject_httpevent(bchanl_t *bchanl, http_connector_event *heve
 		err = subjectoptionwindow_setordervalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERVALUE_ASCENDING);
 		subjectoptionwindow_setorderbyvalue(bchanl->subjectoptionwindow, SUBJECTOPTIONWINDOW_ORDERBYVALUE_NUMBER);
 
-
-		bchanl_subject_relayout(bchanl->nextsubject);
-
 		bchanl_setcurrentsubject(bchanl, bchanl->nextsubject);
 		bchanl_setnextsubject(bchanl, NULL);
+		bchanl_subject_relayout(bchanl->currentsubject);
 
 		subjectwindow_getworkrect(bchanl->subjectwindow, &w_work);
 		draw = bchanl_subject_getdraw(bchanl->currentsubject);
