@@ -886,7 +886,7 @@ LOCAL Bool bchanl_registerexternalbbs(bchanl_t *bchanl)
 	ret = tcurl_check_valid_bbsurl(url, url_len);
 	switch (ret) {
 	case TCURL_CHECK_VALID_BBSURL_NO_LAST_SLSH:
-		url[url_len+1] = TK_SLSH;
+		url[url_len] = TK_SLSH;
 		url_len++;
 		/* intentional */
 	case TCURL_CHECK_VALID_BBSURL_OK:
