@@ -43,9 +43,14 @@
 #define BCHANL_MAINMENU_ITEMNUM_WINDOW 5
 #define BCHANL_MAINMENU_ITEMNUM_GADGET (BCHANL_MAINMENU_ITEMNUM_WINDOW + 1)
 
-EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray, Bool resnumdisplay, Bool sincedisplay, Bool vigordisplay)
+EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subjectactive, Bool subectjoptionenable, Bool extbbsmanageropen, Bool extbbsselected, Bool fromtray, Bool totray, Bool resnumdisplay, Bool sincedisplay, Bool vigordisplay)
 {
 	/* [表示] -> [スレ一覧設定] */
+	if (subjectactive == False) {
+		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_INACT);
+	} else {
+		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_ACT);
+	}
 	if (subectjoptionenable == False) {
 		mchg_atr(mainmenu->mnid, (1 << 8)|2, M_NOSEL);
 	} else {

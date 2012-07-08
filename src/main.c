@@ -1671,9 +1671,10 @@ typedef enum BCHANL_TEXTBOX_MENU_TYPE_ BCHANL_TEXTBOX_MENU_TYPE;
 
 LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl, BCHANL_TEXTBOX_MENU_TYPE type)
 {
-	Bool isopen, isopen_extbbs, selected = False, fromtray, totray, trayempty;
+	Bool isactive, isopen, isopen_extbbs, selected = False, fromtray, totray, trayempty;
 	W index, num;
 
+	isactive = subjectwindow_isactive(bchanl->subjectwindow);
 	isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
 	isopen_extbbs = externalbbswindow_isopen(bchanl->externalbbswindow);
 	if (isopen_extbbs != False) {
@@ -1731,7 +1732,7 @@ LOCAL VOID bchanl_setupmenu(bchanl_t *bchanl, BCHANL_TEXTBOX_MENU_TYPE type)
 		break;
 	}
 
-	bchanl_mainmenu_setup(&bchanl->mainmenu, isopen, isopen_extbbs, selected, fromtray, totray, bchanl->subjectdisplay.resnum, bchanl->subjectdisplay.since, bchanl->subjectdisplay.vigor);
+	bchanl_mainmenu_setup(&bchanl->mainmenu, isactive, isopen, isopen_extbbs, selected, fromtray, totray, bchanl->subjectdisplay.resnum, bchanl->subjectdisplay.since, bchanl->subjectdisplay.vigor);
 }
 
 LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE type)
