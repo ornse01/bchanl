@@ -88,6 +88,9 @@
 #define BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE 30
 #define BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE 1
 
+LOCAL UB bchanl_httpheader_useragent[] = "Monazilla/1.00 (bchanl/0.101)";
+LOCAL W bchanl_httpheader_useragent_len = sizeof(bchanl_httpheader_useragent) - 1;
+
 typedef struct bchanl_hmistate_t_ bchanl_hmistate_t;
 struct bchanl_hmistate_t_ {
 	PTRSTL ptr;
@@ -662,7 +665,7 @@ LOCAL W bchanl_bbsmenu_initialize(bchanl_bbsmenu_t *bchanl, GID gid, bchanl_subj
 	if (cache == NULL) {
 		goto error_cache;
 	}
-	retriever = bbsmnretriever_new(connector);
+	retriever = bbsmnretriever_new(connector, bchanl_httpheader_useragent, bchanl_httpheader_useragent_len);
 	if (retriever == NULL) {
 		goto error_retriever;
 	}
@@ -1274,7 +1277,7 @@ LOCAL W bchanl_initialize(bchanl_t *bchanl, VID vid, W exectype, LINK *storage)
 		goto error_http_connector;
 	}
 
-	retriever = sbjtretriever_new(connector);
+	retriever = sbjtretriever_new(connector, bchanl_httpheader_useragent, bchanl_httpheader_useragent_len);
 	if (retriever == NULL) {
 		DP_ER("sbjtretriever_new error", 0);
 		goto error_retriever;

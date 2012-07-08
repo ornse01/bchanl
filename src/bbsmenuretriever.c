@@ -50,9 +50,11 @@ struct bbsmnretriever_t_ {
 	http_connector_t *connector;
 	ID endpoint;
 	HTTP_STATUSCODE status;
+	UB *useragent;
+	W useragent_len;
 };
 
-EXPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector)
+EXPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector, UB *useragent, W useragent_len)
 {
 	bbsmnretriever_t *retriever;
 
@@ -63,6 +65,8 @@ EXPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector)
 	retriever->connector = connector;
 	retriever->endpoint = -1;
 	retriever->status = 0;
+	retriever->useragent = useragent;
+	retriever->useragent_len = useragent_len;
 
 	return retriever;
 }
@@ -120,7 +124,9 @@ LOCAL UB header[] =
 "Accept: */*\r\n"
 "Referer: http://menu.2ch.net/\r\n"
 "Accept-Language: ja\r\n"
-"User-Agent: Monazilla/1.00\r\n";
+"User-Agent: ";
+LOCAL UB header_default_ua[] = "Monazilla/1.00";
+LOCAL UB header_crlf[] = "\r\n";
 
 EXPORT W bbsmnretriever_recievehttpevent(bbsmnretriever_t *retriever, bbsmncache_t *cache, http_connector_event *hevent)
 {
@@ -133,6 +139,12 @@ EXPORT W bbsmnretriever_recievehttpevent(bbsmnretriever_t *retriever, bbsmncache
 	if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_SEND) {
 		http_connector_sendrequestline(connector, hevent->endpoint, path, strlen(path));
 		http_connector_sendheader(connector, hevent->endpoint, header, strlen(header));
+		if (retriever->useragent != NULL) {
+			http_connector_sendheader(connector, hevent->endpoint, retriever->useragent, retriever->useragent_len);
+		} else {
+			http_connector_sendheader(connector, hevent->endpoint, header_default_ua, strlen(header_default_ua));
+		}
+		http_connector_sendheader(connector, hevent->endpoint, header_crlf, strlen(header_crlf));
 		http_connector_sendheaderend(connector, hevent->endpoint);
 		http_connector_sendmessagebody(connector, hevent->endpoint, NULL, 0);
 		http_connector_sendmessagebodyend(connector, hevent->endpoint);

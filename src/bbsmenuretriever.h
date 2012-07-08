@@ -33,7 +33,7 @@
 
 typedef struct bbsmnretriever_t_ bbsmnretriever_t;
 
-IMPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector);
+IMPORT bbsmnretriever_t* bbsmnretriever_new(http_connector_t *connector, UB *useragent, W useragent_len);
 IMPORT VOID bbsmnretriever_delete(bbsmnretriever_t *retriever);
 IMPORT W bbsmnretriever_sendrequest(bbsmnretriever_t *retriever, bbsmncache_t *cache);
 IMPORT Bool bbsmnretriever_iswaitingendpoint(bbsmnretriever_t *retriever, ID endpoint);

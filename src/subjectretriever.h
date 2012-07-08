@@ -33,7 +33,7 @@
 
 typedef struct sbjtretriever_t_ sbjtretriever_t;
 
-IMPORT sbjtretriever_t* sbjtretriever_new(http_connector_t *connector);
+IMPORT sbjtretriever_t* sbjtretriever_new(http_connector_t *connector, UB *useragent, W useragent_len);
 IMPORT VOID sbjtretriever_delete(sbjtretriever_t *retriever);
 IMPORT W sbjtretriever_sendrequest(sbjtretriever_t *retriever, sbjtcache_t *cache);
 IMPORT Bool sbjtretriever_iswaitingendpoint(sbjtretriever_t *retriever, ID endpoint);
