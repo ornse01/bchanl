@@ -29,7 +29,7 @@ path /SYS/bin /SYS
 *
 
 if ?/SYS/$$PROGRAM.BOX/bchanl/commonstorage
-  rcp /SYS/$$PROGRAM.BOX/bchanl/commonstorage bchan/commonstorage
+  rcp /SYS/$$PROGRAM.BOX/bchanl/commonstorage bchanl/commonstorage
 else
   mkf bchanl/commonstorage
 endif
