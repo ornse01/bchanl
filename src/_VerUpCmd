@@ -1,7 +1,7 @@
 *
 * _VerUpCmd
 *
-* Copyright (c) 2012 project bchan
+* Copyright (c) 2012-2014 project bchan
 *
 * This software is provided 'as-is', without any express or implied
 * warranty. In no event will the authors be held liable for any damages
@@ -34,4 +34,4 @@ else
   mkf bchanl/commonstorage
 endif
 
-vup -a -d bchanl /SYS
+vup -t -d bchanl /SYS
