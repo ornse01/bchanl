@@ -81,6 +81,7 @@ clean:
 	$(RM) $(OBJ)
 	$(RM) $(WC_SRC:%.C=%.c) $(DBSRC)
 	$(RM) $(INST) $(NOINST) *.lst $(DEPS)
+	$(RM) *.btf
 
 install: $(INST:%=$(EXE_INSTALLDIR)/%)
 
