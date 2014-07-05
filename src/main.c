@@ -88,7 +88,7 @@
 #define BCHANL_COMMONSTORAGE_EXTBBSLIST_RECTYPE 30
 #define BCHANL_COMMONSTORAGE_EXTBBSLIST_SUBTYPE 1
 
-LOCAL UB bchanl_httpheader_useragent[] = "Monazilla/1.00 (bchanl/0.200)";
+LOCAL UB bchanl_httpheader_useragent[] = "Monazilla/1.00 (bchanl/0.201)";
 LOCAL W bchanl_httpheader_useragent_len = sizeof(bchanl_httpheader_useragent) - 1;
 
 typedef struct bchanl_hmistate_t_ bchanl_hmistate_t;
