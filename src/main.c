@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -1125,7 +1125,7 @@ LOCAL Bool bchanl_subject_httpevent(bchanl_t *bchanl, http_connector_event *heve
 		break;
 	default:
 		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_ERROR);
-		DP_ER("bbsmnretriever_recievehttpevent", err);
+		DP_ER("sbjtretriever_recievehttpevent", err);
 		break;
 	}
 
