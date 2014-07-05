@@ -1,7 +1,7 @@
 /*
  * subjectretriever.c
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -201,6 +201,7 @@ EXPORT W sbjtretriever_recievehttpevent(sbjtretriever_t *retriever, sbjtcache_t 
 	} else if (hevent->type == HTTP_CONNECTOR_EVENTTYPE_ERROR) {
 		http_connector_deleteendpoint(connector, hevent->endpoint);
 		retriever->endpoint = -1;
+		return SBJTRETRIEVER_REQUEST_ERROR;
 	} else {
 		/* error */
 		return -1;

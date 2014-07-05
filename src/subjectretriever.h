@@ -1,7 +1,7 @@
 /*
  * subjectretriever.h
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2014 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -39,6 +39,7 @@ IMPORT W sbjtretriever_sendrequest(sbjtretriever_t *retriever, sbjtcache_t *cach
 IMPORT Bool sbjtretriever_iswaitingendpoint(sbjtretriever_t *retriever, ID endpoint);
 IMPORT W sbjtretriever_recievehttpevent(sbjtretriever_t *retriever, sbjtcache_t *cache, http_connector_event *hevent);
 
+#define SBJTRETRIEVER_REQUEST_ERROR        -1
 #define SBJTRETRIEVER_REQUEST_NOT_MODIFIED 0
 #define SBJTRETRIEVER_REQUEST_ALLRELOAD    1
 #define SBJTRETRIEVER_REQUEST_WAITNEXT     2
