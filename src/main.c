@@ -627,7 +627,7 @@ LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
 		return;
 	}
 	bbsmnparser_item_gethostboard(item, &host, &host_len, &port, &board, &board_len);
-	subject = bchanl_subjecthash_search(bchanl->subjecthash, host, host_len, board, board_len);
+	subject = bchanl_subjecthash_search(bchanl->subjecthash, host, host_len, port, board, board_len);
 	if (subject == NULL) {
 		DP(("not found by subject hash"));
 		return;
@@ -738,7 +738,7 @@ LOCAL W bchanl_bbsmenu_appenditemtohash(bchanl_bbsmenu_t *bchanl, bbsmnparser_it
 	UH port;
 
 	bbsmnparser_item_gethostboard(item, &host, &host_len, &port, &board, &board_len);
-	err = bchanl_subjecthash_append(bchanl->subjecthash, host, host_len, board, board_len, item->title, item->title_len);
+	err = bchanl_subjecthash_append(bchanl->subjecthash, host, host_len, port, board, board_len, item->title, item->title_len);
 	return err;
 }
 

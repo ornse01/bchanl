@@ -1,7 +1,7 @@
 /*
  * subjectcache.h
  *
- * Copyright (c) 2009 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -40,6 +40,8 @@ IMPORT VOID sbjtcache_getlatestheader(sbjtcache_t *cache, UB **header, W *len);
 IMPORT W sbjtcache_updatelatestheader(sbjtcache_t *cache, UB *header, W len);
 IMPORT VOID sbjtcache_gethost(sbjtcache_t *cache, UB **host, W *len);
 IMPORT W sbjtcache_updatehost(sbjtcache_t *cache, UB *host, W len);
+IMPORT VOID sbjtcache_getport(sbjtcache_t *cache, UH *port);
+IMPORT VOID sbjtcache_updateport(sbjtcache_t *cache, UH port);
 IMPORT VOID sbjtcache_getboard(sbjtcache_t *cache, UB **borad, W *len);
 IMPORT W sbjtcache_updateboard(sbjtcache_t *cache, UB *borad, W len);
 IMPORT W sbjtcache_datasize(sbjtcache_t *cache);

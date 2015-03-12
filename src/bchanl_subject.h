@@ -1,7 +1,7 @@
 /*
  * bchanl_subject.h
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -61,7 +61,7 @@ IMPORT Bool bchanl_subject_getvigordisplay(bchanl_subject_t *subject);
 
 IMPORT bchanl_subjecthash_t* bchanl_subjecthash_new(GID gid, W base);
 IMPORT VOID bchanl_subjecthash_delete(bchanl_subjecthash_t *subjecthash);
-IMPORT bchanl_subject_t* bchanl_subjecthash_search(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UB *board, W board_len);
-IMPORT W bchanl_subjecthash_append(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len);
+IMPORT bchanl_subject_t* bchanl_subjecthash_search(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UH port, UB *board, W board_len);
+IMPORT W bchanl_subjecthash_append(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UH port, UB *board, W board_len, TC *title, W title_len);
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * test_subjectcache.c
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -407,6 +407,29 @@ LOCAL UNITTEST_RESULT test_sbjtcache_9()
 	return test_sbjtcache_9_testseq();
 }
 
+/* test_sbjtcache_10 */
+
+LOCAL UNITTEST_RESULT test_sbjtcache_10()
+{
+	sbjtcache_t *cache;
+	UNITTEST_RESULT result = UNITTEST_RESULT_PASS;
+	UH port;
+	W err, board_len, cmp;
+
+	cache = sbjtcache_new();
+
+	sbjtcache_updateport(cache, 12345);
+	sbjtcache_getport(cache, &port);
+	if (port != 12345) {
+		printf("sbjtcache_getport: data error\n");
+		result = UNITTEST_RESULT_FAIL;
+	}
+
+	sbjtcache_delete(cache);
+
+	return result;
+}
+
 EXPORT VOID test_sbjtcache_main(unittest_driver_t *driver)
 {
 	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_1);
@@ -418,4 +441,5 @@ EXPORT VOID test_sbjtcache_main(unittest_driver_t *driver)
 	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_7);
 	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_8);
 	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_9);
+	UNITTEST_DRIVER_REGIST(driver, test_sbjtcache_10);
 }

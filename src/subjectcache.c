@@ -1,7 +1,7 @@
 /*
  * subjectcache.c
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -47,6 +47,7 @@ struct sbjtcache_t_ {
 	chunkedcache_t subjectdata;
 	UB *host;
 	W host_len;
+	UH port;
 	UB *board;
 	W board_len;
 	UB *latestheader;
@@ -126,6 +127,16 @@ EXPORT W sbjtcache_updatehost(sbjtcache_t *cache, UB *host, W len)
 	cache->host[cache->host_len] = '\0';
 
 	return 0;
+}
+
+EXPORT VOID sbjtcache_getport(sbjtcache_t *cache, UH *port)
+{
+	*port = cache->port;
+}
+
+EXPORT VOID sbjtcache_updateport(sbjtcache_t *cache, UH port)
+{
+	cache->port = port;
 }
 
 EXPORT VOID sbjtcache_getboard(sbjtcache_t *cache, UB **borad, W *len)

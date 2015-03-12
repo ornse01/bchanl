@@ -1,7 +1,7 @@
 /*
  * bchanl_subject.c
  *
- * Copyright (c) 2009-2011 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -348,7 +348,7 @@ EXPORT Bool bchanl_subject_getvigordisplay(bchanl_subject_t *subject)
 	return sbjtlayout_getvigordisplay(subject->layout);
 }
 
-LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
+LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, W host_len, UH port, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
 {
 	sbjtcache_t *cache;
 	sbjtparser_t *parser;
@@ -388,6 +388,7 @@ LOCAL W bchanl_subject_initialize(bchanl_subject_t *subject, GID gid, UB *host, 
 	if (err < 0) {
 		goto error_info;
 	}
+	sbjtcache_updateport(cache, port);
 	err = sbjtcache_updateboard(cache, board, board_len);
 	if (err < 0) {
 		goto error_info;
@@ -431,7 +432,7 @@ LOCAL VOID bchanl_subject_finalize(bchanl_subject_t *subject)
 	sbjtcache_delete(subject->cache);
 }
 
-LOCAL bchanl_subjecthashnode_t* bchanl_subjecthashnode_new(GID gid, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
+LOCAL bchanl_subjecthashnode_t* bchanl_subjecthashnode_new(GID gid, UB *host, W host_len, UH port, UB *board, W board_len, TC *title, W title_len, FSSPEC *fspec, COLOR vobjbgcol)
 {
 	bchanl_subjecthashnode_t *node;
 	W err;
@@ -442,7 +443,7 @@ LOCAL bchanl_subjecthashnode_t* bchanl_subjecthashnode_new(GID gid, UB *host, W 
 	}
 
 	QueInit(&(node->queue));
-	err = bchanl_subject_initialize(&(node->subject), gid, host, host_len, board, board_len, title, title_len, fspec, vobjbgcol);
+	err = bchanl_subject_initialize(&(node->subject), gid, host, host_len, port, board, board_len, title, title_len, fspec, vobjbgcol);
 	if (err < 0) {
 		free(node);
 		return NULL;
@@ -458,11 +459,12 @@ LOCAL VOID bchanl_subjecthashnode_delete(bchanl_subjecthashnode_t *hashnode)
 	return;
 }
 
-LOCAL Bool bchanl_subjecthashnode_issameboard(bchanl_subjecthashnode_t *node, UB *host, W host_len, UB *board, W board_len)
+LOCAL Bool bchanl_subjecthashnode_issameboard(bchanl_subjecthashnode_t *node, UB *host, W host_len, UH port, UB *board, W board_len)
 {
 	sbjtcache_t *cache;
 	UB *host0, *board0;
 	W host_len0, board_len0, cmp;
+	UH port0;
 
 	cache = node->subject.cache;
 
@@ -472,6 +474,11 @@ LOCAL Bool bchanl_subjecthashnode_issameboard(bchanl_subjecthashnode_t *node, UB
 	}
 	cmp = strncmp(host, host0, host_len);
 	if (cmp != 0) {
+		return False;
+	}
+
+	sbjtcache_getport(cache, &port0);
+	if (port != port0) {
 		return False;
 	}
 
@@ -488,13 +495,14 @@ LOCAL Bool bchanl_subjecthashnode_issameboard(bchanl_subjecthashnode_t *node, UB
 	return True;
 }
 
-LOCAL W bchanl_subjecthash_calchashvalue(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UB *board, W board_len)
+LOCAL W bchanl_subjecthash_calchashvalue(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UH port, UB *board, W board_len)
 {
 	W i,num = 0;
 
 	for (i = 0; i < host_len; i++) {
 		num += host[i];
 	}
+	num += port;
 	for (i = 0; i < board_len; i++) {
 		num += board[i];
 	}
@@ -502,17 +510,17 @@ LOCAL W bchanl_subjecthash_calchashvalue(bchanl_subjecthash_t *subjecthash, UB *
 	return num % subjecthash->base;
 }
 
-EXPORT bchanl_subject_t* bchanl_subjecthash_search(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UB *board, W board_len)
+EXPORT bchanl_subject_t* bchanl_subjecthash_search(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UH port, UB *board, W board_len)
 {
 	bchanl_subjecthashnode_t *node, *buf;
 	W hashval;
 	Bool same;
 
-	hashval = bchanl_subjecthash_calchashvalue(subjecthash, host, host_len, board, board_len);
+	hashval = bchanl_subjecthash_calchashvalue(subjecthash, host, host_len, port, board, board_len);
 	buf = subjecthash->tbl + hashval;
 
 	for (node = (bchanl_subjecthashnode_t *)buf->queue.next; node != buf; node = (bchanl_subjecthashnode_t *)node->queue.next) {
-		same = bchanl_subjecthashnode_issameboard(node, host, host_len, board, board_len);
+		same = bchanl_subjecthashnode_issameboard(node, host, host_len, port, board, board_len);
 		if (same == True) {
 			return &(node->subject);
 		}
@@ -521,21 +529,21 @@ EXPORT bchanl_subject_t* bchanl_subjecthash_search(bchanl_subjecthash_t *subject
 	return NULL;
 }
 
-EXPORT W bchanl_subjecthash_append(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UB *board, W board_len, TC *title, W title_len)
+EXPORT W bchanl_subjecthash_append(bchanl_subjecthash_t *subjecthash, UB *host, W host_len, UH port, UB *board, W board_len, TC *title, W title_len)
 {
 	bchanl_subjecthashnode_t *hashnode, *buf;
 	bchanl_subject_t *subject;
 	W hashval;
 
-	subject = bchanl_subjecthash_search(subjecthash, host, host_len, board, board_len);
+	subject = bchanl_subjecthash_search(subjecthash, host, host_len, port, board, board_len);
 	if (subject != NULL) {
 		return 0;
 	}
 
-	hashval = bchanl_subjecthash_calchashvalue(subjecthash, host, host_len, board, board_len);
+	hashval = bchanl_subjecthash_calchashvalue(subjecthash, host, host_len, port, board, board_len);
 	buf = subjecthash->tbl + hashval;
 
-	hashnode = bchanl_subjecthashnode_new(subjecthash->gid, host, host_len, board, board_len, title, title_len, &subjecthash->fspec, subjecthash->vobjbgcol);
+	hashnode = bchanl_subjecthashnode_new(subjecthash->gid, host, host_len, port, board, board_len, title, title_len, &subjecthash->fspec, subjecthash->vobjbgcol);
 	if (hashnode == NULL) {
 		return -1; /* TODO*/
 	}
