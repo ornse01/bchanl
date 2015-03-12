@@ -1,7 +1,7 @@
 /*
  * bbsmenuparser.c
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -262,21 +262,42 @@ LOCAL W bbsmnparser_parsechar(bbsmnparser_t *parser, UB ch, bbsmnparser_item_t *
 	return 0; /* TODO */
 }
 
-EXPORT VOID bbsmnparser_item_gethostboard(bbsmnparser_item_t *item, UB **host, W *host_len, UB **board, W *board_len)
+EXPORT VOID bbsmnparser_item_gethostboard(bbsmnparser_item_t *item, UB **host, W *host_len, UH *port, UB **board, W *board_len)
 {
 	W i = 0;
-	UB *host0 = NULL, *board0 = NULL;
-	W host_len0 = 0, board_len0 = 0;
+	UB *host0 = NULL, *port0 = NULL, *board0 = NULL;
+	W host_len0 = 0, port_len0 = 0, board_len0 = 0;
+	Bool port_exist = False;
 
 	host0 = item->url + 7;
 	for (i=7; i < item->url_len; i++) {
 		if (item->url[i] == '/') {
 			break;
 		}
+		if (item->url[i] == ':') {
+			port_exist = True;
+			break;
+		}
 		host_len0++;
 	}
-
 	i++;
+
+	port0 = item->url + i;
+	if (port_exist != False) {
+		for (; i < item->url_len; i++) {
+			if (item->url[i] == '/') {
+				break;
+			}
+			port_len0++;
+		}
+		i++;
+	}
+	if (port_len0 > 0) {
+		*port = atoi(port0);
+	} else {
+		*port = 80;
+	}
+
 	board0 = item->url + i;
 	for (; i < item->url_len; i++) {
 		if (item->url[i] == '/') {

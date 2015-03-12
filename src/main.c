@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- * Copyright (c) 2009-2014 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -614,6 +614,7 @@ LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
 	W fnd;
 	UB *host, *board;
 	W host_len, board_len;
+	UH port;
 	TC *title;
 	W title_len;
 
@@ -625,7 +626,7 @@ LOCAL VOID bchanl_bbsmenuwindow_click(bchanl_t *bchanl, PNT pos)
 	if (item->category != NULL) {
 		return;
 	}
-	bbsmnparser_item_gethostboard(item, &host, &host_len, &board, &board_len);
+	bbsmnparser_item_gethostboard(item, &host, &host_len, &port, &board, &board_len);
 	subject = bchanl_subjecthash_search(bchanl->subjecthash, host, host_len, board, board_len);
 	if (subject == NULL) {
 		DP(("not found by subject hash"));
@@ -734,8 +735,9 @@ LOCAL W bchanl_bbsmenu_appenditemtohash(bchanl_bbsmenu_t *bchanl, bbsmnparser_it
 	W err;
 	UB *host, *board;
 	W host_len, board_len;
+	UH port;
 
-	bbsmnparser_item_gethostboard(item, &host, &host_len, &board, &board_len);
+	bbsmnparser_item_gethostboard(item, &host, &host_len, &port, &board, &board_len);
 	err = bchanl_subjecthash_append(bchanl->subjecthash, host, host_len, board, board_len, item->title, item->title_len);
 	return err;
 }

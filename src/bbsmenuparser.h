@@ -1,7 +1,7 @@
 /*
  * bbsmenuparser.h
  *
- * Copyright (c) 2009-2012 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -43,7 +43,7 @@ typedef struct bbsmnparser_t_ bbsmnparser_t;
 
 IMPORT VOID bbsmnparser_item_delete(bbsmnparser_item_t *item);
 IMPORT Bool bbsmnparser_item_checkboradurl(bbsmnparser_item_t *item);
-IMPORT VOID bbsmnparser_item_gethostboard(bbsmnparser_item_t *item, UB **host, W *host_len, UB **board, W *board_len);
+IMPORT VOID bbsmnparser_item_gethostboard(bbsmnparser_item_t *item, UB **host, W *host_len, UH *port, UB **board, W *board_len);
 
 IMPORT bbsmnparser_t* bbsmnparser_new(bbsmncache_t *cache);
 IMPORT VOID bbsmnparser_delete(bbsmnparser_t *parser);
