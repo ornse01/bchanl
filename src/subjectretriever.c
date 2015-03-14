@@ -1,7 +1,7 @@
 /*
  * subjectretriever.c
  *
- * Copyright (c) 2009-2014 project bchan
+ * Copyright (c) 2009-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -98,6 +98,7 @@ EXPORT W sbjtretriever_sendrequest(sbjtretriever_t *retriever, sbjtcache_t *cach
 {
 	W host_len;
 	UB *host;
+	UH port;
 
 	if (retriever->endpoint > 0) {
 		DP(("sbjtretriever_sendrequest: requesting\n"));
@@ -105,8 +106,9 @@ EXPORT W sbjtretriever_sendrequest(sbjtretriever_t *retriever, sbjtcache_t *cach
 	}
 
 	sbjtcache_gethost(cache, &host, &host_len);
+	sbjtcache_getport(cache, &port);
 
-	retriever->endpoint = http_connector_createendpoint(retriever->connector, host, host_len, 80, HTTP_METHOD_GET);
+	retriever->endpoint = http_connector_createendpoint(retriever->connector, host, host_len, port, HTTP_METHOD_GET);
 	if (retriever->endpoint < 0) {
 		DP_ER("http_connector_createendpoint error", retriever->endpoint);
 		return -1;
