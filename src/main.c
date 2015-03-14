@@ -1454,8 +1454,6 @@ LOCAL VOID bchanl_readbbsmenutestdata(bchanl_bbsmenu_t *bchanl, bbsmenuwindow_t 
 	bbsmncache_appenddata(cache, bin, len);
 	free(bin);
 
-	req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
-
 	bbsmenuwindow_getworkrect(bchanl_window, &w_work);
 	bbsmndraw_setviewrect(draw, 0, 0, w_work.c.right, w_work.c.bottom);
 	bbsmenuwindow_setworkrect(bchanl_window, 0, 0, w_work.c.right, w_work.c.bottom);
@@ -2281,6 +2279,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 
 	if (msg->msg_type == 0) {
 		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), bchanl.bbsmenuwindow);
+		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
 	} else if (msg->msg_type == EXECREQ) {
 		bchanl_networkrequest_bbsmenu(&bchanl);
 	}
