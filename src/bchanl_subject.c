@@ -178,13 +178,46 @@ EXPORT W bchanl_subject_reorder(bchanl_subject_t *subject, TC *filterword, W fil
 	return 0;
 }
 
+/* tmp */
+LOCAL UB dec[] = "0123456789";
+LOCAL W UH_to_str(UH n, UB *str)
+{
+	W i = 0,digit,draw = 0;
+
+	digit = n / 10000 % 10;
+	if ((digit != 0)||(draw != 0)) {
+		str[i++] = dec[digit];
+		draw = 1;
+	}
+	digit = n / 1000 % 10;
+	if ((digit != 0)||(draw != 0)) {
+		str[i++] = dec[digit];
+		draw = 1;
+	}
+	digit = n / 100 % 10;
+	if ((digit != 0)||(draw != 0)) {
+		str[i++] = dec[digit];
+		draw = 1;
+	}
+	digit = n / 10 % 10;
+	if ((digit != 0)||(draw != 0)) {
+		str[i++] = dec[digit];
+		draw = 1;
+	}
+	digit = n % 10;
+	str[i++] = dec[digit];
+
+	return i;
+}
+
 EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tuple_t *tuple, UB *fsnrec, W fsnrec_len, VOBJSEG *seg, LINK *lnk)
 {
 	W fd, len, err;
-	UB *bin;
+	UB *bin, port_str[6];
 	TC *str, title[21];
 	VID vid;
 	RECT newr;
+	UH port;
 
 	seg->view = (RECT){{0,0,300,20}};
 	seg->height = 100;
@@ -238,6 +271,18 @@ EXPORT W bchanl_subject_createviewervobj(bchanl_subject_t *subject, sbjtlist_tup
 		cls_fil(fd);
 		del_fil(NULL, lnk, 0);
 		return fd;
+	}
+	sbjtcache_getport(subject->cache, &port);
+	if (port != 80) {
+		port_str[0] = ':';
+		len = UH_to_str(port, port_str+1) + 1;
+		err = wri_rec(fd, -1, port_str, len, NULL, NULL, 0);
+		if (err < 0) {
+			DP_ER("wri_rec:host error", err);
+			cls_fil(fd);
+			del_fil(NULL, lnk, 0);
+			return fd;
+		}
 	}
 	err = wri_rec(fd, -1, "\n", 1, NULL, NULL, 0);
 	if (err < 0) {
