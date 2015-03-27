@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile (bchan: BTRON 2channel board viewer)
+#	@(#)Makefile (bchan: BTRON BBS board viewer)
 #		GNU make 用
 #
 #	make の方法
@@ -14,7 +14,7 @@
 #
 
 # バージョン
-version = 0x0201
+version = 0x0300
 
 # リリース用をデフォルトにする
 mode =
