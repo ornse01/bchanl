@@ -130,8 +130,8 @@
 	MC_STR "板一覧再取得\0"
 
 	{# TEXT_MLIST4 0 0}	-- data number
-	MC_STR "外部板"
-	MC_IND "外部板管理"
+	MC_STR "掲示板"
+	MC_IND "掲示板管理"
 	MC_LINE
 	MC_STR "板追加"
 	MC_STR "一つ上げる"
@@ -139,7 +139,7 @@
 	MC_STR "削除\0"
 
 	{# TEXT_WTIT_BBSMENU 0 0}	-- data number
-	"２ちゃんねる板一覧\0"
+	"掲示板一覧\0"
 
 	{# TEXT_WTIT_SUBJECT 0 0}	-- data number
 	"スレ一覧\0"

@@ -798,9 +798,9 @@ LOCAL VOID bchanl_bbsmenu_relayoutcache(bchanl_bbsmenu_t *bchanl)
 
 LOCAL VOID bchanl_bbsmenu_relayoutexternal(bchanl_bbsmenu_t *bchanl)
 {
-	W err, ret, category_len, title_len, url_len;
+	W err, ret, title_len, url_len;
 	Bool cont;
-	TC *category, *title;
+	TC *title;
 	UB *url;
 	extbbslist_readcontext_t *ctx;
 	bbsmnparser_t *parser = bchanl->parser;
@@ -810,17 +810,6 @@ LOCAL VOID bchanl_bbsmenu_relayoutexternal(bchanl_bbsmenu_t *bchanl)
 
 	ret = extbbslist_number(bchanl->extbbslist);
 	if (ret <= 0) {
-		return;
-	}
-
-	category = bchanl->category_extbbs;
-	category_len = tc_strlen(category);
-	item = bbsmnparser_newcategoryitem(parser, category, category_len);
-	if (item == NULL) {
-		return;
-	}
-	err = bbsmnlayout_appenditem(layout, item);
-	if (err < 0) {
 		return;
 	}
 
@@ -2279,10 +2268,10 @@ EXPORT	W	MAIN(MESSAGE *msg)
 
 	if (msg->msg_type == 0) {
 		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), bchanl.bbsmenuwindow);
-		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
 	} else if (msg->msg_type == EXECREQ) {
 		//bchanl_networkrequest_bbsmenu(&bchanl);
 	}
+	req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
 
 	subjectwindow_requestredisp(bchanl.subjectwindow);
 	bbsmenuwindow_requestredisp(bchanl.bbsmenuwindow);
