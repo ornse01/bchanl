@@ -1635,7 +1635,7 @@ LOCAL VOID bchanl_bbsmenuwindow_keydwn(bchanl_t *bchanl, UH keycode, TC ch, UW s
 	case KC_PG_L:
 		break;
 	case KC_PF5:
-		bchanl_networkrequest_bbsmenu(bchanl);
+		//bchanl_networkrequest_bbsmenu(bchanl);
 		break;
 	case TK_E: /* temporary */
 		if (stat & ES_CMD) {
@@ -1754,7 +1754,7 @@ LOCAL VOID bchanl_selectmenu(bchanl_t *bchanl, W sel, BCHANL_TEXTBOX_MENU_TYPE t
 		bbsmenuwindow_requestredisp(bchanl->bbsmenuwindow);
 		break;
 	case BCHANL_MAINMENU_SELECT_BBSMENUFETCH: /* [板一覧再取得] */
-		bchanl_networkrequest_bbsmenu(bchanl);
+		//bchanl_networkrequest_bbsmenu(bchanl);
 		break;
 	case BCHANL_MAINMENU_SELECT_SUBJECTOPTION: /* [スレ一覧設定] */
 		isopen = subjectoptionwindow_isopen(bchanl->subjectoptionwindow);
@@ -2281,7 +2281,7 @@ EXPORT	W	MAIN(MESSAGE *msg)
 		bchanl_readbbsmenutestdata(&(bchanl.bbsmenu), bchanl.bbsmenuwindow);
 		req_tmg(0, BCHANL_MESSAGE_RETRIEVER_RELAYOUT);
 	} else if (msg->msg_type == EXECREQ) {
-		bchanl_networkrequest_bbsmenu(&bchanl);
+		//bchanl_networkrequest_bbsmenu(&bchanl);
 	}
 
 	subjectwindow_requestredisp(bchanl.subjectwindow);
