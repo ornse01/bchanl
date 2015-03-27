@@ -1,7 +1,7 @@
 /*
  * bchanl_menus.c
  *
- * Copyright (c) 2011-2012 project bchan
+ * Copyright (c) 2011-2015 project bchan
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -96,6 +96,9 @@ EXPORT W bchanl_mainmenu_setup(bchanl_mainmenu_t *mainmenu, Bool subjectactive, 
 		mchg_atr(mainmenu->mnid, (2 << 8)|3, M_ACT);
 		mchg_atr(mainmenu->mnid, (2 << 8)|5, M_ACT);
 	}
+
+	/* [操作] -> [板一覧再取得] */
+	mchg_atr(mainmenu->mnid, (3 << 8)|1, M_INACT);
 
 	/* [外部板] -> [外部板管理] */
 	if (extbbsmanageropen == False) {
